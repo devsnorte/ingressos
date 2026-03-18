@@ -36,8 +36,18 @@ RUN pip install --upgrade pip setuptools wheel && \
     pip install -e ".[postgres]" && \
     pip install gunicorn redis supervisor
 
+# Build frontend assets
+RUN cd /pretix && make npminstall
+
 # Copy production settings alongside pretix
 COPY production_settings.py /pretix/src/production_settings.py
+
+# Pre-build static files into the image (needs a dummy config for Django settings)
+RUN mkdir -p /etc/pretix && \
+    printf '[pretix]\ninstance_name=build\nurl=http://localhost\ncurrency=BRL\ndatadir=/data\n\n[database]\nbackend=sqlite3\n\n[django]\nsecret=build-secret\n' > /etc/pretix/pretix.cfg && \
+    mkdir -p /data/logs /data/media && \
+    cd /pretix/src && python -m pretix rebuild && \
+    rm /etc/pretix/pretix.cfg
 
 # Copy deployment files
 COPY scripts/ /scripts/
