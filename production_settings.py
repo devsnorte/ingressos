@@ -1,6 +1,5 @@
 from pretix.settings import *  # noqa
 
-STATIC_ROOT = "/pretix/src/static.dist"
 STORAGES = {
     **STORAGES,  # noqa
     "staticfiles": {
