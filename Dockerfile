@@ -34,7 +34,7 @@ COPY pretix /pretix
 WORKDIR /pretix
 RUN pip install --upgrade pip setuptools wheel && \
     pip install -e ".[postgres]" && \
-    pip install gunicorn redis supervisor
+    pip install gunicorn redis supervisor whitenoise
 
 # Copy production settings alongside pretix
 COPY production_settings.py /pretix/src/production_settings.py
