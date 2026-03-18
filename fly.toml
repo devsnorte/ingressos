@@ -12,7 +12,7 @@ primary_region = "gru"
 
 [[vm]]
   size = "shared-cpu-2x"
-  memory = "1gb"
+  memory = "2gb"
 
 [mounts]
   source = "ingressos_data"
