@@ -1,0 +1,3 @@
+[submodule "pretix"]
+	path = pretix
+	url = https://github.com/devsnorte/pretix.git
