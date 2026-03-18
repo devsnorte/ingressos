@@ -37,7 +37,7 @@ RUN pip install --upgrade pip setuptools wheel && \
     pip install gunicorn redis supervisor
 
 # Build frontend assets
-RUN cd /pretix && make npminstall
+RUN cd /pretix/src && make npminstall
 
 # Copy production settings alongside pretix
 COPY production_settings.py /pretix/src/production_settings.py
