@@ -20,9 +20,8 @@ primary_region = "gru"
 
 [checks]
   [checks.health]
-    type = "http"
+    type = "tcp"
     port = 8000
-    path = "/healthcheck/"
     interval = "30s"
     timeout = "5s"
     grace_period = "300s"
