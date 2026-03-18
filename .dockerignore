@@ -1,0 +1,7 @@
+.git
+.env
+*.pyc
+__pycache__
+docs/
+pretix/.git
+pretix/.github

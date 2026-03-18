@@ -1,0 +1,27 @@
+app = "ingressos"
+primary_region = "gru"
+
+[build]
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  size = "shared-cpu-2x"
+  memory = "1gb"
+
+[mounts]
+  source = "ingressos_data"
+  destination = "/data"
+
+[checks]
+  [checks.health]
+    type = "http"
+    port = 8000
+    path = "/healthcheck/"
+    interval = "30s"
+    timeout = "5s"
