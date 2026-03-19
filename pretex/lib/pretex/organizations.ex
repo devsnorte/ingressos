@@ -42,4 +42,11 @@ defmodule Pretex.Organizations do
   def count_organizations do
     Repo.aggregate(Organization, :count)
   end
+
+  @doc "Sets or clears the require_2fa flag for an organization."
+  def set_require_2fa(%Organization{} = org, required) when is_boolean(required) do
+    org
+    |> Ecto.Changeset.change(require_2fa: required)
+    |> Repo.update()
+  end
 end

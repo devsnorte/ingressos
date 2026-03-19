@@ -19,13 +19,21 @@ defmodule PretexWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :require_customer_no_2fa do
+    plug :require_authenticated_customer_no_2fa
+  end
+
+  pipeline :require_user_no_2fa do
+    plug :require_authenticated_user_no_2fa
+  end
+
   scope "/", PretexWeb do
     pipe_through :browser
 
     get "/", PageController, :home
   end
 
-  # ── Staff auth (magic link) ──────────────────────────────────────────────
+  # -- Staff auth (magic link) -----------------------------------------------
 
   scope "/staff", PretexWeb do
     pipe_through :browser
@@ -40,7 +48,33 @@ defmodule PretexWeb.Router do
     delete "/log-out", UserSessionController, :delete
   end
 
-  # ── Admin (requires staff login) ─────────────────────────────────────────
+  # -- Staff 2FA challenge (authenticated but 2FA not yet verified) ----------
+  # Uses plain :browser pipeline so the 2FA check in require_authenticated_user
+  # does not loop. The on_mount callback handles authentication without 2FA check.
+
+  scope "/staff", PretexWeb do
+    pipe_through [:browser, :require_user_no_2fa]
+
+    live_session :staff_two_factor,
+      on_mount: [{PretexWeb.UserAuth, :require_authenticated_no_2fa}] do
+      live "/two-factor", StaffLive.TwoFactor, :new
+    end
+
+    post "/two-factor/complete", StaffTwoFactorController, :complete
+  end
+
+  # -- Staff security settings (requires authenticated + 2FA) ----------------
+
+  scope "/staff", PretexWeb do
+    pipe_through [:browser, :require_authenticated_user]
+
+    live_session :staff_security,
+      on_mount: [{PretexWeb.UserAuth, :require_authenticated_user}] do
+      live "/security", StaffLive.Security, :index
+    end
+  end
+
+  # -- Admin (requires staff login) ------------------------------------------
 
   scope "/admin", PretexWeb.Admin do
     pipe_through [:browser, :require_authenticated_user]
@@ -59,7 +93,22 @@ defmodule PretexWeb.Router do
     end
   end
 
-  # ── Customer auth ─────────────────────────────────────────────────────────
+  # -- Customer 2FA challenge (authenticated but 2FA not yet verified) --------
+  # Uses plain :browser pipeline so the 2FA check in require_authenticated_customer
+  # does not loop. The on_mount callback handles authentication without 2FA check.
+
+  scope "/", PretexWeb do
+    pipe_through [:browser, :require_customer_no_2fa]
+
+    live_session :customer_two_factor,
+      on_mount: [{PretexWeb.CustomerAuth, :require_authenticated_no_2fa}] do
+      live "/customers/two-factor", CustomerLive.TwoFactor, :new
+    end
+
+    post "/customers/two-factor/complete", CustomerTwoFactorController, :complete
+  end
+
+  # -- Customer auth ---------------------------------------------------------
 
   scope "/", PretexWeb do
     pipe_through [:browser, :require_authenticated_customer]

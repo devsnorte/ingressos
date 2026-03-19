@@ -35,9 +35,13 @@ defmodule PretexWeb.CustomerAuth do
   def log_in_customer(conn, customer, params \\ %{}) do
     customer_return_to = get_session(conn, :customer_return_to)
 
-    conn
-    |> create_or_extend_session(customer, params)
-    |> redirect(to: customer_return_to || signed_in_path(conn))
+    conn = create_or_extend_session(conn, customer, params)
+
+    if Pretex.Customers.Customer.totp_enabled?(customer) do
+      redirect(conn, to: ~p"/customers/two-factor")
+    else
+      redirect(conn, to: customer_return_to || signed_in_path(conn))
+    end
   end
 
   @doc """
@@ -215,7 +219,7 @@ defmodule PretexWeb.CustomerAuth do
     {:cont, mount_current_scope(socket, session)}
   end
 
-  def on_mount(:require_authenticated, _params, session, socket) do
+  def on_mount(:require_authenticated_no_2fa, _params, session, socket) do
     socket = mount_current_scope(socket, session)
 
     if socket.assigns.current_scope && socket.assigns.current_scope.customer do
@@ -227,6 +231,32 @@ defmodule PretexWeb.CustomerAuth do
         |> Phoenix.LiveView.redirect(to: ~p"/customers/log-in")
 
       {:halt, socket}
+    end
+  end
+
+  def on_mount(:require_authenticated, _params, session, socket) do
+    socket = mount_current_scope(socket, session)
+
+    cond do
+      is_nil(socket.assigns.current_scope) or is_nil(socket.assigns.current_scope.customer) ->
+        socket =
+          socket
+          |> Phoenix.LiveView.put_flash(:error, "You must log in to access this page.")
+          |> Phoenix.LiveView.redirect(to: ~p"/customers/log-in")
+
+        {:halt, socket}
+
+      Pretex.Customers.Customer.totp_enabled?(socket.assigns.current_scope.customer) and
+          session["customer_2fa_verified"] != true ->
+        socket =
+          socket
+          |> Phoenix.LiveView.put_flash(:error, "Please complete two-factor authentication.")
+          |> Phoenix.LiveView.redirect(to: ~p"/customers/two-factor")
+
+        {:halt, socket}
+
+      true ->
+        {:cont, socket}
     end
   end
 
@@ -267,9 +297,10 @@ defmodule PretexWeb.CustomerAuth do
   def signed_in_path(_), do: ~p"/"
 
   @doc """
-  Plug for routes that require the customer to be authenticated.
+  Plug for routes that require the customer to be authenticated but do NOT
+  enforce 2FA. Used for the 2FA challenge routes themselves to avoid redirect loops.
   """
-  def require_authenticated_customer(conn, _opts) do
+  def require_authenticated_customer_no_2fa(conn, _opts) do
     if conn.assigns.current_scope && conn.assigns.current_scope.customer do
       conn
     else
@@ -278,6 +309,32 @@ defmodule PretexWeb.CustomerAuth do
       |> maybe_store_return_to()
       |> redirect(to: ~p"/customers/log-in")
       |> halt()
+    end
+  end
+
+  @doc """
+  Plug for routes that require the customer to be authenticated.
+  """
+  def require_authenticated_customer(conn, _opts) do
+    customer = conn.assigns.current_scope && conn.assigns.current_scope.customer
+
+    cond do
+      is_nil(customer) ->
+        conn
+        |> put_flash(:error, "You must log in to access this page.")
+        |> maybe_store_return_to()
+        |> redirect(to: ~p"/customers/log-in")
+        |> halt()
+
+      Pretex.Customers.Customer.totp_enabled?(customer) and
+          get_session(conn, :customer_2fa_verified) != true ->
+        conn
+        |> put_flash(:error, "Please complete two-factor authentication.")
+        |> redirect(to: ~p"/customers/two-factor")
+        |> halt()
+
+      true ->
+        conn
     end
   end
 

@@ -8,9 +8,16 @@ defmodule Pretex.Customers.Customer do
     field :hashed_password, :string, redact: true
     field :confirmed_at, :utc_datetime
     field :authenticated_at, :utc_datetime, virtual: true
+    field :totp_secret, :binary
+    field :totp_enabled_at, :utc_datetime
 
-    timestamps(type: :utc_datetime)
+    has_many :recovery_codes, Pretex.Customers.CustomerRecoveryCode
+    has_many :webauthn_credentials, Pretex.Customers.CustomerWebAuthnCredential
+
+    timestamps type: :utc_datetime
   end
+
+  def totp_enabled?(%__MODULE__{totp_enabled_at: ts}), do: not is_nil(ts)
 
   @doc """
   A customer changeset for registering or changing the email.

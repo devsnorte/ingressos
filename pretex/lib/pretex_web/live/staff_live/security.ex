@@ -1,72 +1,20 @@
-defmodule PretexWeb.CustomerLive.Settings do
+defmodule PretexWeb.StaffLive.Security do
   use PretexWeb, :live_view
 
-  on_mount({PretexWeb.CustomerAuth, :require_sudo_mode})
+  on_mount({PretexWeb.UserAuth, :require_authenticated_user})
 
-  alias Pretex.Customers
+  alias Pretex.Accounts
 
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
+    <Layouts.app flash={@flash}>
       <div class="text-center">
         <.header>
-          Account Settings
-          <:subtitle>Manage your account email address and password settings</:subtitle>
+          Security Settings
+          <:subtitle>Manage two-factor authentication for your staff account</:subtitle>
         </.header>
       </div>
-
-      <.form for={@email_form} id="email_form" phx-submit="update_email" phx-change="validate_email">
-        <.input
-          field={@email_form[:email]}
-          type="email"
-          label="Email"
-          autocomplete="username"
-          spellcheck="false"
-          required
-        />
-        <.button variant="primary" phx-disable-with="Changing...">Change Email</.button>
-      </.form>
-
-      <div class="divider" />
-
-      <.form
-        for={@password_form}
-        id="password_form"
-        action={~p"/customers/update-password"}
-        method="post"
-        phx-change="validate_password"
-        phx-submit="update_password"
-        phx-trigger-action={@trigger_submit}
-      >
-        <input
-          name={@password_form[:email].name}
-          type="hidden"
-          id="hidden_customer_email"
-          spellcheck="false"
-          value={@current_email}
-        />
-        <.input
-          field={@password_form[:password]}
-          type="password"
-          label="New password"
-          autocomplete="new-password"
-          spellcheck="false"
-          required
-        />
-        <.input
-          field={@password_form[:password_confirmation]}
-          type="password"
-          label="Confirm new password"
-          autocomplete="new-password"
-          spellcheck="false"
-        />
-        <.button variant="primary" phx-disable-with="Saving...">
-          Save Password
-        </.button>
-      </.form>
-
-      <div class="divider" />
 
       <%!-- TOTP Section --%>
       <div id="totp-section">
@@ -144,7 +92,7 @@ defmodule PretexWeb.CustomerLive.Settings do
               </.form>
             </div>
           <% else %>
-            <%= if Customers.Customer.totp_enabled?(@current_scope.customer) do %>
+            <%= if Accounts.User.totp_enabled?(@current_user) do %>
               <div
                 id="totp-enabled-badge"
                 class="flex items-center justify-between rounded-2xl border border-green-100 bg-green-50 p-4"
@@ -210,7 +158,7 @@ defmodule PretexWeb.CustomerLive.Settings do
       <div id="webauthn-section">
         <h2 class="text-lg font-semibold text-gray-900 mb-1">Security Keys</h2>
         <p class="text-sm text-gray-500 mb-4">
-          Add a hardware security key (e.g. YubiKey) or a passkey for passwordless authentication.
+          Add a hardware security key (e.g. YubiKey) or a passkey for additional protection.
         </p>
 
         <%= if @webauthn_credentials == [] do %>
@@ -333,32 +281,14 @@ defmodule PretexWeb.CustomerLive.Settings do
   end
 
   @impl true
-  def mount(%{"token" => token}, _session, socket) do
-    socket =
-      case Customers.update_customer_email(socket.assigns.current_scope.customer, token) do
-        {:ok, _customer} ->
-          put_flash(socket, :info, "Email changed successfully.")
-
-        {:error, _} ->
-          put_flash(socket, :error, "Email change link is invalid or it has expired.")
-      end
-
-    {:ok, push_navigate(socket, to: ~p"/customers/settings")}
-  end
-
   def mount(_params, _session, socket) do
-    customer = socket.assigns.current_scope.customer
-    email_changeset = Customers.change_customer_email(customer, %{}, validate_unique: false)
-    password_changeset = Customers.change_customer_password(customer, %{}, hash_password: false)
-    webauthn_credentials = Customers.list_webauthn_credentials(customer)
-    remaining = Customers.remaining_recovery_codes(customer)
+    user = socket.assigns.current_user
+    webauthn_credentials = Accounts.list_webauthn_credentials(user)
+    remaining = Accounts.remaining_recovery_codes(user)
 
     socket =
       socket
-      |> assign(:current_email, customer.email)
-      |> assign(:email_form, to_form(email_changeset))
-      |> assign(:password_form, to_form(password_changeset))
-      |> assign(:trigger_submit, false)
+      |> assign(:page_title, "Security Settings")
       |> assign(:pending_totp_secret, nil)
       |> assign(:totp_qr_svg, nil)
       |> assign(:totp_secret_b32, nil)
@@ -374,73 +304,14 @@ defmodule PretexWeb.CustomerLive.Settings do
     {:ok, socket}
   end
 
-  @impl true
-  def handle_event("validate_email", params, socket) do
-    %{"customer" => customer_params} = params
-
-    email_form =
-      socket.assigns.current_scope.customer
-      |> Customers.change_customer_email(customer_params, validate_unique: false)
-      |> Map.put(:action, :validate)
-      |> to_form()
-
-    {:noreply, assign(socket, email_form: email_form)}
-  end
-
-  def handle_event("update_email", params, socket) do
-    %{"customer" => customer_params} = params
-    customer = socket.assigns.current_scope.customer
-    true = Customers.sudo_mode?(customer)
-
-    case Customers.change_customer_email(customer, customer_params) do
-      %{valid?: true} = changeset ->
-        Customers.deliver_customer_update_email_instructions(
-          Ecto.Changeset.apply_action!(changeset, :insert),
-          customer.email,
-          &url(~p"/customers/settings/confirm-email/#{&1}")
-        )
-
-        info = "A link to confirm your email change has been sent to the new address."
-        {:noreply, socket |> put_flash(:info, info)}
-
-      changeset ->
-        {:noreply, assign(socket, :email_form, to_form(changeset, action: :insert))}
-    end
-  end
-
-  def handle_event("validate_password", params, socket) do
-    %{"customer" => customer_params} = params
-
-    password_form =
-      socket.assigns.current_scope.customer
-      |> Customers.change_customer_password(customer_params, hash_password: false)
-      |> Map.put(:action, :validate)
-      |> to_form()
-
-    {:noreply, assign(socket, password_form: password_form)}
-  end
-
-  def handle_event("update_password", params, socket) do
-    %{"customer" => customer_params} = params
-    customer = socket.assigns.current_scope.customer
-    true = Customers.sudo_mode?(customer)
-
-    case Customers.change_customer_password(customer, customer_params) do
-      %{valid?: true} = changeset ->
-        {:noreply, assign(socket, trigger_submit: true, password_form: to_form(changeset))}
-
-      changeset ->
-        {:noreply, assign(socket, password_form: to_form(changeset, action: :insert))}
-    end
-  end
-
   # ── TOTP ────────────────────────────────────────────────────────────────────
 
+  @impl true
   def handle_event("start_totp_setup", _params, socket) do
-    customer = socket.assigns.current_scope.customer
-    secret = Customers.generate_totp_secret()
-    qr_svg = Customers.totp_qr_svg(customer, secret)
-    b32 = Customers.totp_secret_base32(secret)
+    user = socket.assigns.current_user
+    secret = Accounts.generate_totp_secret()
+    qr_svg = Accounts.totp_qr_svg(user, secret)
+    b32 = Accounts.totp_secret_base32(secret)
 
     socket =
       socket
@@ -463,13 +334,13 @@ defmodule PretexWeb.CustomerLive.Settings do
   end
 
   def handle_event("verify_totp_setup", %{"totp" => %{"code" => code}}, socket) do
-    customer = socket.assigns.current_scope.customer
+    user = socket.assigns.current_user
     secret = socket.assigns.pending_totp_secret
 
-    if Customers.valid_totp_code?(secret, code) do
-      case Customers.enable_totp(customer, secret) do
-        {:ok, _updated_customer} ->
-          codes = Customers.generate_recovery_codes(customer)
+    if Accounts.valid_totp_code?(secret, code) do
+      case Accounts.enable_totp(user, secret) do
+        {:ok, _updated_user} ->
+          codes = Accounts.generate_recovery_codes(user)
 
           socket =
             socket
@@ -499,10 +370,10 @@ defmodule PretexWeb.CustomerLive.Settings do
   end
 
   def handle_event("disable_totp", _params, socket) do
-    customer = socket.assigns.current_scope.customer
+    user = socket.assigns.current_user
 
-    case Customers.disable_totp(customer) do
-      {:ok, _updated_customer} ->
+    case Accounts.disable_totp(user) do
+      {:ok, _updated_user} ->
         {:noreply, put_flash(socket, :info, "Authenticator app disabled.")}
 
       {:error, _changeset} ->
@@ -523,8 +394,8 @@ defmodule PretexWeb.CustomerLive.Settings do
   # ── Recovery Codes ──────────────────────────────────────────────────────────
 
   def handle_event("regenerate_recovery_codes", _params, socket) do
-    customer = socket.assigns.current_scope.customer
-    codes = Customers.generate_recovery_codes(customer)
+    user = socket.assigns.current_user
+    codes = Accounts.generate_recovery_codes(user)
 
     socket =
       socket
@@ -552,8 +423,8 @@ defmodule PretexWeb.CustomerLive.Settings do
   end
 
   def handle_event("start_webauthn_registration", %{"webauthn" => %{"label" => label}}, socket) do
-    customer = socket.assigns.current_scope.customer
-    {challenge, opts} = Customers.webauthn_registration_options(customer)
+    user = socket.assigns.current_user
+    {challenge, opts} = Accounts.webauthn_registration_options(user)
 
     socket =
       socket
@@ -565,13 +436,13 @@ defmodule PretexWeb.CustomerLive.Settings do
   end
 
   def handle_event("webauthn_registered", %{"credential" => credential_json}, socket) do
-    customer = socket.assigns.current_scope.customer
+    user = socket.assigns.current_user
     challenge = socket.assigns.webauthn_registration_challenge
     label = socket.assigns[:webauthn_pending_label] || "Security Key"
 
-    case Customers.register_webauthn_credential(customer, challenge, credential_json, label) do
+    case Accounts.register_webauthn_credential(user, challenge, credential_json, label) do
       {:ok, _credential} ->
-        credentials = Customers.list_webauthn_credentials(customer)
+        credentials = Accounts.list_webauthn_credentials(user)
 
         socket =
           socket
@@ -603,15 +474,15 @@ defmodule PretexWeb.CustomerLive.Settings do
   end
 
   def handle_event("delete_webauthn_credential", %{"id" => id_str}, socket) do
-    customer = socket.assigns.current_scope.customer
+    user = socket.assigns.current_user
     id = String.to_integer(id_str)
 
     credential =
       Enum.find(socket.assigns.webauthn_credentials, fn c -> c.id == id end)
 
-    if credential && credential.customer_id == customer.id do
+    if credential && credential.user_id == user.id do
       Pretex.Repo.delete!(credential)
-      credentials = Customers.list_webauthn_credentials(customer)
+      credentials = Accounts.list_webauthn_credentials(user)
 
       socket =
         socket

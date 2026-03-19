@@ -9,8 +9,9 @@ defmodule Pretex.Organizations.Organization do
     field :description, :string
     field :logo_url, :string
     field :is_active, :boolean, default: true
+    field :require_2fa, :boolean, default: false
 
-    timestamps(type: :utc_datetime)
+    timestamps type: :utc_datetime
   end
 
   def creation_changeset(organization, attrs) do

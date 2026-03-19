@@ -37,8 +37,11 @@ defmodule PretexWeb.UserAuth do
     end
   end
 
-  @doc "Redirects unauthenticated staff to /staff/log-in."
-  def require_authenticated_user(conn, _opts) do
+  @doc """
+  Plug for routes that require the user to be authenticated but do NOT
+  enforce 2FA. Used for the 2FA challenge routes themselves to avoid redirect loops.
+  """
+  def require_authenticated_user_no_2fa(conn, _opts) do
     if conn.assigns[:current_user] do
       conn
     else
@@ -49,16 +52,45 @@ defmodule PretexWeb.UserAuth do
     end
   end
 
+  @doc "Redirects unauthenticated staff to /staff/log-in."
+  def require_authenticated_user(conn, _opts) do
+    user = conn.assigns[:current_user]
+
+    cond do
+      is_nil(user) ->
+        conn
+        |> put_flash(:error, "You must be logged in to access this page.")
+        |> redirect(to: ~p"/staff/log-in")
+        |> halt()
+
+      Pretex.Accounts.User.totp_enabled?(user) and
+          get_session(conn, :user_2fa_verified) != true ->
+        conn
+        |> put_flash(:error, "Please complete two-factor authentication.")
+        |> redirect(to: ~p"/staff/two-factor")
+        |> halt()
+
+      true ->
+        conn
+    end
+  end
+
   @doc "Logs a user in by writing a signed session token."
   def log_in_user(conn, user, params \\ %{}) do
     token = Accounts.generate_user_session_token(user)
     user_return_to = get_session(conn, :user_return_to)
 
-    conn
-    |> renew_session()
-    |> put_token_in_session(token)
-    |> maybe_write_remember_me_cookie(token, params)
-    |> redirect(to: user_return_to || signed_in_path(conn))
+    conn =
+      conn
+      |> renew_session()
+      |> put_token_in_session(token)
+      |> maybe_write_remember_me_cookie(token, params)
+
+    if Pretex.Accounts.User.totp_enabled?(user) do
+      redirect(conn, to: ~p"/staff/two-factor")
+    else
+      redirect(conn, to: user_return_to || signed_in_path(conn))
+    end
   end
 
   defp maybe_write_remember_me_cookie(conn, token, %{"remember_me" => "true"}) do
@@ -100,7 +132,7 @@ defmodule PretexWeb.UserAuth do
     {:cont, mount_current_user(session, socket)}
   end
 
-  def on_mount(:require_authenticated_user, _params, session, socket) do
+  def on_mount(:require_authenticated_no_2fa, _params, session, socket) do
     socket = mount_current_user(session, socket)
 
     if socket.assigns.current_user do
@@ -112,6 +144,32 @@ defmodule PretexWeb.UserAuth do
         |> Phoenix.LiveView.redirect(to: ~p"/staff/log-in")
 
       {:halt, socket}
+    end
+  end
+
+  def on_mount(:require_authenticated_user, _params, session, socket) do
+    socket = mount_current_user(session, socket)
+
+    cond do
+      is_nil(socket.assigns.current_user) ->
+        socket =
+          socket
+          |> Phoenix.LiveView.put_flash(:error, "You must be logged in to access this page.")
+          |> Phoenix.LiveView.redirect(to: ~p"/staff/log-in")
+
+        {:halt, socket}
+
+      Pretex.Accounts.User.totp_enabled?(socket.assigns.current_user) and
+          session["user_2fa_verified"] != true ->
+        socket =
+          socket
+          |> Phoenix.LiveView.put_flash(:error, "Please complete two-factor authentication.")
+          |> Phoenix.LiveView.redirect(to: ~p"/staff/two-factor")
+
+        {:halt, socket}
+
+      true ->
+        {:cont, socket}
     end
   end
 
