@@ -9,7 +9,7 @@ defmodule PretexWeb.Layouts do
   # The default root.html.heex file contains the HTML
   # skeleton of your application, namely HTML headers
   # and other static content.
-  embed_templates "layouts/*"
+  embed_templates("layouts/*")
 
   @doc """
   Renders your app layout.
@@ -25,44 +25,80 @@ defmodule PretexWeb.Layouts do
       </Layouts.app>
 
   """
-  attr :flash, :map, required: true, doc: "the map of flash messages"
+  attr(:flash, :map, required: true, doc: "the map of flash messages")
 
-  attr :current_scope, :map,
+  attr(:current_scope, :map,
     default: nil,
     doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
+  )
 
-  slot :inner_block, required: true
+  slot(:inner_block, required: true)
 
   def app(assigns) do
     ~H"""
-    <header class="navbar px-4 sm:px-6 lg:px-8">
+    <header class="navbar px-4 sm:px-6 lg:px-8 border-b border-base-200">
       <div class="flex-1">
         <a href="/" class="flex-1 flex w-fit items-center gap-2">
           <img src={~p"/images/logo.svg"} width="36" />
-          <span class="text-sm font-semibold">v{Application.spec(:phoenix, :vsn)}</span>
+          <span class="text-sm font-semibold">Pretex</span>
         </a>
       </div>
       <div class="flex-none">
-        <ul class="flex flex-column px-1 space-x-4 items-center">
-          <li>
-            <a href="https://phoenixframework.org/" class="btn btn-ghost">Website</a>
-          </li>
-          <li>
-            <a href="https://github.com/phoenixframework/phoenix" class="btn btn-ghost">GitHub</a>
-          </li>
+        <ul class="flex flex-row px-1 space-x-2 items-center">
+          <%= if @current_scope && @current_scope.customer do %>
+            <li>
+              <span class="text-sm text-base-content/60 hidden sm:inline">
+                {@current_scope.customer.email}
+              </span>
+            </li>
+            <li>
+              <.link
+                navigate={~p"/account/orders"}
+                class="btn btn-ghost btn-sm"
+              >
+                <.icon name="hero-ticket" class="size-4" />
+                <span class="hidden sm:inline">My Orders</span>
+              </.link>
+            </li>
+            <li>
+              <.link
+                navigate={~p"/customers/settings"}
+                class="btn btn-ghost btn-sm"
+              >
+                <.icon name="hero-cog-6-tooth" class="size-4" />
+                <span class="hidden sm:inline">Settings</span>
+              </.link>
+            </li>
+            <li>
+              <.link
+                href={~p"/customers/log-out"}
+                method="delete"
+                class="btn btn-ghost btn-sm"
+              >
+                <.icon name="hero-arrow-right-on-rectangle" class="size-4" />
+                <span class="hidden sm:inline">Log out</span>
+              </.link>
+            </li>
+          <% else %>
+            <li>
+              <.link navigate={~p"/customers/log-in"} class="btn btn-ghost btn-sm">
+                Log in
+              </.link>
+            </li>
+            <li>
+              <.link navigate={~p"/customers/register"} class="btn btn-primary btn-sm">
+                Sign up
+              </.link>
+            </li>
+          <% end %>
           <li>
             <.theme_toggle />
-          </li>
-          <li>
-            <a href="https://hexdocs.pm/phoenix/overview.html" class="btn btn-primary">
-              Get Started <span aria-hidden="true">&rarr;</span>
-            </a>
           </li>
         </ul>
       </div>
     </header>
 
-    <main class="px-4 py-20 sm:px-6 lg:px-8">
+    <main class="px-4 py-12 sm:px-6 lg:px-8">
       <div class="mx-auto max-w-2xl space-y-4">
         {render_slot(@inner_block)}
       </div>
@@ -79,8 +115,8 @@ defmodule PretexWeb.Layouts do
 
       <.flash_group flash={@flash} />
   """
-  attr :flash, :map, required: true, doc: "the map of flash messages"
-  attr :id, :string, default: "flash-group", doc: "the optional id of flash container"
+  attr(:flash, :map, required: true, doc: "the map of flash messages")
+  attr(:id, :string, default: "flash-group", doc: "the optional id of flash container")
 
   def flash_group(assigns) do
     ~H"""

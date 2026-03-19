@@ -7,6 +7,19 @@
 # General application configuration
 import Config
 
+config :pretex, :scopes,
+  customer: [
+    default: true,
+    module: Pretex.Customers.Scope,
+    assign_key: :current_scope,
+    access_path: [:customer, :id],
+    schema_key: :customer_id,
+    schema_type: :id,
+    schema_table: :customers,
+    test_data_fixture: Pretex.CustomersFixtures,
+    test_setup_helper: :register_and_log_in_customer
+  ]
+
 config :pretex,
   ecto_repos: [Pretex.Repo],
   generators: [timestamp_type: :utc_datetime]

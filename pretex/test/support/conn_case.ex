@@ -35,4 +35,45 @@ defmodule PretexWeb.ConnCase do
     Pretex.DataCase.setup_sandbox(tags)
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
+
+  @doc """
+  Setup helper that registers and logs in customers.
+
+      setup :register_and_log_in_customer
+
+  It stores an updated connection and a registered customer in the
+  test context.
+  """
+  def register_and_log_in_customer(%{conn: conn} = context) do
+    customer = Pretex.CustomersFixtures.customer_fixture()
+    scope = Pretex.Customers.Scope.for_customer(customer)
+
+    opts =
+      context
+      |> Map.take([:token_authenticated_at])
+      |> Enum.into([])
+
+    %{conn: log_in_customer(conn, customer, opts), customer: customer, scope: scope}
+  end
+
+  @doc """
+  Logs the given `customer` into the `conn`.
+
+  It returns an updated `conn`.
+  """
+  def log_in_customer(conn, customer, opts \\ []) do
+    token = Pretex.Customers.generate_customer_session_token(customer)
+
+    maybe_set_token_authenticated_at(token, opts[:token_authenticated_at])
+
+    conn
+    |> Phoenix.ConnTest.init_test_session(%{})
+    |> Plug.Conn.put_session(:customer_token, token)
+  end
+
+  defp maybe_set_token_authenticated_at(_token, nil), do: nil
+
+  defp maybe_set_token_authenticated_at(token, authenticated_at) do
+    Pretex.CustomersFixtures.override_token_authenticated_at(token, authenticated_at)
+  end
 end
