@@ -95,6 +95,59 @@ defmodule PretexWeb.Router do
       live("/organizations/:org_id/events/new", EventLive.New, :new)
       live("/organizations/:org_id/events/:id/edit", EventLive.Edit, :edit)
       live("/organizations/:org_id/events/:id", EventLive.Show, :show)
+
+      live("/organizations/:org_id/events/:event_id/sub-events", SubEventLive.Index, :index)
+      live("/organizations/:org_id/events/:event_id/sub-events/new", SubEventLive.Index, :new)
+
+      live(
+        "/organizations/:org_id/events/:event_id/sub-events/:id/edit",
+        SubEventLive.Index,
+        :edit
+      )
+
+      live("/organizations/:org_id/events/:event_id/catalog", CatalogLive.Index, :index)
+      live("/organizations/:org_id/events/:event_id/catalog/new", CatalogLive.Index, :new)
+      live("/organizations/:org_id/events/:event_id/catalog/:id/edit", CatalogLive.Index, :edit)
+
+      live("/organizations/:org_id/events/:event_id/quotas", QuotaLive.Index, :index)
+      live("/organizations/:org_id/events/:event_id/quotas/new", QuotaLive.Index, :new)
+      live("/organizations/:org_id/events/:event_id/quotas/:id/edit", QuotaLive.Index, :edit)
+
+      live(
+        "/organizations/:org_id/events/:event_id/questions",
+        QuestionLive.Index,
+        :index
+      )
+
+      live(
+        "/organizations/:org_id/events/:event_id/questions/new",
+        QuestionLive.Index,
+        :new
+      )
+
+      live(
+        "/organizations/:org_id/events/:event_id/questions/:id/edit",
+        QuestionLive.Index,
+        :edit
+      )
+
+      live(
+        "/organizations/:org_id/events/:event_id/questions/attendee-fields",
+        QuestionLive.AttendeeFields,
+        :index
+      )
+
+      live(
+        "/organizations/:org_id/events/:event_id/catalog/items/new",
+        CatalogLive.ItemForm,
+        :new
+      )
+
+      live(
+        "/organizations/:org_id/events/:event_id/catalog/items/:id",
+        CatalogLive.ItemForm,
+        :edit
+      )
     end
   end
 
@@ -137,6 +190,12 @@ defmodule PretexWeb.Router do
       live("/customers/register", CustomerLive.Registration, :new)
       live("/customers/log-in", CustomerLive.Login, :new)
       live("/customers/log-in/:token", CustomerLive.Confirmation, :new)
+
+      live("/events", EventsLive.Index, :index)
+      live("/events/:slug", EventsLive.Show, :index)
+      live("/events/:slug/checkout", EventsLive.Checkout, :info)
+      live("/events/:slug/checkout/summary", EventsLive.Checkout, :summary)
+      live("/events/:slug/orders/:code", EventsLive.Confirmation, :index)
     end
 
     post("/customers/log-in", CustomerSessionController, :create)

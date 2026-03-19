@@ -5,8 +5,24 @@ defmodule Pretex.Events do
 
   alias Pretex.Repo
   alias Pretex.Events.Event
+  alias Pretex.Events.SubEvent
   alias Pretex.Events.TicketType
   alias Pretex.Organizations.Organization
+
+  def list_published_events do
+    Event
+    |> where([e], e.status == "published")
+    |> order_by([e], asc: e.starts_at)
+    |> preload(:organization)
+    |> Repo.all()
+  end
+
+  def get_event_by_slug!(slug) do
+    Event
+    |> where([e], e.slug == ^slug and e.status == "published")
+    |> preload(:organization)
+    |> Repo.one!()
+  end
 
   def list_events(%Organization{id: org_id}) do
     Event
@@ -132,4 +148,73 @@ defmodule Pretex.Events do
   defp ticket_types_query(%Event{id: id}) do
     from(t in TicketType, where: t.event_id == ^id)
   end
+
+  # ---------------------------------------------------------------------------
+  # Series enable/disable
+  # ---------------------------------------------------------------------------
+
+  def enable_series(%Event{} = event) do
+    event
+    |> Ecto.Changeset.change(is_series: true)
+    |> Repo.update()
+  end
+
+  def disable_series(%Event{} = event) do
+    event
+    |> Ecto.Changeset.change(is_series: false)
+    |> Repo.update()
+  end
+
+  # ---------------------------------------------------------------------------
+  # SubEvent context
+  # ---------------------------------------------------------------------------
+
+  def list_sub_events(%Event{id: parent_id}) do
+    SubEvent
+    |> where([s], s.parent_event_id == ^parent_id)
+    |> order_by([s], asc: s.inserted_at)
+    |> Repo.all()
+  end
+
+  def get_sub_event!(id) do
+    Repo.get!(SubEvent, id)
+  end
+
+  def create_sub_event(%Event{} = parent_event, attrs) do
+    %SubEvent{}
+    |> SubEvent.changeset(attrs)
+    |> Ecto.Changeset.put_change(:parent_event_id, parent_event.id)
+    |> Ecto.Changeset.put_change(:status, "draft")
+    |> Repo.insert()
+  end
+
+  def update_sub_event(%SubEvent{} = sub_event, attrs) do
+    sub_event
+    |> SubEvent.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def delete_sub_event(%SubEvent{} = sub_event) do
+    Repo.delete(sub_event)
+  end
+
+  def change_sub_event(%SubEvent{} = sub_event, attrs \\ %{}) do
+    SubEvent.changeset(sub_event, attrs)
+  end
+
+  def publish_sub_event(%SubEvent{status: "draft"} = sub_event) do
+    sub_event
+    |> Ecto.Changeset.change(status: "published")
+    |> Repo.update()
+  end
+
+  def publish_sub_event(_), do: {:error, :invalid_status}
+
+  def hide_sub_event(%SubEvent{status: status} = sub_event) when status in ~w(draft published) do
+    sub_event
+    |> Ecto.Changeset.change(status: "hidden")
+    |> Repo.update()
+  end
+
+  def hide_sub_event(_), do: {:error, :invalid_status}
 end

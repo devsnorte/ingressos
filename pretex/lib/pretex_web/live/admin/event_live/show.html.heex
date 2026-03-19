@@ -164,6 +164,149 @@
       </div>
     </div>
 
+    <%!-- Sub-events card --%>
+    <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
+      <div class="card-body p-6">
+        <div class="flex items-center justify-between gap-4 mb-4">
+          <h2 class="text-base font-semibold text-base-content flex items-center gap-2">
+            <.icon name="hero-rectangle-stack" class="size-4 text-base-content/40" /> Sub-Events
+          </h2>
+          <%= if @event.is_series do %>
+            <.link
+              navigate={~p"/admin/organizations/#{@org}/events/#{@event}/sub-events"}
+              class="btn btn-ghost btn-xs gap-1"
+            >
+              <.icon name="hero-arrow-right" class="size-3" /> Manage Sub-Events
+            </.link>
+          <% end %>
+        </div>
+
+        <%= if @event.is_series do %>
+          <div class="flex items-start gap-3 rounded-lg bg-success/10 border border-success/30 p-4 text-sm text-success-content">
+            <.icon name="hero-check-circle" class="size-5 shrink-0 text-success mt-0.5" />
+            <p>
+              Series mode is enabled. Use
+              <.link
+                navigate={~p"/admin/organizations/#{@org}/events/#{@event}/sub-events"}
+                class="font-semibold underline underline-offset-2"
+              >
+                Sub-Events
+              </.link>
+              to manage individual sessions, days, or stages.
+            </p>
+          </div>
+        <% else %>
+          <div class="flex items-start gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm">
+            <.icon
+              name="hero-information-circle"
+              class="size-5 shrink-0 text-base-content/40 mt-0.5"
+            />
+            <div class="flex-1">
+              <p class="text-base-content/70">
+                Enable series mode to break this event into multiple sub-events (e.g. different days, rooms, or stages).
+              </p>
+            </div>
+            <.link
+              navigate={~p"/admin/organizations/#{@org}/events/#{@event}/sub-events"}
+              class="btn btn-outline btn-xs gap-1 shrink-0"
+            >
+              <.icon name="hero-rectangle-stack" class="size-3" /> Enable Series
+            </.link>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%!-- Item Catalog card --%>
+    <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
+      <div class="card-body p-6">
+        <div class="flex items-center justify-between gap-4 mb-4">
+          <h2 class="text-base font-semibold text-base-content flex items-center gap-2">
+            <.icon name="hero-shopping-bag" class="size-4 text-base-content/40" /> Item Catalog
+          </h2>
+          <.link
+            navigate={~p"/admin/organizations/#{@org}/events/#{@event}/catalog"}
+            class="btn btn-ghost btn-xs gap-1"
+          >
+            <.icon name="hero-arrow-right" class="size-3" /> Manage Catalog
+          </.link>
+        </div>
+        <div class="flex items-start gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm">
+          <.icon
+            name="hero-information-circle"
+            class="size-5 shrink-0 text-base-content/40 mt-0.5"
+          />
+          <p class="text-base-content/70">
+            Manage items, merchandise, add-ons, and bundles for sale at this event.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <%!-- Quotas card --%>
+    <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
+      <div class="card-body p-6">
+        <div class="flex items-center justify-between gap-4 mb-4">
+          <h2 class="text-base font-semibold text-base-content flex items-center gap-2">
+            <.icon name="hero-chart-bar" class="size-4 text-base-content/40" />
+            Quotas &amp; Availability
+          </h2>
+          <.link
+            navigate={~p"/admin/organizations/#{@org}/events/#{@event}/quotas"}
+            class="btn btn-ghost btn-xs gap-1"
+          >
+            <.icon name="hero-arrow-right" class="size-3" /> Manage Quotas
+          </.link>
+        </div>
+        <div class="flex items-start gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm">
+          <.icon
+            name="hero-information-circle"
+            class="size-5 shrink-0 text-base-content/40 mt-0.5"
+          />
+          <p class="text-base-content/70">
+            Define capacity quotas and track ticket availability across item types.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <%!-- Attendee Questions card --%>
+    <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
+      <div class="card-body p-6">
+        <div class="flex items-center justify-between gap-4 mb-4">
+          <h2 class="text-base font-semibold text-base-content flex items-center gap-2">
+            <.icon name="hero-question-mark-circle" class="size-4 text-base-content/40" />
+            Attendee Questions
+          </h2>
+          <div class="flex items-center gap-2">
+            <.link
+              navigate={
+                ~p"/admin/organizations/#{@org}/events/#{@event}/questions/attendee-fields"
+              }
+              class="btn btn-ghost btn-xs gap-1"
+            >
+              <.icon name="hero-user" class="size-3" /> Attendee Fields
+            </.link>
+            <.link
+              navigate={~p"/admin/organizations/#{@org}/events/#{@event}/questions"}
+              class="btn btn-ghost btn-xs gap-1"
+            >
+              <.icon name="hero-arrow-right" class="size-3" /> Manage Questions
+            </.link>
+          </div>
+        </div>
+        <div class="flex items-start gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm">
+          <.icon
+            name="hero-information-circle"
+            class="size-5 shrink-0 text-base-content/40 mt-0.5"
+          />
+          <p class="text-base-content/70">
+            Collect custom information from attendees at checkout. Configure built-in fields (name, email, etc.) and add custom questions.
+          </p>
+        </div>
+      </div>
+    </div>
+
     <%!-- Ticket types card --%>
     <div class="card bg-base-100 border border-base-200 shadow-sm">
       <div class="card-body p-6">

@@ -16,13 +16,13 @@ defmodule PretexWeb.CustomerLive.OrdersTest do
     test "renders the orders empty-state page", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/account/orders")
 
-      assert has_element?(view, "h1", "No orders yet")
+      assert has_element?(view, "h2", "No orders yet")
     end
 
     test "shows the browse events CTA link", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/account/orders")
 
-      assert has_element?(view, "a[href='/']")
+      assert has_element?(view, "a[href='/events']")
     end
 
     test "shows ticket icon in empty state", %{conn: conn} do
@@ -35,6 +35,12 @@ defmodule PretexWeb.CustomerLive.OrdersTest do
       {:ok, _view, html} = live(conn, ~p"/account/orders")
 
       assert html =~ customer.email
+    end
+
+    test "shows page heading My Orders", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/account/orders")
+
+      assert html =~ "My Orders"
     end
   end
 end

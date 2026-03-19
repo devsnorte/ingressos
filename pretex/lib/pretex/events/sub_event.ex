@@ -1,11 +1,10 @@
-defmodule Pretex.Events.Event do
+defmodule Pretex.Events.SubEvent do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @statuses ~w(draft published completed)
-  @color_regex ~r/^#[0-9a-fA-F]{6}$/
+  @statuses ~w(draft published hidden)
 
-  schema "events" do
+  schema "sub_events" do
     field(:name, :string)
     field(:slug, :string)
     field(:description, :string)
@@ -13,46 +12,30 @@ defmodule Pretex.Events.Event do
     field(:ends_at, :utc_datetime)
     field(:venue, :string)
     field(:status, :string, default: "draft")
-    field(:logo_url, :string)
-    field(:banner_url, :string)
-    field(:primary_color, :string, default: "#6366f1")
-    field(:accent_color, :string, default: "#f43f5e")
+    field(:capacity, :integer)
 
-    field(:is_series, :boolean, default: false)
-
-    belongs_to(:organization, Pretex.Organizations.Organization)
-    has_many(:ticket_types, Pretex.Events.TicketType)
-    has_many(:sub_events, Pretex.Events.SubEvent, foreign_key: :parent_event_id)
+    belongs_to(:parent_event, Pretex.Events.Event)
 
     timestamps(type: :utc_datetime)
   end
 
-  def changeset(event, attrs) do
-    event
+  def changeset(sub_event, attrs) do
+    sub_event
     |> cast(attrs, [
       :name,
       :description,
       :starts_at,
       :ends_at,
       :venue,
-      :logo_url,
-      :banner_url,
-      :primary_color,
-      :accent_color,
-      :is_series
+      :status,
+      :capacity
     ])
-    |> validate_required([:name, :starts_at, :ends_at])
+    |> validate_required([:name])
     |> validate_length(:name, min: 2, max: 255)
     |> validate_inclusion(:status, @statuses)
-    |> validate_format(:primary_color, @color_regex,
-      message: "must be a valid hex color (e.g. #6366f1)"
-    )
-    |> validate_format(:accent_color, @color_regex,
-      message: "must be a valid hex color (e.g. #f43f5e)"
-    )
     |> validate_ends_after_starts()
     |> maybe_generate_slug()
-    |> unique_constraint(:slug, name: :events_organization_id_slug_index)
+    |> unique_constraint(:slug, name: :sub_events_parent_event_id_slug_index)
   end
 
   defp validate_ends_after_starts(changeset) do

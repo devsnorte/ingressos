@@ -1,0 +1,287 @@
+<Layouts.app flash={@flash}>
+  <div class="mx-auto max-w-4xl px-4 py-8">
+    <%!-- Top bar --%>
+    <div class="mb-6 flex items-center justify-between gap-4 flex-wrap">
+      <.link
+        navigate={~p"/admin/organizations/#{@org}/events/#{@event}"}
+        class="inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-primary transition-colors"
+      >
+        <.icon name="hero-arrow-left" class="size-4" /> Back to Event
+      </.link>
+
+      <.link
+        patch={~p"/admin/organizations/#{@org}/events/#{@event}/catalog/new"}
+        class="btn btn-primary btn-sm gap-1"
+      >
+        <.icon name="hero-plus" class="size-4" /> New Item
+      </.link>
+    </div>
+
+    <%!-- Page title --%>
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-base-content">Item Catalog</h1>
+      <p class="text-sm text-base-content/60 mt-1">{@event.name}</p>
+    </div>
+
+    <%!-- Items list --%>
+    <div id="items" phx-update="stream" class="space-y-3 mb-8">
+      <div
+        id="items-empty-state"
+        class="hidden only:flex flex-col items-center justify-center py-20 text-center"
+      >
+        <.icon name="hero-shopping-bag" class="size-12 text-base-content/20 mb-4" />
+        <p class="text-base font-semibold text-base-content/50">No items yet.</p>
+        <p class="text-sm text-base-content/40 mt-1">
+          Add your first item to get started.
+        </p>
+        <.link
+          patch={~p"/admin/organizations/#{@org}/events/#{@event}/catalog/new"}
+          class="btn btn-primary btn-sm mt-6 gap-1"
+        >
+          <.icon name="hero-plus" class="size-4" /> New Item
+        </.link>
+      </div>
+
+      <div
+        :for={{dom_id, item} <- @streams.items}
+        id={dom_id}
+        class="card bg-base-100 border border-base-200 shadow-sm hover:shadow-md transition-all duration-150"
+      >
+        <div class="card-body p-4">
+          <div class="flex items-start gap-4">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-3 mb-1 flex-wrap">
+                <span class="font-semibold text-base-content truncate">
+                  {item.name}
+                </span>
+                <span class={[
+                  "badge badge-sm shrink-0 capitalize",
+                  item.status == "active" && "badge-success",
+                  item.status == "inactive" && "badge-ghost"
+                ]}>
+                  {item.status}
+                </span>
+                <span class="badge badge-sm badge-outline capitalize">
+                  {item.item_type}
+                </span>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-4 text-xs text-base-content/50 mt-1">
+                <span class="flex items-center gap-1 font-mono font-semibold text-base-content/70">
+                  {format_price(item.price_cents)}
+                </span>
+                <%= if item.category do %>
+                  <span class="flex items-center gap-1">
+                    <.icon name="hero-tag" class="size-3" />
+                    {item.category.name}
+                  </span>
+                <% end %>
+                <%= if item.available_quantity do %>
+                  <span class="flex items-center gap-1">
+                    <.icon name="hero-archive-box" class="size-3" />
+                    {item.available_quantity} available
+                  </span>
+                <% end %>
+                <%= if item.variations != [] do %>
+                  <span class="flex items-center gap-1">
+                    <.icon name="hero-squares-2x2" class="size-3" />
+                    {length(item.variations)} variation(s)
+                  </span>
+                <% end %>
+              </div>
+
+              <%= if item.description do %>
+                <p class="text-sm text-base-content/60 mt-2 leading-relaxed line-clamp-2">
+                  {item.description}
+                </p>
+              <% end %>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+              <.link
+                navigate={
+                  ~p"/admin/organizations/#{@org}/events/#{@event}/catalog/items/#{item.id}"
+                }
+                class="btn btn-ghost btn-xs"
+              >
+                Details
+              </.link>
+              <.link
+                patch={~p"/admin/organizations/#{@org}/events/#{@event}/catalog/#{item.id}/edit"}
+                class="btn btn-ghost btn-xs"
+              >
+                Edit
+              </.link>
+              <button
+                id={"delete-#{item.id}"}
+                phx-click="delete"
+                phx-value-id={item.id}
+                data-confirm={"Delete \"#{item.name}\"? This cannot be undone."}
+                class="btn btn-ghost btn-xs text-error hover:bg-error hover:text-error-content"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%!-- Bundles section --%>
+    <div class="card bg-base-100 border border-base-200 shadow-sm">
+      <div class="card-body p-6">
+        <h2 class="text-base font-semibold text-base-content mb-4 flex items-center gap-2">
+          <.icon name="hero-gift" class="size-4 text-base-content/40" /> Bundles
+        </h2>
+
+        <%= if @bundles == [] do %>
+          <div class="flex items-start gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm">
+            <.icon
+              name="hero-information-circle"
+              class="size-5 shrink-0 text-base-content/40 mt-0.5"
+            />
+            <p class="text-base-content/70">
+              No bundles configured yet. Bundles let you group items together at a special price.
+            </p>
+          </div>
+        <% else %>
+          <div class="space-y-3">
+            <div
+              :for={bundle <- @bundles}
+              class="flex items-center justify-between gap-4 rounded-lg border border-base-200 p-3"
+            >
+              <div class="min-w-0">
+                <p class="font-medium text-base-content truncate">{bundle.name}</p>
+                <p class="text-xs text-base-content/50 font-mono mt-0.5">
+                  {format_price(bundle.price_cents)} · {length(bundle.items)} item(s)
+                </p>
+              </div>
+              <span class={[
+                "badge badge-sm shrink-0 capitalize",
+                bundle.status == "active" && "badge-success",
+                bundle.status == "inactive" && "badge-ghost"
+              ]}>
+                {bundle.status}
+              </span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%!-- Modal: New / Edit Item --%>
+  <%= if @live_action in [:new, :edit] do %>
+    <div
+      id="item-modal-backdrop"
+      class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+      phx-click="cancel"
+    >
+    </div>
+
+    <div
+      id="item-modal"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        class="w-full max-w-lg bg-base-100 rounded-2xl shadow-2xl border border-base-200 overflow-hidden"
+        phx-click-away="cancel"
+      >
+        <%!-- Modal header --%>
+        <div class="flex items-center justify-between px-6 py-4 border-b border-base-200">
+          <h2 class="text-lg font-bold text-base-content">
+            {if @live_action == :new, do: "New Item", else: "Edit Item"}
+          </h2>
+          <button
+            type="button"
+            phx-click="cancel"
+            class="btn btn-ghost btn-sm btn-circle"
+            aria-label="Close"
+          >
+            <.icon name="hero-x-mark" class="size-5" />
+          </button>
+        </div>
+
+        <%!-- Modal body --%>
+        <div class="px-6 py-5 overflow-y-auto max-h-[70vh]">
+          <.form
+            for={@form}
+            id="item-form"
+            phx-change="validate"
+            phx-submit="save"
+            class="space-y-4"
+          >
+            <.input field={@form[:name]} type="text" label="Name" required />
+            <.input field={@form[:description]} type="textarea" label="Description" rows="2" />
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <.input
+                field={@form[:item_type]}
+                type="select"
+                label="Type"
+                options={[
+                  {"Ticket", "ticket"},
+                  {"Merchandise", "merchandise"},
+                  {"Add-on", "addon"}
+                ]}
+              />
+              <.input
+                field={@form[:status]}
+                type="select"
+                label="Status"
+                options={[{"Active", "active"}, {"Inactive", "inactive"}]}
+              />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <.input
+                field={@form[:price_cents]}
+                type="number"
+                label="Price (cents)"
+                min="0"
+                step="1"
+              />
+              <.input
+                field={@form[:available_quantity]}
+                type="number"
+                label="Available Quantity"
+                min="1"
+              />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <.input
+                field={@form[:min_per_order]}
+                type="number"
+                label="Min per Order"
+                min="1"
+              />
+              <.input
+                field={@form[:max_per_order]}
+                type="number"
+                label="Max per Order"
+                min="1"
+              />
+            </div>
+
+            <div class="flex items-center gap-6">
+              <.input field={@form[:is_addon]} type="checkbox" label="Is Add-on?" />
+              <.input field={@form[:require_voucher]} type="checkbox" label="Require Voucher?" />
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+              <button type="button" phx-click="cancel" class="btn btn-ghost btn-sm">
+                Cancel
+              </button>
+              <.button type="submit" variant="primary" phx-disable-with="Saving…">
+                {if @live_action == :new, do: "Create Item", else: "Save Changes"}
+              </.button>
+            </div>
+          </.form>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</Layouts.app>

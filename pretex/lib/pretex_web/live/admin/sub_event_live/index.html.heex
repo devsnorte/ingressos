@@ -1,0 +1,262 @@
+<Layouts.app flash={@flash}>
+  <div class="mx-auto max-w-3xl px-4 py-8">
+    <%!-- Top bar --%>
+    <div class="mb-6 flex items-center justify-between gap-4 flex-wrap">
+      <.link
+        navigate={~p"/admin/organizations/#{@org}/events/#{@event}"}
+        class="inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-primary transition-colors"
+      >
+        <.icon name="hero-arrow-left" class="size-4" /> Back to Event
+      </.link>
+
+      <div class="flex items-center gap-2 flex-wrap justify-end">
+        <%= if @event.is_series do %>
+          <button
+            id="disable-series"
+            phx-click="disable_series"
+            data-confirm="Disable series mode? This will not delete existing sub-events."
+            class="btn btn-ghost btn-sm gap-1"
+          >
+            <.icon name="hero-x-circle" class="size-4" /> Disable Series
+          </button>
+          <.link
+            patch={~p"/admin/organizations/#{@org}/events/#{@event}/sub-events/new"}
+            class="btn btn-primary btn-sm gap-1"
+          >
+            <.icon name="hero-plus" class="size-4" /> New Sub-Event
+          </.link>
+        <% else %>
+          <button
+            id="enable-series"
+            phx-click="enable_series"
+            class="btn btn-outline btn-sm gap-1"
+          >
+            <.icon name="hero-rectangle-stack" class="size-4" /> Enable Series
+          </button>
+        <% end %>
+      </div>
+    </div>
+
+    <%!-- Page title --%>
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-base-content">Sub-Events</h1>
+      <p class="text-sm text-base-content/60 mt-1">{@event.name}</p>
+    </div>
+
+    <%!-- Series disabled notice --%>
+    <%= unless @event.is_series do %>
+      <div
+        id="series-disabled-notice"
+        class="flex items-start gap-3 rounded-xl bg-base-200 border border-base-300 p-6 text-sm"
+      >
+        <.icon name="hero-rectangle-stack" class="size-6 shrink-0 text-base-content/40 mt-0.5" />
+        <div>
+          <p class="font-semibold text-base-content mb-1">Series mode is not enabled</p>
+          <p class="text-base-content/60">
+            Enable series mode to break this event into multiple sub-events (e.g. different days, rooms, or stages).
+          </p>
+        </div>
+      </div>
+    <% end %>
+
+    <%!-- Sub-events list (only when series is enabled) --%>
+    <%= if @event.is_series do %>
+      <div id="sub-events" phx-update="stream" class="space-y-3">
+        <div
+          id="sub-events-empty-state"
+          class="hidden only:flex flex-col items-center justify-center py-20 text-center"
+        >
+          <.icon name="hero-calendar-days" class="size-12 text-base-content/20 mb-4" />
+          <p class="text-base font-semibold text-base-content/50">No sub-events yet.</p>
+          <p class="text-sm text-base-content/40 mt-1">
+            Add your first sub-event to get started.
+          </p>
+          <.link
+            patch={~p"/admin/organizations/#{@org}/events/#{@event}/sub-events/new"}
+            class="btn btn-primary btn-sm mt-6 gap-1"
+          >
+            <.icon name="hero-plus" class="size-4" /> New Sub-Event
+          </.link>
+        </div>
+
+        <div
+          :for={{dom_id, sub_event} <- @streams.sub_events}
+          id={dom_id}
+          class="card bg-base-100 border border-base-200 shadow-sm hover:shadow-md transition-all duration-150"
+        >
+          <div class="card-body p-4">
+            <div class="flex items-start gap-4">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-3 mb-1 flex-wrap">
+                  <span class="font-semibold text-base-content truncate">
+                    {sub_event.name}
+                  </span>
+                  <span class={[
+                    "badge badge-sm shrink-0 capitalize",
+                    sub_event.status == "published" && "badge-success",
+                    sub_event.status == "draft" && "badge-warning",
+                    sub_event.status == "hidden" && "badge-ghost"
+                  ]}>
+                    {sub_event.status}
+                  </span>
+                </div>
+
+                <p class="text-xs font-mono text-base-content/40 mb-2">/{sub_event.slug}</p>
+
+                <div class="flex flex-wrap items-center gap-4 text-xs text-base-content/50">
+                  <%= if sub_event.starts_at do %>
+                    <span class="flex items-center gap-1">
+                      <.icon name="hero-calendar" class="size-3" />
+                      {Calendar.strftime(sub_event.starts_at, "%b %d, %Y at %H:%M UTC")}
+                    </span>
+                  <% end %>
+                  <%= if sub_event.venue do %>
+                    <span class="flex items-center gap-1">
+                      <.icon name="hero-map-pin" class="size-3" />
+                      {sub_event.venue}
+                    </span>
+                  <% end %>
+                  <%= if sub_event.capacity do %>
+                    <span class="flex items-center gap-1">
+                      <.icon name="hero-users" class="size-3" />
+                      {sub_event.capacity} capacity
+                    </span>
+                  <% end %>
+                </div>
+
+                <%= if sub_event.description do %>
+                  <p class="text-sm text-base-content/60 mt-2 leading-relaxed line-clamp-2">
+                    {sub_event.description}
+                  </p>
+                <% end %>
+              </div>
+
+              <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                <.link
+                  patch={
+                    ~p"/admin/organizations/#{@org}/events/#{@event}/sub-events/#{sub_event.id}/edit"
+                  }
+                  class="btn btn-ghost btn-xs"
+                >
+                  Edit
+                </.link>
+
+                <%= if sub_event.status == "draft" do %>
+                  <button
+                    id={"publish-#{sub_event.id}"}
+                    phx-click="publish"
+                    phx-value-id={sub_event.id}
+                    data-confirm="Publish this sub-event? It will become visible to attendees."
+                    class="btn btn-success btn-xs"
+                  >
+                    Publish
+                  </button>
+                <% end %>
+
+                <%= if sub_event.status in ["draft", "published"] do %>
+                  <button
+                    id={"hide-#{sub_event.id}"}
+                    phx-click="hide"
+                    phx-value-id={sub_event.id}
+                    data-confirm="Hide this sub-event? It will no longer be visible to attendees."
+                    class="btn btn-ghost btn-xs"
+                  >
+                    Hide
+                  </button>
+                <% end %>
+
+                <button
+                  id={"delete-#{sub_event.id}"}
+                  phx-click="delete"
+                  phx-value-id={sub_event.id}
+                  data-confirm="Delete this sub-event? This cannot be undone."
+                  class="btn btn-ghost btn-xs text-error hover:bg-error hover:text-error-content"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <%!-- Modal: New / Edit Sub-Event --%>
+  <%= if @live_action in [:new, :edit] do %>
+    <div
+      id="sub-event-modal-backdrop"
+      class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+      phx-click="cancel"
+    >
+    </div>
+
+    <div
+      id="sub-event-modal"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        class="w-full max-w-lg bg-base-100 rounded-2xl shadow-2xl border border-base-200 overflow-hidden"
+        phx-click-away="cancel"
+      >
+        <%!-- Modal header --%>
+        <div class="flex items-center justify-between px-6 py-4 border-b border-base-200">
+          <h2 class="text-lg font-bold text-base-content">
+            {if @live_action == :new, do: "New Sub-Event", else: "Edit Sub-Event"}
+          </h2>
+          <button
+            type="button"
+            phx-click="cancel"
+            class="btn btn-ghost btn-sm btn-circle"
+            aria-label="Close"
+          >
+            <.icon name="hero-x-mark" class="size-5" />
+          </button>
+        </div>
+
+        <%!-- Modal body --%>
+        <div class="px-6 py-5">
+          <.form
+            for={@form}
+            id="sub-event-form"
+            phx-change="validate"
+            phx-submit="save"
+            class="space-y-4"
+          >
+            <.input field={@form[:name]} type="text" label="Name" required />
+            <.input field={@form[:description]} type="textarea" label="Description" rows="3" />
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <.input
+                field={@form[:starts_at]}
+                type="datetime-local"
+                label="Starts At"
+              />
+              <.input
+                field={@form[:ends_at]}
+                type="datetime-local"
+                label="Ends At"
+              />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <.input field={@form[:venue]} type="text" label="Venue" />
+              <.input field={@form[:capacity]} type="number" label="Capacity" min="1" />
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+              <button type="button" phx-click="cancel" class="btn btn-ghost btn-sm">
+                Cancel
+              </button>
+              <.button type="submit" variant="primary" phx-disable-with="Saving…">
+                {if @live_action == :new, do: "Create Sub-Event", else: "Save Changes"}
+              </.button>
+            </div>
+          </.form>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</Layouts.app>

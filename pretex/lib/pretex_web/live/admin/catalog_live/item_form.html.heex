@@ -1,0 +1,289 @@
+<Layouts.app flash={@flash}>
+  <div class="mx-auto max-w-3xl px-4 py-8">
+    <%!-- Top bar --%>
+    <div class="mb-6 flex items-center justify-between gap-4 flex-wrap">
+      <.link
+        navigate={~p"/admin/organizations/#{@org}/events/#{@event}/catalog"}
+        class="inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-primary transition-colors"
+      >
+        <.icon name="hero-arrow-left" class="size-4" /> Back to Catalog
+      </.link>
+    </div>
+
+    <%!-- Page title --%>
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-base-content">
+        {if @live_action == :new, do: "New Item", else: "Edit Item"}
+      </h1>
+      <p class="text-sm text-base-content/60 mt-1">{@event.name}</p>
+    </div>
+
+    <%!-- Item form card --%>
+    <div class="card bg-base-100 border border-base-200 shadow-sm mb-6">
+      <div class="card-body p-6">
+        <h2 class="text-base font-semibold text-base-content mb-4 flex items-center gap-2">
+          <.icon name="hero-shopping-bag" class="size-4 text-base-content/40" /> Item Details
+        </h2>
+
+        <.form
+          for={@form}
+          id="item-form"
+          phx-change="validate"
+          phx-submit="save"
+          class="space-y-4"
+        >
+          <.input field={@form[:name]} type="text" label="Name" required />
+          <.input field={@form[:description]} type="textarea" label="Description" rows="3" />
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <.input
+              field={@form[:item_type]}
+              type="select"
+              label="Type"
+              options={[
+                {"Ticket", "ticket"},
+                {"Merchandise", "merchandise"},
+                {"Add-on", "addon"}
+              ]}
+            />
+            <.input
+              field={@form[:status]}
+              type="select"
+              label="Status"
+              options={[{"Active", "active"}, {"Inactive", "inactive"}]}
+            />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <.input
+                field={@form[:price_cents]}
+                type="number"
+                label="Price (cents)"
+                min="0"
+                step="1"
+              />
+              <%= if is_integer(@form[:price_cents].value) or is_binary(@form[:price_cents].value) do %>
+                <p class="text-xs text-base-content/50 mt-1">
+                  = {format_price(
+                    case @form[:price_cents].value do
+                      v when is_integer(v) -> v
+                      v when is_binary(v) -> String.to_integer(v)
+                      _ -> 0
+                    end
+                  )}
+                </p>
+              <% end %>
+            </div>
+            <.input
+              field={@form[:available_quantity]}
+              type="number"
+              label="Available Quantity"
+              min="1"
+            />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <.input
+              field={@form[:min_per_order]}
+              type="number"
+              label="Min per Order"
+              min="1"
+            />
+            <.input
+              field={@form[:max_per_order]}
+              type="number"
+              label="Max per Order"
+              min="1"
+            />
+          </div>
+
+          <div class="flex flex-wrap items-center gap-8 pt-1">
+            <.input field={@form[:is_addon]} type="checkbox" label="Is Add-on?" />
+            <.input field={@form[:require_voucher]} type="checkbox" label="Require Voucher?" />
+          </div>
+
+          <div class="flex justify-end gap-3 pt-2 border-t border-base-200">
+            <.link
+              navigate={~p"/admin/organizations/#{@org}/events/#{@event}/catalog"}
+              class="btn btn-ghost btn-sm"
+            >
+              Cancel
+            </.link>
+            <.button type="submit" variant="primary" phx-disable-with="Saving…">
+              {if @live_action == :new, do: "Create Item", else: "Save Changes"}
+            </.button>
+          </div>
+        </.form>
+      </div>
+    </div>
+
+    <%!-- Variations section (only shown when editing an existing item) --%>
+    <%= if @live_action == :edit do %>
+      <div class="card bg-base-100 border border-base-200 shadow-sm">
+        <div class="card-body p-6">
+          <div class="flex items-center justify-between gap-4 mb-4">
+            <h2 class="text-base font-semibold text-base-content flex items-center gap-2">
+              <.icon name="hero-squares-2x2" class="size-4 text-base-content/40" /> Variations
+            </h2>
+            <%= unless @show_variation_form do %>
+              <button
+                type="button"
+                id="add-variation-btn"
+                phx-click="show_variation_form"
+                class="btn btn-outline btn-sm gap-1"
+              >
+                <.icon name="hero-plus" class="size-4" /> Add Variation
+              </button>
+            <% end %>
+          </div>
+
+          <%!-- Existing variations list --%>
+          <%= if @item.variations == [] do %>
+            <div
+              id="no-variations-notice"
+              class="flex items-start gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm mb-4"
+            >
+              <.icon
+                name="hero-information-circle"
+                class="size-5 shrink-0 text-base-content/40 mt-0.5"
+              />
+              <p class="text-base-content/70">
+                No variations yet. Add variations to offer different options (e.g. sizes, colours) for this item.
+              </p>
+            </div>
+          <% else %>
+            <div id="variations-list" class="space-y-2 mb-4">
+              <div
+                :for={variation <- @item.variations}
+                id={"variation-#{variation.id}"}
+                class="flex items-center justify-between gap-4 rounded-lg border border-base-200 bg-base-50 p-3"
+              >
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-3 flex-wrap">
+                    <span class="font-medium text-base-content truncate">
+                      {variation.name}
+                    </span>
+                    <span class={[
+                      "badge badge-sm shrink-0 capitalize",
+                      variation.status == "active" && "badge-success",
+                      variation.status == "inactive" && "badge-ghost"
+                    ]}>
+                      {variation.status}
+                    </span>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-4 mt-1 text-xs text-base-content/50">
+                    <span class="font-mono font-semibold text-base-content/70">
+                      {format_price(variation.price_cents)}
+                    </span>
+                    <%= if variation.stock do %>
+                      <span class="flex items-center gap-1">
+                        <.icon name="hero-archive-box" class="size-3" />
+                        {variation.stock} in stock
+                      </span>
+                    <% end %>
+                  </div>
+                </div>
+
+                <button
+                  id={"delete-variation-#{variation.id}"}
+                  type="button"
+                  phx-click="delete_variation"
+                  phx-value-id={variation.id}
+                  data-confirm={"Remove variation \"#{variation.name}\"?"}
+                  class="btn btn-ghost btn-xs text-error hover:bg-error hover:text-error-content"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          <% end %>
+
+          <%!-- Add variation inline form --%>
+          <%= if @show_variation_form do %>
+            <div
+              id="variation-form-panel"
+              class="rounded-xl border border-primary/30 bg-primary/5 p-5"
+            >
+              <h3 class="text-sm font-semibold text-base-content mb-3 flex items-center gap-2">
+                <.icon name="hero-plus-circle" class="size-4 text-primary" /> New Variation
+              </h3>
+
+              <.form
+                for={@variation_form}
+                id="variation-form"
+                phx-change="validate_variation"
+                phx-submit="add_variation"
+                class="space-y-3"
+              >
+                <.input
+                  field={@variation_form[:name]}
+                  type="text"
+                  label="Variation Name"
+                  required
+                />
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <.input
+                      field={@variation_form[:price_cents]}
+                      type="number"
+                      label="Price (cents)"
+                      min="0"
+                      step="1"
+                    />
+                    <%= if is_integer(@variation_form[:price_cents].value) or is_binary(@variation_form[:price_cents].value) do %>
+                      <p class="text-xs text-base-content/50 mt-1">
+                        = {format_price(
+                          case @variation_form[:price_cents].value do
+                            v when is_integer(v) ->
+                              v
+
+                            v when is_binary(v) ->
+                              case Integer.parse(v) do
+                                {n, _} -> n
+                                :error -> 0
+                              end
+
+                            _ ->
+                              0
+                          end
+                        )}
+                      </p>
+                    <% end %>
+                  </div>
+                  <.input
+                    field={@variation_form[:stock]}
+                    type="number"
+                    label="Stock"
+                    min="0"
+                  />
+                </div>
+
+                <.input
+                  field={@variation_form[:status]}
+                  type="select"
+                  label="Status"
+                  options={[{"Active", "active"}, {"Inactive", "inactive"}]}
+                />
+
+                <div class="flex justify-end gap-3 pt-1">
+                  <button
+                    type="button"
+                    phx-click="hide_variation_form"
+                    class="btn btn-ghost btn-sm"
+                  >
+                    Cancel
+                  </button>
+                  <.button type="submit" variant="primary" phx-disable-with="Adding…">
+                    Add Variation
+                  </.button>
+                </div>
+              </.form>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</Layouts.app>
