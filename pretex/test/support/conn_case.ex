@@ -76,4 +76,29 @@ defmodule PretexWeb.ConnCase do
   defp maybe_set_token_authenticated_at(token, authenticated_at) do
     Pretex.CustomersFixtures.override_token_authenticated_at(token, authenticated_at)
   end
+
+  @doc """
+  Setup helper that creates and logs in a staff user.
+
+      setup :register_and_log_in_user
+
+  It stores an updated connection and the created user in the test context.
+  """
+  def register_and_log_in_user(%{conn: conn}) do
+    user = Pretex.AccountsFixtures.user_fixture()
+    %{conn: log_in_user(conn, user), user: user}
+  end
+
+  @doc """
+  Logs the given staff `user` into the `conn` by writing a session token.
+
+  It returns an updated `conn`.
+  """
+  def log_in_user(conn, user) do
+    token = Pretex.Accounts.generate_user_session_token(user)
+
+    conn
+    |> Phoenix.ConnTest.init_test_session(%{})
+    |> Plug.Conn.put_session(:user_token, token)
+  end
 end

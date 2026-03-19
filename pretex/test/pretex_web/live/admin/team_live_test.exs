@@ -46,6 +46,8 @@ defmodule PretexWeb.Admin.TeamLiveTest do
   # ---------------------------------------------------------------------------
 
   describe "index — listing team members" do
+    setup :register_and_log_in_user
+
     test "renders the team page with member rows", %{conn: conn} do
       org = org_fixture(%{name: "Devs Norte", slug: unique_slug()})
       user = user_fixture(%{name: "Alice Smith", email: "alice@example.com"})
@@ -109,6 +111,8 @@ defmodule PretexWeb.Admin.TeamLiveTest do
   # ---------------------------------------------------------------------------
 
   describe "invite action — invite form" do
+    setup :register_and_log_in_user
+
     test "navigating to :invite shows the invite form", %{conn: conn} do
       org = org_fixture()
 
@@ -199,6 +203,8 @@ defmodule PretexWeb.Admin.TeamLiveTest do
   # ---------------------------------------------------------------------------
 
   describe "permissions action — editing member permissions" do
+    setup :register_and_log_in_user
+
     test "navigating to :permissions shows the permissions form", %{conn: conn} do
       org = org_fixture()
       user = user_fixture(%{name: "Charlie", email: "charlie@example.com"})
@@ -311,6 +317,8 @@ defmodule PretexWeb.Admin.TeamLiveTest do
   # ---------------------------------------------------------------------------
 
   describe "remove member — confirmation modal" do
+    setup :register_and_log_in_user
+
     test "clicking Remove opens confirmation modal", %{conn: conn} do
       org = org_fixture()
       user = user_fixture(%{name: "Eve", email: "eve@example.com"})
@@ -430,6 +438,8 @@ defmodule PretexWeb.Admin.TeamLiveTest do
   # ---------------------------------------------------------------------------
 
   describe "last admin protection" do
+    setup :register_and_log_in_user
+
     test "removing the last admin shows error flash and does not remove member", %{conn: conn} do
       org = org_fixture()
       user = user_fixture(%{name: "Solo Admin", email: "solo@example.com"})
