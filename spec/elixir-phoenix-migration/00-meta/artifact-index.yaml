@@ -1,0 +1,48 @@
+feature: elixir-phoenix-migration
+scope: full
+phases-completed:
+  - phase-1-generate-spec
+  - phase-2-spec-review
+  - phase-3-generate-stories
+  - phase-4-implementation-brief
+artifacts:
+  prd: 10-product/prd.md
+  brief: 10-product/brief.md
+  stories:
+    - 10-product/stories/story-001-multi-organization-support.md
+    - 10-product/stories/story-002-team-and-permission-management.md
+    - 10-product/stories/story-003-customer-accounts.md
+    - 10-product/stories/story-004-two-factor-authentication.md
+    - 10-product/stories/story-005-event-creation-and-management.md
+    - 10-product/stories/story-006-sub-events.md
+    - 10-product/stories/story-007-item-and-product-catalog.md
+    - 10-product/stories/story-008-quotas-and-availability.md
+    - 10-product/stories/story-009-custom-attendee-questions.md
+    - 10-product/stories/story-010-ticket-purchase-and-cart.md
+    - 10-product/stories/story-011-byog-payment-provider-configuration.md
+    - 10-product/stories/story-012-byog-payment-processing.md
+    - 10-product/stories/story-013-order-management.md
+    - 10-product/stories/story-014-order-fees.md
+    - 10-product/stories/story-015-vouchers.md
+    - 10-product/stories/story-016-discounts.md
+    - 10-product/stories/story-017-gift-cards.md
+    - 10-product/stories/story-018-memberships.md
+    - 10-product/stories/story-019-waiting-list.md
+    - 10-product/stories/story-020-check-in.md
+    - 10-product/stories/story-021-check-in-lists-and-gates.md
+    - 10-product/stories/story-022-device-provisioning.md
+    - 10-product/stories/story-023-data-synchronization-offline-check-in.md
+    - 10-product/stories/story-024-seating-plans.md
+    - 10-product/stories/story-025-tax-rules.md
+    - 10-product/stories/story-026-invoicing.md
+    - 10-product/stories/story-027-email-and-notification-system.md
+    - 10-product/stories/story-028-badge-and-ticket-pdf-generation.md
+    - 10-product/stories/story-029-reporting-and-data-export.md
+    - 10-product/stories/story-030-multi-domain-support.md
+    - 10-product/stories/story-031-embeddable-ticket-widget.md
+    - 10-product/stories/story-032-audit-logging.md
+    - 10-product/stories/story-033-rest-api.md
+    - 10-product/stories/story-034-webhooks.md
+    - 10-product/stories/story-035-oauth-oidc-provider.md
+    - 10-product/stories/story-036-multi-language-support.md
+github-issues: "https://github.com/devsnorte/ingressos/issues?q=label%3Aagentic-workflow"
