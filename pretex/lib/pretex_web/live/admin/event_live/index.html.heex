@@ -1,0 +1,126 @@
+<Layouts.app flash={@flash}>
+  <div class="mx-auto max-w-5xl px-4 py-8">
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-2xl font-bold text-base-content">Events</h1>
+        <p class="text-sm text-base-content/60 mt-1">{@org.name}</p>
+      </div>
+      <.link
+        navigate={~p"/admin/organizations/#{@org}/events/new"}
+        class="btn btn-primary btn-sm gap-2"
+      >
+        <.icon name="hero-plus" class="size-4" /> New Event
+      </.link>
+    </div>
+
+    <div id="events" phx-update="stream" class="space-y-3">
+      <div
+        id="events-empty-state"
+        class="hidden only:flex flex-col items-center justify-center py-24 text-center"
+      >
+        <.icon name="hero-calendar-days" class="size-14 text-base-content/20 mb-4" />
+        <p class="text-base font-semibold text-base-content/50">No events yet.</p>
+        <p class="text-sm text-base-content/40 mt-1">Create your first event to get started.</p>
+      </div>
+
+      <div
+        :for={{id, event} <- @streams.events}
+        id={id}
+        class="card bg-base-100 border border-base-200 shadow-sm hover:shadow-md transition-all duration-150"
+      >
+        <div class="card-body p-4">
+          <div class="flex items-center gap-4">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-3 mb-1">
+                <.link
+                  navigate={~p"/admin/organizations/#{@org}/events/#{event}"}
+                  class="font-semibold text-base-content hover:text-primary transition-colors truncate"
+                >
+                  {event.name}
+                </.link>
+                <span class={[
+                  "badge badge-sm shrink-0 capitalize",
+                  event.status == "published" && "badge-success",
+                  event.status == "draft" && "badge-warning",
+                  event.status == "completed" && "badge-ghost"
+                ]}>
+                  {event.status}
+                </span>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-4 text-xs text-base-content/50">
+                <%= if event.starts_at do %>
+                  <span class="flex items-center gap-1">
+                    <.icon name="hero-calendar" class="size-3" />
+                    {Calendar.strftime(event.starts_at, "%b %d, %Y")}
+                  </span>
+                <% end %>
+                <%= if event.venue do %>
+                  <span class="flex items-center gap-1">
+                    <.icon name="hero-map-pin" class="size-3" />
+                    {event.venue}
+                  </span>
+                <% end %>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+              <.link
+                navigate={~p"/admin/organizations/#{@org}/events/#{event}/edit"}
+                class="btn btn-ghost btn-xs"
+              >
+                Edit
+              </.link>
+
+              <%= if event.status == "draft" do %>
+                <button
+                  id={"publish-#{event.id}"}
+                  phx-click="publish"
+                  phx-value-id={event.id}
+                  data-confirm="Publish this event? Make sure you have ticket types configured."
+                  class="btn btn-success btn-xs"
+                >
+                  Publish
+                </button>
+              <% end %>
+
+              <%= if event.status == "published" do %>
+                <button
+                  id={"complete-#{event.id}"}
+                  phx-click="complete"
+                  phx-value-id={event.id}
+                  data-confirm="Mark this event as completed?"
+                  class="btn btn-neutral btn-xs"
+                >
+                  Complete
+                </button>
+              <% end %>
+
+              <button
+                id={"clone-#{event.id}"}
+                phx-click="clone"
+                phx-value-id={event.id}
+                data-confirm={"Clone \"#{event.name}\"?"}
+                class="btn btn-ghost btn-xs"
+              >
+                Clone
+              </button>
+
+              <%= if event.status == "draft" do %>
+                <button
+                  id={"delete-#{event.id}"}
+                  phx-click="delete"
+                  phx-value-id={event.id}
+                  data-confirm="Delete this event? This cannot be undone."
+                  class="btn btn-ghost btn-xs text-error hover:bg-error hover:text-error-content"
+                >
+                  Delete
+                </button>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layouts.app>

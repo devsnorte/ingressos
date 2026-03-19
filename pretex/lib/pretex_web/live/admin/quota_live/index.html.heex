@@ -1,0 +1,220 @@
+<Layouts.app flash={@flash}>
+  <div class="mx-auto max-w-3xl px-4 py-8">
+    <%!-- Top bar --%>
+    <div class="mb-6 flex items-center justify-between gap-4 flex-wrap">
+      <.link
+        navigate={~p"/admin/organizations/#{@org}/events/#{@event}"}
+        class="inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-primary transition-colors"
+      >
+        <.icon name="hero-arrow-left" class="size-4" /> Back to Event
+      </.link>
+
+      <.link
+        patch={~p"/admin/organizations/#{@org}/events/#{@event}/quotas/new"}
+        class="btn btn-primary btn-sm gap-1"
+      >
+        <.icon name="hero-plus" class="size-4" /> New Quota
+      </.link>
+    </div>
+
+    <%!-- Page title --%>
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-base-content">Quotas &amp; Availability</h1>
+      <p class="text-sm text-base-content/60 mt-1">{@event.name}</p>
+    </div>
+
+    <%!-- Quota list --%>
+    <div id="quotas" phx-update="stream" class="space-y-3">
+      <div
+        id="quotas-empty-state"
+        class="hidden only:flex flex-col items-center justify-center py-20 text-center"
+      >
+        <.icon name="hero-chart-bar" class="size-12 text-base-content/20 mb-4" />
+        <p class="text-base font-semibold text-base-content/50">No quotas yet.</p>
+        <p class="text-sm text-base-content/40 mt-1">
+          Create your first quota to manage ticket availability.
+        </p>
+        <.link
+          patch={~p"/admin/organizations/#{@org}/events/#{@event}/quotas/new"}
+          class="btn btn-primary btn-sm mt-6 gap-1"
+        >
+          <.icon name="hero-plus" class="size-4" /> New Quota
+        </.link>
+      </div>
+
+      <div
+        :for={{dom_id, quota} <- @streams.quotas}
+        id={dom_id}
+        class="card bg-base-100 border border-base-200 shadow-sm hover:shadow-md transition-all duration-150"
+      >
+        <div class="card-body p-5">
+          <div class="flex items-start gap-4">
+            <div class="flex-1 min-w-0">
+              <%!-- Header row --%>
+              <div class="flex items-center gap-3 mb-3 flex-wrap">
+                <span class="font-semibold text-base-content truncate text-base">
+                  {quota.name}
+                </span>
+                <%= if Pretex.Catalog.sold_out?(quota) do %>
+                  <span class="badge badge-error badge-sm">Sold Out</span>
+                <% else %>
+                  <span class={[
+                    "badge badge-sm",
+                    cond do
+                      Pretex.Catalog.available_quantity(quota) / max(quota.capacity, 1) * 100 > 50 ->
+                        "badge-success"
+
+                      Pretex.Catalog.available_quantity(quota) / max(quota.capacity, 1) * 100 > 10 ->
+                        "badge-warning"
+
+                      true ->
+                        "badge-error"
+                    end
+                  ]}>
+                    {Pretex.Catalog.available_quantity(quota)} available
+                  </span>
+                <% end %>
+              </div>
+
+              <%!-- Stats row --%>
+              <div class="flex flex-wrap items-center gap-4 text-xs text-base-content/50 mb-3">
+                <span class="flex items-center gap-1">
+                  <.icon name="hero-users" class="size-3" /> Capacity:
+                  <strong class="text-base-content/70">{quota.capacity}</strong>
+                </span>
+                <span class="flex items-center gap-1">
+                  <.icon name="hero-ticket" class="size-3" /> Sold:
+                  <strong class="text-base-content/70">{quota.sold_count}</strong>
+                </span>
+                <span class="flex items-center gap-1">
+                  <.icon name="hero-check-circle" class="size-3" /> Available:
+                  <strong class="text-base-content/70">
+                    {Pretex.Catalog.available_quantity(quota)}
+                  </strong>
+                </span>
+                <span class="flex items-center gap-1">
+                  <.icon name="hero-link" class="size-3" /> Items assigned:
+                  <strong class="text-base-content/70">{length(quota.quota_items)}</strong>
+                </span>
+              </div>
+
+              <%!-- Progress bar --%>
+              <div class="w-full">
+                <progress
+                  class={[
+                    "progress w-full h-2",
+                    cond do
+                      quota.capacity > 0 &&
+                          Pretex.Catalog.available_quantity(quota) / quota.capacity * 100 > 50 ->
+                        "progress-success"
+
+                      quota.capacity > 0 &&
+                          Pretex.Catalog.available_quantity(quota) / quota.capacity * 100 > 10 ->
+                        "progress-warning"
+
+                      true ->
+                        "progress-error"
+                    end
+                  ]}
+                  value={quota.sold_count}
+                  max={quota.capacity}
+                >
+                </progress>
+                <p class="text-xs text-base-content/40 mt-1">
+                  {if quota.capacity > 0,
+                    do: "#{Float.round(quota.sold_count / quota.capacity * 100, 1)}% sold",
+                    else: "0% sold"}
+                </p>
+              </div>
+            </div>
+
+            <%!-- Actions --%>
+            <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+              <.link
+                patch={~p"/admin/organizations/#{@org}/events/#{@event}/quotas/#{quota.id}/edit"}
+                class="btn btn-ghost btn-xs"
+              >
+                Edit
+              </.link>
+              <button
+                id={"delete-#{quota.id}"}
+                phx-click="delete"
+                phx-value-id={quota.id}
+                data-confirm="Delete this quota? This cannot be undone."
+                class="btn btn-ghost btn-xs text-error hover:bg-error hover:text-error-content"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%!-- Modal: New / Edit Quota --%>
+  <%= if @live_action in [:new, :edit] do %>
+    <div
+      id="quota-modal-backdrop"
+      class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+      phx-click="close_modal"
+    >
+    </div>
+
+    <div
+      id="quota-modal"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        class="w-full max-w-lg bg-base-100 rounded-2xl shadow-2xl border border-base-200 overflow-hidden"
+        phx-click-away="close_modal"
+      >
+        <%!-- Modal header --%>
+        <div class="flex items-center justify-between px-6 py-4 border-b border-base-200">
+          <h2 class="text-lg font-bold text-base-content">
+            {if @live_action == :new, do: "New Quota", else: "Edit Quota"}
+          </h2>
+          <button
+            type="button"
+            phx-click="close_modal"
+            class="btn btn-ghost btn-sm btn-circle"
+            aria-label="Close"
+          >
+            <.icon name="hero-x-mark" class="size-5" />
+          </button>
+        </div>
+
+        <%!-- Modal body --%>
+        <div class="px-6 py-5">
+          <.form
+            for={@form}
+            id="quota-form"
+            phx-change="validate"
+            phx-submit="save"
+            class="space-y-4"
+          >
+            <.input field={@form[:name]} type="text" label="Name" required />
+            <.input
+              field={@form[:capacity]}
+              type="number"
+              label="Capacity"
+              min="1"
+              required
+            />
+
+            <div class="flex justify-end gap-3 pt-2">
+              <button type="button" phx-click="close_modal" class="btn btn-ghost btn-sm">
+                Cancel
+              </button>
+              <.button type="submit" variant="primary" phx-disable-with="Saving…">
+                {if @live_action == :new, do: "Create Quota", else: "Save Changes"}
+              </.button>
+            </div>
+          </.form>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</Layouts.app>

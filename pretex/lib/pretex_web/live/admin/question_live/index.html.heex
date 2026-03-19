@@ -1,0 +1,310 @@
+<Layouts.app flash={@flash}>
+  <div class="mx-auto max-w-3xl px-4 py-8">
+    <%!-- Top bar --%>
+    <div class="mb-6 flex items-center justify-between gap-4 flex-wrap">
+      <.link
+        navigate={~p"/admin/organizations/#{@org}/events/#{@event}"}
+        class="inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-primary transition-colors"
+      >
+        <.icon name="hero-arrow-left" class="size-4" /> Back to Event
+      </.link>
+
+      <.link
+        patch={~p"/admin/organizations/#{@org}/events/#{@event}/questions/new"}
+        class="btn btn-primary btn-sm gap-1"
+      >
+        <.icon name="hero-plus" class="size-4" /> New Question
+      </.link>
+    </div>
+
+    <%!-- Page title --%>
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-base-content">Attendee Questions</h1>
+      <p class="text-sm text-base-content/60 mt-1">{@event.name}</p>
+    </div>
+
+    <%!-- Attendee fields link --%>
+    <div class="mb-6 flex items-center gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm">
+      <.icon name="hero-user" class="size-5 shrink-0 text-base-content/40" />
+      <p class="text-base-content/70 flex-1">
+        Configure which built-in attendee fields (name, email, company, etc.) are collected at checkout.
+      </p>
+      <.link
+        navigate={~p"/admin/organizations/#{@org}/events/#{@event}/questions/attendee-fields"}
+        class="btn btn-outline btn-xs gap-1 shrink-0"
+      >
+        <.icon name="hero-cog-6-tooth" class="size-3" /> Attendee Fields
+      </.link>
+    </div>
+
+    <%!-- Question list --%>
+    <div id="questions" phx-update="stream" class="space-y-3">
+      <div
+        id="questions-empty-state"
+        class="hidden only:flex flex-col items-center justify-center py-20 text-center"
+      >
+        <.icon name="hero-question-mark-circle" class="size-12 text-base-content/20 mb-4" />
+        <p class="text-base font-semibold text-base-content/50">No questions yet.</p>
+        <p class="text-sm text-base-content/40 mt-1">
+          Create your first question to collect information from attendees.
+        </p>
+        <.link
+          patch={~p"/admin/organizations/#{@org}/events/#{@event}/questions/new"}
+          class="btn btn-primary btn-sm mt-6 gap-1"
+        >
+          <.icon name="hero-plus" class="size-4" /> New Question
+        </.link>
+      </div>
+
+      <div
+        :for={{dom_id, question} <- @streams.questions}
+        id={dom_id}
+        class="card bg-base-100 border border-base-200 shadow-sm hover:shadow-md transition-all duration-150"
+      >
+        <div class="card-body p-5">
+          <div class="flex items-start gap-4">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-3 flex-wrap mb-2">
+                <span class="font-semibold text-base-content truncate text-base">
+                  {question.label}
+                </span>
+                <span class={[
+                  "badge badge-sm capitalize",
+                  type_badge_class(question.question_type)
+                ]}>
+                  {String.replace(question.question_type, "_", " ")}
+                </span>
+                <%= if question.is_required do %>
+                  <span class="badge badge-sm badge-error gap-1">
+                    <.icon name="hero-star" class="size-2.5" /> Required
+                  </span>
+                <% end %>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-4 text-xs text-base-content/50">
+                <span class="flex items-center gap-1">
+                  <.icon name="hero-hashtag" class="size-3" /> Position:
+                  <strong class="text-base-content/70">{question.position}</strong>
+                </span>
+                <%= if length(question.options) > 0 do %>
+                  <span class="flex items-center gap-1">
+                    <.icon name="hero-list-bullet" class="size-3" /> Options:
+                    <strong class="text-base-content/70">{length(question.options)}</strong>
+                  </span>
+                <% end %>
+              </div>
+
+              <%= if length(question.options) > 0 do %>
+                <div class="flex flex-wrap gap-1 mt-2">
+                  <%= for option <- question.options do %>
+                    <span class="badge badge-outline badge-xs">{option.label}</span>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+
+            <%!-- Actions --%>
+            <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+              <.link
+                patch={
+                  ~p"/admin/organizations/#{@org}/events/#{@event}/questions/#{question.id}/edit"
+                }
+                class="btn btn-ghost btn-xs"
+              >
+                Edit
+              </.link>
+              <button
+                id={"delete-#{question.id}"}
+                phx-click="delete"
+                phx-value-id={question.id}
+                data-confirm="Delete this question? This cannot be undone."
+                class="btn btn-ghost btn-xs text-error hover:bg-error hover:text-error-content"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%!-- Modal: New / Edit Question --%>
+  <%= if @live_action in [:new, :edit] do %>
+    <div
+      id="question-modal-backdrop"
+      class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+      phx-click="close_modal"
+    >
+    </div>
+
+    <div
+      id="question-modal"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        class="w-full max-w-lg bg-base-100 rounded-2xl shadow-2xl border border-base-200 overflow-hidden max-h-[90vh] flex flex-col"
+        phx-click-away="close_modal"
+      >
+        <%!-- Modal header --%>
+        <div class="flex items-center justify-between px-6 py-4 border-b border-base-200 shrink-0">
+          <h2 class="text-lg font-bold text-base-content">
+            {if @live_action == :new, do: "New Question", else: "Edit Question"}
+          </h2>
+          <button
+            type="button"
+            phx-click="close_modal"
+            class="btn btn-ghost btn-sm btn-circle"
+            aria-label="Close"
+          >
+            <.icon name="hero-x-mark" class="size-5" />
+          </button>
+        </div>
+
+        <%!-- Modal body --%>
+        <div class="px-6 py-5 overflow-y-auto flex-1">
+          <.form
+            for={@form}
+            id="question-form"
+            phx-change="validate"
+            phx-submit="save"
+            class="space-y-4"
+          >
+            <.input field={@form[:label]} type="text" label="Label" required />
+
+            <div class="form-control w-full">
+              <label class="label pb-1">
+                <span class="label-text font-medium">Question Type</span>
+              </label>
+              <select
+                id={@form[:question_type].id}
+                name={@form[:question_type].name}
+                class="select select-bordered w-full"
+              >
+                <option value="">Select a type…</option>
+                <option
+                  :for={type <- Pretex.Catalog.Question.question_types()}
+                  value={type}
+                  selected={Ecto.Changeset.get_field(@form.source, :question_type) == type}
+                >
+                  {String.replace(type, "_", " ") |> String.capitalize()}
+                </option>
+              </select>
+              <%= if @form[:question_type].errors != [] do %>
+                <label class="label">
+                  <span class="label-text-alt text-error">
+                    {translate_error(hd(@form[:question_type].errors))}
+                  </span>
+                </label>
+              <% end %>
+            </div>
+
+            <div class="form-control">
+              <label class="label cursor-pointer justify-start gap-3">
+                <input
+                  type="hidden"
+                  name={@form[:is_required].name}
+                  value="false"
+                />
+                <input
+                  type="checkbox"
+                  id={@form[:is_required].id}
+                  name={@form[:is_required].name}
+                  value="true"
+                  checked={Ecto.Changeset.get_field(@form.source, :is_required)}
+                  class="checkbox checkbox-sm"
+                />
+                <span class="label-text">Required</span>
+              </label>
+            </div>
+
+            <.input
+              field={@form[:position]}
+              type="number"
+              label="Position"
+              min="0"
+            />
+
+            <%!-- Options section for choice types --%>
+            <%= if needs_options?(Ecto.Changeset.get_field(@form.source, :question_type)) do %>
+              <div id="options-section" class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <p class="text-sm font-semibold text-base-content">Answer Options</p>
+                  <button
+                    type="button"
+                    phx-click="add_option"
+                    class="btn btn-outline btn-xs gap-1"
+                  >
+                    <.icon name="hero-plus" class="size-3" /> Add Option
+                  </button>
+                </div>
+
+                <%= if @pending_options == [] do %>
+                  <p class="text-xs text-base-content/40 italic">
+                    No options yet. Click "Add Option" to add choices.
+                  </p>
+                <% else %>
+                  <div class="space-y-2">
+                    <%= for {option, index} <- Enum.with_index(@pending_options) do %>
+                      <div
+                        id={"option-row-#{index}"}
+                        class="flex items-center gap-2"
+                      >
+                        <%= if is_nil(Map.get(option, :id)) do %>
+                          <input
+                            type="text"
+                            name={"question[option_labels][#{index}]"}
+                            value={Map.get(option, :label, "")}
+                            placeholder="Option label…"
+                            class="input input-bordered input-sm flex-1"
+                          />
+                          <button
+                            type="button"
+                            phx-click="remove_option"
+                            phx-value-index={index}
+                            class="btn btn-ghost btn-xs btn-circle text-error"
+                            aria-label="Remove option"
+                          >
+                            <.icon name="hero-x-mark" class="size-4" />
+                          </button>
+                        <% else %>
+                          <input
+                            type="text"
+                            name={"question[option_labels][#{option.id}]"}
+                            value={Map.get(option, :label, "")}
+                            placeholder="Option label…"
+                            class="input input-bordered input-sm flex-1"
+                          />
+                          <button
+                            type="button"
+                            phx-click="remove_existing_option"
+                            phx-value-id={option.id}
+                            class="btn btn-ghost btn-xs btn-circle text-error"
+                            aria-label="Remove option"
+                          >
+                            <.icon name="hero-x-mark" class="size-4" />
+                          </button>
+                        <% end %>
+                      </div>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+
+            <div class="flex justify-end gap-3 pt-2">
+              <button type="button" phx-click="close_modal" class="btn btn-ghost btn-sm">
+                Cancel
+              </button>
+              <.button type="submit" variant="primary" phx-disable-with="Saving…">
+                {if @live_action == :new, do: "Create Question", else: "Save Changes"}
+              </.button>
+            </div>
+          </.form>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</Layouts.app>

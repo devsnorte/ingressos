@@ -1,0 +1,333 @@
+<Layouts.app flash={@flash}>
+  <div class="mx-auto max-w-3xl px-4 py-8">
+    <%!-- Top bar --%>
+    <div class="mb-6 flex items-center justify-between gap-4 flex-wrap">
+      <.link
+        navigate={~p"/admin/organizations/#{@org}/events"}
+        class="inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-primary transition-colors"
+      >
+        <.icon name="hero-arrow-left" class="size-4" /> Back to Events
+      </.link>
+
+      <div class="flex items-center gap-2 flex-wrap justify-end">
+        <.link
+          navigate={~p"/admin/organizations/#{@org}/events/#{@event}/edit"}
+          class="btn btn-ghost btn-sm gap-1"
+        >
+          <.icon name="hero-pencil-square" class="size-4" /> Edit
+        </.link>
+
+        <%= if @event.status == "draft" do %>
+          <button
+            id="publish-event"
+            phx-click="publish"
+            disabled={@ticket_count == 0}
+            data-confirm="Publish this event? It will become visible to attendees."
+            class="btn btn-success btn-sm gap-1"
+          >
+            <.icon name="hero-rocket-launch" class="size-4" /> Publish
+          </button>
+        <% end %>
+
+        <%= if @event.status == "published" do %>
+          <button
+            id="complete-event"
+            phx-click="complete"
+            data-confirm="Mark this event as completed? This cannot be undone."
+            class="btn btn-neutral btn-sm gap-1"
+          >
+            <.icon name="hero-check-circle" class="size-4" /> Complete
+          </button>
+        <% end %>
+
+        <button
+          id="clone-event"
+          phx-click="clone"
+          data-confirm={"Clone \"#{@event.name}\"? A new draft will be created."}
+          class="btn btn-ghost btn-sm gap-1"
+        >
+          <.icon name="hero-document-duplicate" class="size-4" /> Clone
+        </button>
+      </div>
+    </div>
+
+    <%!-- Event header card --%>
+    <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
+      <div class="card-body p-6">
+        <div class="flex items-start justify-between gap-4 mb-5">
+          <div class="min-w-0">
+            <h1 class="text-2xl font-bold text-base-content break-words">{@event.name}</h1>
+            <p class="text-xs text-base-content/40 font-mono mt-1">/{@event.slug}</p>
+            <%= if @event.description do %>
+              <p class="text-base-content/70 mt-3 text-sm leading-relaxed">
+                {@event.description}
+              </p>
+            <% end %>
+          </div>
+          <span class={[
+            "badge badge-lg shrink-0 capitalize",
+            @event.status == "published" && "badge-success",
+            @event.status == "draft" && "badge-warning",
+            @event.status == "completed" && "badge-ghost"
+          ]}>
+            {@event.status}
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 text-sm">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-base-content/40 mb-1">
+              Starts At
+            </p>
+            <%= if @event.starts_at do %>
+              <p class="text-base-content flex items-center gap-1">
+                <.icon name="hero-calendar" class="size-4 text-base-content/40" />
+                {Calendar.strftime(@event.starts_at, "%B %d, %Y at %H:%M UTC")}
+              </p>
+            <% else %>
+              <p class="text-base-content/30 italic">Not set</p>
+            <% end %>
+          </div>
+
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-base-content/40 mb-1">
+              Ends At
+            </p>
+            <%= if @event.ends_at do %>
+              <p class="text-base-content flex items-center gap-1">
+                <.icon name="hero-calendar" class="size-4 text-base-content/40" />
+                {Calendar.strftime(@event.ends_at, "%B %d, %Y at %H:%M UTC")}
+              </p>
+            <% else %>
+              <p class="text-base-content/30 italic">Not set</p>
+            <% end %>
+          </div>
+
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-base-content/40 mb-1">
+              Venue
+            </p>
+            <%= if @event.venue do %>
+              <p class="text-base-content flex items-center gap-1">
+                <.icon name="hero-map-pin" class="size-4 text-base-content/40" />
+                {@event.venue}
+              </p>
+            <% else %>
+              <p class="text-base-content/30 italic">Not set</p>
+            <% end %>
+          </div>
+
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-base-content/40 mb-1">
+              Organization
+            </p>
+            <p class="text-base-content flex items-center gap-1">
+              <.icon name="hero-building-office" class="size-4 text-base-content/40" />
+              {@org.name}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%!-- Branding card --%>
+    <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
+      <div class="card-body p-6">
+        <h2 class="text-base font-semibold text-base-content mb-4 flex items-center gap-2">
+          <.icon name="hero-swatch" class="size-4 text-base-content/40" /> Branding
+        </h2>
+        <div class="flex flex-wrap items-center gap-6">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-full border-2 border-base-300 shadow-sm"
+              style={"background-color: #{@event.primary_color}"}
+            >
+            </div>
+            <div>
+              <p class="text-xs text-base-content/50 font-medium">Primary Color</p>
+              <p class="text-sm font-mono text-base-content">{@event.primary_color}</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-full border-2 border-base-300 shadow-sm"
+              style={"background-color: #{@event.accent_color}"}
+            >
+            </div>
+            <div>
+              <p class="text-xs text-base-content/50 font-medium">Accent Color</p>
+              <p class="text-sm font-mono text-base-content">{@event.accent_color}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%!-- Sub-events card --%>
+    <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
+      <div class="card-body p-6">
+        <div class="flex items-center justify-between gap-4 mb-4">
+          <h2 class="text-base font-semibold text-base-content flex items-center gap-2">
+            <.icon name="hero-rectangle-stack" class="size-4 text-base-content/40" /> Sub-Events
+          </h2>
+          <%= if @event.is_series do %>
+            <.link
+              navigate={~p"/admin/organizations/#{@org}/events/#{@event}/sub-events"}
+              class="btn btn-ghost btn-xs gap-1"
+            >
+              <.icon name="hero-arrow-right" class="size-3" /> Manage Sub-Events
+            </.link>
+          <% end %>
+        </div>
+
+        <%= if @event.is_series do %>
+          <div class="flex items-start gap-3 rounded-lg bg-success/10 border border-success/30 p-4 text-sm text-success-content">
+            <.icon name="hero-check-circle" class="size-5 shrink-0 text-success mt-0.5" />
+            <p>
+              Series mode is enabled. Use
+              <.link
+                navigate={~p"/admin/organizations/#{@org}/events/#{@event}/sub-events"}
+                class="font-semibold underline underline-offset-2"
+              >
+                Sub-Events
+              </.link>
+              to manage individual sessions, days, or stages.
+            </p>
+          </div>
+        <% else %>
+          <div class="flex items-start gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm">
+            <.icon
+              name="hero-information-circle"
+              class="size-5 shrink-0 text-base-content/40 mt-0.5"
+            />
+            <div class="flex-1">
+              <p class="text-base-content/70">
+                Enable series mode to break this event into multiple sub-events (e.g. different days, rooms, or stages).
+              </p>
+            </div>
+            <.link
+              navigate={~p"/admin/organizations/#{@org}/events/#{@event}/sub-events"}
+              class="btn btn-outline btn-xs gap-1 shrink-0"
+            >
+              <.icon name="hero-rectangle-stack" class="size-3" /> Enable Series
+            </.link>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%!-- Item Catalog card --%>
+    <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
+      <div class="card-body p-6">
+        <div class="flex items-center justify-between gap-4 mb-4">
+          <h2 class="text-base font-semibold text-base-content flex items-center gap-2">
+            <.icon name="hero-shopping-bag" class="size-4 text-base-content/40" /> Item Catalog
+          </h2>
+          <.link
+            navigate={~p"/admin/organizations/#{@org}/events/#{@event}/catalog"}
+            class="btn btn-ghost btn-xs gap-1"
+          >
+            <.icon name="hero-arrow-right" class="size-3" /> Manage Catalog
+          </.link>
+        </div>
+        <div class="flex items-start gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm">
+          <.icon
+            name="hero-information-circle"
+            class="size-5 shrink-0 text-base-content/40 mt-0.5"
+          />
+          <p class="text-base-content/70">
+            Manage items, merchandise, add-ons, and bundles for sale at this event.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <%!-- Quotas card --%>
+    <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
+      <div class="card-body p-6">
+        <div class="flex items-center justify-between gap-4 mb-4">
+          <h2 class="text-base font-semibold text-base-content flex items-center gap-2">
+            <.icon name="hero-chart-bar" class="size-4 text-base-content/40" />
+            Quotas &amp; Availability
+          </h2>
+          <.link
+            navigate={~p"/admin/organizations/#{@org}/events/#{@event}/quotas"}
+            class="btn btn-ghost btn-xs gap-1"
+          >
+            <.icon name="hero-arrow-right" class="size-3" /> Manage Quotas
+          </.link>
+        </div>
+        <div class="flex items-start gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm">
+          <.icon
+            name="hero-information-circle"
+            class="size-5 shrink-0 text-base-content/40 mt-0.5"
+          />
+          <p class="text-base-content/70">
+            Define capacity quotas and track ticket availability across item types.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <%!-- Attendee Questions card --%>
+    <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
+      <div class="card-body p-6">
+        <div class="flex items-center justify-between gap-4 mb-4">
+          <h2 class="text-base font-semibold text-base-content flex items-center gap-2">
+            <.icon name="hero-question-mark-circle" class="size-4 text-base-content/40" />
+            Attendee Questions
+          </h2>
+          <div class="flex items-center gap-2">
+            <.link
+              navigate={
+                ~p"/admin/organizations/#{@org}/events/#{@event}/questions/attendee-fields"
+              }
+              class="btn btn-ghost btn-xs gap-1"
+            >
+              <.icon name="hero-user" class="size-3" /> Attendee Fields
+            </.link>
+            <.link
+              navigate={~p"/admin/organizations/#{@org}/events/#{@event}/questions"}
+              class="btn btn-ghost btn-xs gap-1"
+            >
+              <.icon name="hero-arrow-right" class="size-3" /> Manage Questions
+            </.link>
+          </div>
+        </div>
+        <div class="flex items-start gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm">
+          <.icon
+            name="hero-information-circle"
+            class="size-5 shrink-0 text-base-content/40 mt-0.5"
+          />
+          <p class="text-base-content/70">
+            Collect custom information from attendees at checkout. Configure built-in fields (name, email, etc.) and add custom questions.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <%!-- Ticket types card --%>
+    <div class="card bg-base-100 border border-base-200 shadow-sm">
+      <div class="card-body p-6">
+        <h2 class="text-base font-semibold text-base-content mb-4 flex items-center gap-2">
+          <.icon name="hero-ticket" class="size-4 text-base-content/40" /> Ticket Types
+        </h2>
+
+        <%= if @ticket_count == 0 do %>
+          <div
+            id="no-ticket-types-notice"
+            class="flex items-start gap-3 rounded-lg bg-warning/10 border border-warning/30 p-4 text-sm text-warning-content"
+          >
+            <.icon name="hero-exclamation-triangle" class="size-5 shrink-0 text-warning mt-0.5" />
+            <p>Add at least one ticket type to publish this event.</p>
+          </div>
+        <% else %>
+          <p id="ticket-count" class="text-sm text-base-content/70">
+            {@ticket_count} ticket type(s) configured.
+          </p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</Layouts.app>

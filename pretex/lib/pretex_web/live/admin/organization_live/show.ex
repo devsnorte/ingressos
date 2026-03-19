@@ -19,6 +19,26 @@ defmodule PretexWeb.Admin.OrganizationLive.Show do
   end
 
   @impl true
+  def handle_event("toggle_require_2fa", _params, socket) do
+    org = socket.assigns.organization
+    new_value = !org.require_2fa
+
+    case Organizations.set_require_2fa(org, new_value) do
+      {:ok, updated_org} ->
+        {:noreply,
+         socket
+         |> assign(:organization, updated_org)
+         |> put_flash(
+           :info,
+           if(new_value, do: "2FA requirement enabled.", else: "2FA requirement disabled.")
+         )}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Failed to update 2FA requirement.")}
+    end
+  end
+
+  @impl true
   def handle_info(
         {PretexWeb.Admin.OrganizationLive.FormComponent, {:saved, organization}},
         socket

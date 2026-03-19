@@ -13,7 +13,7 @@ defmodule PretexWeb.Admin.OrganizationLiveTest do
   end
 
   describe "Index" do
-    setup [:create_organization]
+    setup [:register_and_log_in_user, :create_organization]
 
     test "lists all organizations", %{conn: conn, organization: organization} do
       {:ok, _index_live, html} = live(conn, ~p"/admin/organizations")
@@ -82,7 +82,7 @@ defmodule PretexWeb.Admin.OrganizationLiveTest do
   end
 
   describe "Show" do
-    setup [:create_organization]
+    setup [:register_and_log_in_user, :create_organization]
 
     test "displays organization", %{conn: conn, organization: organization} do
       {:ok, _show_live, html} = live(conn, ~p"/admin/organizations/#{organization}")

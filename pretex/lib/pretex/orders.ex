@@ -1,0 +1,380 @@
+defmodule Pretex.Orders do
+  @moduledoc "Manages cart sessions and orders."
+
+  import Ecto.Query
+
+  alias Pretex.Repo
+  alias Pretex.Orders.CartSession
+  alias Pretex.Orders.CartItem
+  alias Pretex.Orders.Order
+  alias Pretex.Orders.OrderItem
+  alias Pretex.Catalog.QuotaItem
+  alias Pretex.Events.Event
+
+  # ---------------------------------------------------------------------------
+  # Cart management
+  # ---------------------------------------------------------------------------
+
+  @doc """
+  Creates a new cart session for an event.
+  Generates a random 32-byte hex session token and sets expiry to 15 minutes.
+  """
+  def create_cart(%Event{} = event) do
+    token = :crypto.strong_rand_bytes(32) |> Base.encode16(case: :lower)
+
+    expires_at =
+      DateTime.utc_now() |> DateTime.add(15 * 60, :second) |> DateTime.truncate(:second)
+
+    %CartSession{}
+    |> CartSession.changeset(%{
+      session_token: token,
+      expires_at: expires_at,
+      status: "active"
+    })
+    |> Ecto.Changeset.put_change(:event_id, event.id)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Fetches a cart session by token, preloading cart_items with item and variation.
+  Returns nil if not found.
+  """
+  def get_cart_by_token(token) when is_binary(token) do
+    CartSession
+    |> where([c], c.session_token == ^token)
+    |> preload(cart_items: [:item, :item_variation])
+    |> Repo.one()
+  end
+
+  def get_cart_by_token(_), do: nil
+
+  @doc """
+  Marks a cart as expired.
+  """
+  def expire_cart(%CartSession{} = cart) do
+    cart
+    |> Ecto.Changeset.change(status: "expired")
+    |> Repo.update()
+  end
+
+  @doc """
+  Adds an item to the cart or updates quantity if already present.
+  Options: [quantity: 1, variation_id: nil]
+  """
+  def add_to_cart(%CartSession{} = cart, item, opts \\ []) do
+    quantity = Keyword.get(opts, :quantity, 1)
+    variation_id = Keyword.get(opts, :variation_id, nil)
+
+    existing =
+      CartItem
+      |> where([ci], ci.cart_session_id == ^cart.id and ci.item_id == ^item.id)
+      |> then(fn q ->
+        if variation_id do
+          where(q, [ci], ci.item_variation_id == ^variation_id)
+        else
+          where(q, [ci], is_nil(ci.item_variation_id))
+        end
+      end)
+      |> Repo.one()
+
+    case existing do
+      nil ->
+        %CartItem{}
+        |> CartItem.changeset(%{
+          quantity: quantity,
+          item_id: item.id,
+          item_variation_id: variation_id
+        })
+        |> Ecto.Changeset.put_change(:cart_session_id, cart.id)
+        |> Repo.insert()
+
+      cart_item ->
+        new_quantity = cart_item.quantity + quantity
+
+        cart_item
+        |> CartItem.changeset(%{quantity: new_quantity})
+        |> Repo.update()
+    end
+  end
+
+  @doc """
+  Removes a cart item by its id from the cart.
+  """
+  def remove_from_cart(%CartSession{} = cart, cart_item_id) do
+    case Repo.get_by(CartItem, id: cart_item_id, cart_session_id: cart.id) do
+      nil -> {:error, :not_found}
+      cart_item -> Repo.delete(cart_item)
+    end
+  end
+
+  @doc """
+  Deletes all cart items for the given cart session.
+  """
+  def clear_cart(%CartSession{} = cart) do
+    CartItem
+    |> where([ci], ci.cart_session_id == ^cart.id)
+    |> Repo.delete_all()
+
+    {:ok, cart}
+  end
+
+  @doc """
+  Computes the total price in cents for a cart.
+  Uses variation price if present, otherwise item price.
+  """
+  def cart_total(%CartSession{cart_items: cart_items}) when is_list(cart_items) do
+    Enum.reduce(cart_items, 0, fn cart_item, acc ->
+      unit_price =
+        if cart_item.item_variation && cart_item.item_variation.price_cents do
+          cart_item.item_variation.price_cents
+        else
+          cart_item.item.price_cents
+        end
+
+      acc + cart_item.quantity * unit_price
+    end)
+  end
+
+  def cart_total(_), do: 0
+
+  # ---------------------------------------------------------------------------
+  # Order management
+  # ---------------------------------------------------------------------------
+
+  @doc """
+  Creates an order from the given cart and attrs.
+  attrs: %{email:, name:, payment_method:}
+
+  - Validates cart is active and not expired
+  - Creates Order with OrderItems
+  - Generates ticket_code per order_item and confirmation_code for order
+  - Sets expires_at based on payment_method
+  - Marks cart as checked_out
+  - Increments quota sold_count
+  - All inside a Repo.transaction
+  """
+  def create_order_from_cart(%CartSession{} = cart, attrs) do
+    cart = Repo.preload(cart, cart_items: [:item, :item_variation])
+
+    with :ok <- validate_cart_active(cart),
+         :ok <- validate_cart_not_expired(cart) do
+      Repo.transaction(fn ->
+        total_cents = cart_total(cart)
+        payment_method = Map.get(attrs, :payment_method) || Map.get(attrs, "payment_method")
+        expires_at = order_expires_at(payment_method)
+        confirmation_code = generate_confirmation_code()
+
+        order_changeset =
+          %Order{}
+          |> Order.changeset(attrs)
+          |> Ecto.Changeset.put_change(:event_id, cart.event_id)
+          |> Ecto.Changeset.put_change(:status, "pending")
+          |> Ecto.Changeset.put_change(:total_cents, total_cents)
+          |> Ecto.Changeset.put_change(:expires_at, expires_at)
+          |> Ecto.Changeset.put_change(:confirmation_code, confirmation_code)
+
+        order =
+          case Repo.insert(order_changeset) do
+            {:ok, o} -> o
+            {:error, cs} -> Repo.rollback(cs)
+          end
+
+        Enum.each(cart.cart_items, fn cart_item ->
+          unit_price =
+            if cart_item.item_variation && cart_item.item_variation.price_cents do
+              cart_item.item_variation.price_cents
+            else
+              cart_item.item.price_cents
+            end
+
+          ticket_code = generate_ticket_code()
+
+          item_changeset =
+            %OrderItem{}
+            |> OrderItem.changeset(%{
+              quantity: cart_item.quantity,
+              unit_price_cents: unit_price
+            })
+            |> Ecto.Changeset.put_change(:order_id, order.id)
+            |> Ecto.Changeset.put_change(:item_id, cart_item.item_id)
+            |> Ecto.Changeset.put_change(:item_variation_id, cart_item.item_variation_id)
+            |> Ecto.Changeset.put_change(:ticket_code, ticket_code)
+
+          case Repo.insert(item_changeset) do
+            {:ok, _} -> :ok
+            {:error, cs} -> Repo.rollback(cs)
+          end
+
+          increment_quota_sold_count(
+            cart_item.item_id,
+            cart_item.item_variation_id,
+            cart_item.quantity
+          )
+        end)
+
+        cart
+        |> Ecto.Changeset.change(status: "checked_out")
+        |> Repo.update!()
+
+        Repo.preload(order, order_items: [:item, :item_variation])
+      end)
+    end
+  end
+
+  @doc """
+  Lists all orders for an event, preloading order_items.
+  """
+  def list_orders_for_event(%Event{id: event_id}) do
+    Order
+    |> where([o], o.event_id == ^event_id)
+    |> order_by([o], desc: o.inserted_at)
+    |> preload(:order_items)
+    |> Repo.all()
+  end
+
+  @doc """
+  Lists all orders for a customer by customer_id.
+  """
+  def list_orders_for_customer(customer_id) do
+    Order
+    |> where([o], o.customer_id == ^customer_id)
+    |> order_by([o], desc: o.inserted_at)
+    |> preload([:event, order_items: [:item, :item_variation]])
+    |> Repo.all()
+  end
+
+  @doc """
+  Gets an order by id, preloading order_items with item, item_variation, and answers.
+  Raises if not found.
+  """
+  def get_order!(id) do
+    Order
+    |> preload(order_items: [:item, :item_variation, :answers])
+    |> Repo.get!(id)
+  end
+
+  @doc """
+  Looks up an order by its confirmation code.
+  Returns {:ok, order} or {:error, :not_found}.
+  """
+  def get_order_by_confirmation_code(code) when is_binary(code) do
+    case Order
+         |> where([o], o.confirmation_code == ^code)
+         |> preload([:event, order_items: [:item, :item_variation]])
+         |> Repo.one() do
+      nil -> {:error, :not_found}
+      order -> {:ok, order}
+    end
+  end
+
+  def get_order_by_confirmation_code(_), do: {:error, :not_found}
+
+  @doc """
+  Confirms an order by setting its status to "confirmed".
+  """
+  def confirm_order(%Order{} = order) do
+    order
+    |> Ecto.Changeset.change(status: "confirmed")
+    |> Repo.update()
+  end
+
+  @doc """
+  Cancels an order and decrements the quota sold_count for each order item.
+  """
+  def cancel_order(%Order{} = order) do
+    order = Repo.preload(order, :order_items)
+
+    Repo.transaction(fn ->
+      Enum.each(order.order_items, fn order_item ->
+        decrement_quota_sold_count(
+          order_item.item_id,
+          order_item.item_variation_id,
+          order_item.quantity
+        )
+      end)
+
+      case order |> Ecto.Changeset.change(status: "cancelled") |> Repo.update() do
+        {:ok, updated} -> updated
+        {:error, cs} -> Repo.rollback(cs)
+      end
+    end)
+  end
+
+  @doc """
+  Marks all stale pending orders (where expires_at < now) as expired.
+  """
+  def expire_stale_orders do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    Order
+    |> where([o], o.status == "pending" and o.expires_at < ^now)
+    |> Repo.update_all(set: [status: "expired"])
+  end
+
+  # ---------------------------------------------------------------------------
+  # Private helpers
+  # ---------------------------------------------------------------------------
+
+  defp validate_cart_active(%CartSession{status: "active"}), do: :ok
+  defp validate_cart_active(_), do: {:error, :cart_not_active}
+
+  defp validate_cart_not_expired(%CartSession{expires_at: expires_at}) do
+    if DateTime.compare(expires_at, DateTime.utc_now()) == :gt do
+      :ok
+    else
+      {:error, :cart_expired}
+    end
+  end
+
+  defp order_expires_at("credit_card"), do: future_datetime(15 * 60)
+  defp order_expires_at("pix"), do: future_datetime(15 * 60)
+  defp order_expires_at("boleto"), do: future_datetime(30 * 60)
+  defp order_expires_at("bank_transfer"), do: future_datetime(3 * 24 * 60 * 60)
+  defp order_expires_at(_), do: future_datetime(15 * 60)
+
+  defp future_datetime(seconds) do
+    DateTime.utc_now()
+    |> DateTime.add(seconds, :second)
+    |> DateTime.truncate(:second)
+  end
+
+  defp generate_ticket_code do
+    :crypto.strong_rand_bytes(4) |> Base.encode16()
+  end
+
+  defp generate_confirmation_code do
+    :crypto.strong_rand_bytes(3) |> Base.encode16()
+  end
+
+  defp increment_quota_sold_count(item_id, variation_id, quantity) do
+    quota_ids = find_quota_ids(item_id, variation_id)
+
+    if quota_ids != [] do
+      from(q in Pretex.Catalog.Quota, where: q.id in ^quota_ids)
+      |> Repo.update_all(inc: [sold_count: quantity])
+    end
+  end
+
+  defp decrement_quota_sold_count(item_id, variation_id, quantity) do
+    quota_ids = find_quota_ids(item_id, variation_id)
+
+    if quota_ids != [] do
+      from(q in Pretex.Catalog.Quota, where: q.id in ^quota_ids)
+      |> Repo.update_all(inc: [sold_count: -quantity])
+    end
+  end
+
+  defp find_quota_ids(item_id, nil) do
+    QuotaItem
+    |> where([qi], qi.item_id == ^item_id)
+    |> select([qi], qi.quota_id)
+    |> Repo.all()
+  end
+
+  defp find_quota_ids(_item_id, variation_id) do
+    QuotaItem
+    |> where([qi], qi.item_variation_id == ^variation_id)
+    |> select([qi], qi.quota_id)
+    |> Repo.all()
+  end
+end

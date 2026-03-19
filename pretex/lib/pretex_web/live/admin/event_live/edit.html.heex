@@ -1,0 +1,55 @@
+<Layouts.app flash={@flash}>
+  <div class="mx-auto max-w-2xl px-4 py-8">
+    <div class="mb-6">
+      <.link
+        navigate={~p"/admin/organizations/#{@org}/events/#{@event}"}
+        class="inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-primary transition-colors"
+      >
+        <.icon name="hero-arrow-left" class="size-4" /> Back to Event
+      </.link>
+    </div>
+
+    <div class="card bg-base-100 border border-base-200 shadow-sm">
+      <div class="card-body p-6 sm:p-8">
+        <h1 class="text-xl font-bold text-base-content mb-6">Edit Event</h1>
+
+        <.form
+          for={@form}
+          id="event-form"
+          phx-change="validate"
+          phx-submit="save"
+          class="space-y-5"
+        >
+          <.input field={@form[:name]} type="text" label="Event Name" required />
+          <.input field={@form[:description]} type="textarea" label="Description" rows="3" />
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <.input field={@form[:starts_at]} type="datetime-local" label="Starts At" required />
+            <.input field={@form[:ends_at]} type="datetime-local" label="Ends At" required />
+          </div>
+
+          <.input field={@form[:venue]} type="text" label="Venue" />
+          <.input field={@form[:logo_url]} type="text" label="Logo URL" />
+          <.input field={@form[:banner_url]} type="text" label="Banner URL" />
+
+          <div class="grid grid-cols-2 gap-4">
+            <.input field={@form[:primary_color]} type="color" label="Primary Color" />
+            <.input field={@form[:accent_color]} type="color" label="Accent Color" />
+          </div>
+
+          <div class="flex justify-end gap-3 pt-2">
+            <.link
+              navigate={~p"/admin/organizations/#{@org}/events/#{@event}"}
+              class="btn btn-ghost btn-sm"
+            >
+              Cancel
+            </.link>
+            <.button type="submit" variant="primary" phx-disable-with="Saving…">
+              Save Changes
+            </.button>
+          </div>
+        </.form>
+      </div>
+    </div>
+  </div>
+</Layouts.app>

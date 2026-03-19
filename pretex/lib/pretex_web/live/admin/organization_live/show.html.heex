@@ -16,11 +16,45 @@
   <:item title="Description">{@organization.description}</:item>
   <:item title="Status">{if @organization.is_active, do: "Active", else: "Inactive"}</:item>
   <:item title="Created">{@organization.inserted_at}</:item>
+  <:item title="Require 2FA">
+    <div class="flex items-center gap-3">
+      <%= if @organization.require_2fa do %>
+        <span
+          id="require-2fa-status"
+          class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800"
+        >
+          <.icon name="hero-shield-check" class="w-3 h-3" /> Enabled
+        </span>
+      <% else %>
+        <span
+          id="require-2fa-status"
+          class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600"
+        >
+          <.icon name="hero-shield-exclamation" class="w-3 h-3" /> Disabled
+        </span>
+      <% end %>
+      <button
+        id="toggle-require-2fa"
+        phx-click="toggle_require_2fa"
+        class="text-xs underline text-gray-500 hover:text-gray-800"
+        data-confirm={
+          if @organization.require_2fa,
+            do: "Disable 2FA requirement for this organization?",
+            else: "Require 2FA for all members of this organization?"
+        }
+      >
+        {if @organization.require_2fa, do: "Disable", else: "Enable"}
+      </button>
+    </div>
+  </:item>
 </.list>
 
 <div :if={@live_action == :edit} class="modal modal-open">
   <div class="modal-box">
-    <.link patch={~p"/admin/organizations/#{@organization}"} class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+    <.link
+      patch={~p"/admin/organizations/#{@organization}"}
+      class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+    >
       ✕
     </.link>
     <.live_component

@@ -7,6 +7,19 @@
 # General application configuration
 import Config
 
+config :pretex, :scopes,
+  customer: [
+    default: true,
+    module: Pretex.Customers.Scope,
+    assign_key: :current_scope,
+    access_path: [:customer, :id],
+    schema_key: :customer_id,
+    schema_type: :id,
+    schema_table: :customers,
+    test_data_fixture: Pretex.CustomersFixtures,
+    test_setup_helper: :register_and_log_in_customer
+  ]
+
 config :pretex,
   ecto_repos: [Pretex.Repo],
   generators: [timestamp_type: :utc_datetime]
@@ -15,6 +28,7 @@ config :pretex,
 config :pretex, PretexWeb.Endpoint,
   url: [host: "localhost"],
   adapter: Bandit.PhoenixAdapter,
+  http: [port: String.to_integer(System.get_env("PORT") || "4000")],
   render_errors: [
     formats: [html: PretexWeb.ErrorHTML, json: PretexWeb.ErrorJSON],
     layout: false
@@ -59,6 +73,10 @@ config :logger, :default_formatter,
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
+
+config :wax_,
+  origin: "http://localhost:4000",
+  rp_id: "localhost"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
