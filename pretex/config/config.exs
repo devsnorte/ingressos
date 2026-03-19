@@ -15,6 +15,7 @@ config :pretex,
 config :pretex, PretexWeb.Endpoint,
   url: [host: "localhost"],
   adapter: Bandit.PhoenixAdapter,
+  http: [port: String.to_integer(System.get_env("PORT") || "4000")],
   render_errors: [
     formats: [html: PretexWeb.ErrorHTML, json: PretexWeb.ErrorJSON],
     layout: false
