@@ -3,13 +3,13 @@ defmodule Pretex.Teams.Membership do
   import Ecto.Changeset
 
   schema "memberships" do
-    belongs_to(:organization, Pretex.Organizations.Organization)
-    belongs_to(:user, Pretex.Accounts.User)
+    belongs_to :organization, Pretex.Organizations.Organization
+    belongs_to :user, Pretex.Accounts.User
 
-    field(:role, :string)
-    field(:is_active, :boolean, default: true)
+    field :role, :string
+    field :is_active, :boolean, default: true
 
-    has_many(:permissions, Pretex.Teams.OrganizationPermission)
+    has_many :permissions, Pretex.Teams.OrganizationPermission
 
     timestamps(type: :utc_datetime)
   end

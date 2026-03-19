@@ -3,14 +3,14 @@ defmodule Pretex.Teams.Invitation do
   import Ecto.Changeset
 
   schema "invitations" do
-    belongs_to(:organization, Pretex.Organizations.Organization)
-    belongs_to(:invited_by, Pretex.Accounts.User)
+    belongs_to :organization, Pretex.Organizations.Organization
+    belongs_to :invited_by, Pretex.Accounts.User
 
-    field(:email, :string)
-    field(:role, :string)
-    field(:token, :string)
-    field(:accepted_at, :utc_datetime)
-    field(:expires_at, :utc_datetime)
+    field :email, :string
+    field :role, :string
+    field :token, :string
+    field :accepted_at, :utc_datetime
+    field :expires_at, :utc_datetime
 
     timestamps(type: :utc_datetime)
   end

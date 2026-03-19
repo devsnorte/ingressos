@@ -3,12 +3,12 @@ defmodule Pretex.Teams.OrganizationPermission do
   import Ecto.Changeset
 
   schema "organization_permissions" do
-    belongs_to(:membership, Pretex.Teams.Membership)
+    belongs_to :membership, Pretex.Teams.Membership
 
-    field(:resource, :string)
-    field(:can_read, :boolean, default: true)
-    field(:can_write, :boolean, default: false)
-    field(:event_id, :integer)
+    field :resource, :string
+    field :can_read, :boolean, default: true
+    field :can_write, :boolean, default: false
+    field :event_id, :integer
 
     timestamps(type: :utc_datetime)
   end

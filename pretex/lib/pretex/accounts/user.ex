@@ -3,10 +3,10 @@ defmodule Pretex.Accounts.User do
   import Ecto.Changeset
 
   schema "users" do
-    field(:email, :string)
-    field(:name, :string)
+    field :email, :string
+    field :name, :string
 
-    has_many(:memberships, Pretex.Teams.Membership)
+    has_many :memberships, Pretex.Teams.Membership
 
     timestamps(type: :utc_datetime)
   end
