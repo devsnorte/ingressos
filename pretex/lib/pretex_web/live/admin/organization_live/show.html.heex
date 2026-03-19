@@ -20,7 +20,10 @@
 
 <div :if={@live_action == :edit} class="modal modal-open">
   <div class="modal-box">
-    <.link patch={~p"/admin/organizations/#{@organization}"} class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+    <.link
+      patch={~p"/admin/organizations/#{@organization}"}
+      class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+    >
       ✕
     </.link>
     <.live_component
