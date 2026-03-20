@@ -47,50 +47,47 @@ defmodule PretexWeb.Components.Dashboard do
   attr :org, :map, required: true
 
   def sidebar(assigns) do
+    org_id = assigns.org.id
+
     nav_items = [
-      %{icon: "hero-home", label: "Dashboard", path: "/admin/organizations/#{assigns.org.id}"},
       %{
         icon: "hero-calendar-days",
-        label: "Events",
-        path: "/admin/organizations/#{assigns.org.id}/events"
+        label: "Eventos",
+        path: "/admin/organizations/#{org_id}/events"
       },
-      %{icon: "hero-users", label: "Teams", path: "/admin/organizations/#{assigns.org.id}/teams"},
-      %{
-        icon: "hero-ticket",
-        label: "Catalog",
-        path: "/admin/organizations/#{assigns.org.id}/catalog"
-      },
-      %{
-        icon: "hero-rectangle-stack",
-        label: "Quotas",
-        path: "/admin/organizations/#{assigns.org.id}/quotas"
-      },
-      %{
-        icon: "hero-question-mark-circle",
-        label: "Questions",
-        path: "/admin/organizations/#{assigns.org.id}/questions"
-      },
-      %{icon: "hero-chart-bar", label: "Reports", path: "#", disabled: true},
-      %{icon: "hero-cog-6-tooth", label: "Settings", path: "#", disabled: true}
+      %{icon: "hero-users", label: "Equipe", path: "/admin/organizations/#{org_id}/team"},
+      %{icon: "hero-chart-bar", label: "Relatórios", path: "#", disabled: true},
+      %{icon: "hero-cog-6-tooth", label: "Configurações", path: "#", disabled: true}
     ]
 
     assigns = assign(assigns, :nav_items, nav_items)
 
     ~H"""
     <aside class="bg-base-100 w-64 min-h-screen border-r border-base-300 flex flex-col">
+      <%!-- Logo + org switcher --%>
       <div class="p-4 flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
           <.icon name="hero-ticket" class="w-5 h-5 text-primary-content" />
         </div>
-        <div>
+        <div class="flex-1 min-w-0">
           <div class="font-bold text-base-content text-sm">Pretex</div>
-          <div class="text-xs text-base-content/50">{@org.display_name || @org.name}</div>
+          <div class="text-xs text-base-content/50 truncate">{@org.display_name || @org.name}</div>
         </div>
       </div>
 
-      <div class="px-4 pt-4 pb-2">
+      <%!-- Back to org list --%>
+      <div class="px-4 pb-2">
+        <a
+          href="/admin/organizations"
+          class="flex items-center gap-2 text-xs text-base-content/50 hover:text-primary transition-colors"
+        >
+          <.icon name="hero-arrow-left" class="w-3 h-3" /> Todas as organizações
+        </a>
+      </div>
+
+      <div class="px-4 pt-2 pb-2">
         <span class="text-xs font-semibold text-base-content/40 uppercase tracking-wider">
-          Main Navigation
+          Navegação
         </span>
       </div>
 
@@ -107,11 +104,18 @@ defmodule PretexWeb.Components.Dashboard do
 
       <div class="p-4 mt-auto">
         <div class="rounded-xl bg-primary/5 p-4">
-          <div class="text-sm font-semibold text-base-content">Need Help?</div>
+          <div class="text-sm font-semibold text-base-content">Precisa de ajuda?</div>
           <div class="text-xs text-base-content/60 mt-1">
-            Check our documentation for guides and tutorials.
+            Consulte a documentação para guias e tutoriais.
           </div>
-          <a href="#" class="btn btn-primary btn-sm btn-outline mt-3 w-full">View Docs</a>
+          <a
+            href="https://github.com/devsnorte/ingressos"
+            target="_blank"
+            rel="noopener"
+            class="btn btn-primary btn-sm btn-outline mt-3 w-full"
+          >
+            Ver Docs
+          </a>
         </div>
       </div>
     </aside>

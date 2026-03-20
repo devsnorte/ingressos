@@ -29,11 +29,10 @@ defmodule PretexWeb.Components.DashboardTest do
           org: @org
         )
 
-      assert html =~ "Dashboard"
-      assert html =~ "Events"
-      assert html =~ "Teams"
-      assert html =~ "Catalog"
-      assert html =~ "Main Navigation"
+      assert html =~ "Eventos"
+      assert html =~ "Equipe"
+      assert html =~ "Navegação"
+      assert html =~ "Todas as organizações"
     end
 
     test "highlights active nav item" do
