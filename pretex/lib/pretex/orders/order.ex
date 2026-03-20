@@ -20,6 +20,7 @@ defmodule Pretex.Orders.Order do
     belongs_to(:customer, Pretex.Customers.Customer)
     has_many(:order_items, Pretex.Orders.OrderItem)
     has_many(:fees, Pretex.Fees.OrderFee)
+    has_one(:voucher_redemption, Pretex.Vouchers.VoucherRedemption)
 
     timestamps(type: :utc_datetime)
   end
