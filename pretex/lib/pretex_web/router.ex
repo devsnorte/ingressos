@@ -161,6 +161,10 @@ defmodule PretexWeb.Router do
         CatalogLive.ItemForm,
         :edit
       )
+
+      live("/organizations/:org_id/events/:event_id/orders", OrderLive.Index, :index)
+      live("/organizations/:org_id/events/:event_id/orders/new", OrderLive.NewManual, :new_manual)
+      live("/organizations/:org_id/events/:event_id/orders/:id", OrderLive.Show, :show)
     end
   end
 

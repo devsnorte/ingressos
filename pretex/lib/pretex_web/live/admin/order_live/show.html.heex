@@ -1,0 +1,306 @@
+<.dashboard_layout
+  current_path={~p"/admin/organizations/#{@org}/events/#{@event}/orders"}
+  org={@org}
+  flash={@flash}
+>
+  <div class="mx-auto max-w-3xl px-4 py-8">
+    <%!-- Barra superior --%>
+    <div class="mb-6 flex items-center justify-between gap-4 flex-wrap">
+      <.link
+        navigate={~p"/admin/organizations/#{@org}/events/#{@event}/orders"}
+        class="inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-primary transition-colors"
+      >
+        <.icon name="hero-arrow-left" class="size-4" /> Voltar aos Pedidos
+      </.link>
+
+      <%!-- Ações principais --%>
+      <div class="flex items-center gap-2 flex-wrap justify-end">
+        <button
+          :if={@order.status == "confirmed"}
+          id="resend-tickets-top"
+          phx-click="resend_tickets"
+          class="btn btn-ghost btn-sm gap-1"
+        >
+          <.icon name="hero-envelope" class="size-4" /> Reenviar Ingressos
+        </button>
+
+        <button
+          :if={!@order.locked_by_organizer}
+          phx-click="lock_order"
+          class="btn btn-ghost btn-sm gap-1"
+        >
+          <.icon name="hero-lock-closed" class="size-4" /> Bloquear
+        </button>
+
+        <button
+          :if={@order.locked_by_organizer}
+          phx-click="unlock_order"
+          class="btn btn-ghost btn-sm gap-1"
+        >
+          <.icon name="hero-lock-open" class="size-4" /> Desbloquear
+        </button>
+
+        <button
+          :if={@order.status in ["pending", "confirmed"]}
+          id="cancel-order-top"
+          phx-click="cancel_order"
+          data-confirm="Cancelar este pedido? Esta ação não pode ser desfeita."
+          class="btn btn-error btn-sm gap-1"
+        >
+          <.icon name="hero-x-circle" class="size-4" /> Cancelar Pedido
+        </button>
+      </div>
+    </div>
+
+    <%!-- Alerta de bloqueio --%>
+    <div
+      :if={@order.locked_by_organizer}
+      class="alert alert-warning mb-4 flex items-start gap-3 text-sm"
+    >
+      <.icon name="hero-lock-closed" class="size-5 shrink-0 mt-0.5" />
+      <div>
+        <p class="font-semibold">Pedido bloqueado para edição</p>
+        <p class="text-warning-content/80 mt-0.5">
+          Este pedido está bloqueado pelo organizador. Desbloqueie antes de permitir alterações.
+        </p>
+      </div>
+    </div>
+
+    <%!-- Card resumo do pedido --%>
+    <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
+      <div class="card-body p-6">
+        <div class="flex items-start justify-between gap-4 mb-5 flex-wrap">
+          <div>
+            <div class="flex items-center gap-3 flex-wrap">
+              <h1 class="text-xl font-bold text-base-content font-mono">
+                #{@order.confirmation_code}
+              </h1>
+              <span class={[
+                "badge badge-lg",
+                @order.status == "pending" && "badge-warning",
+                @order.status == "confirmed" && "badge-success",
+                @order.status == "cancelled" && "badge-error",
+                @order.status == "expired" && "badge-ghost",
+                @order.status == "refunded" && "badge-info"
+              ]}>
+                {case @order.status do
+                  "pending" -> "Pendente"
+                  "confirmed" -> "Confirmado"
+                  "cancelled" -> "Cancelado"
+                  "expired" -> "Expirado"
+                  "refunded" -> "Reembolsado"
+                  other -> other
+                end}
+              </span>
+            </div>
+            <p class="text-xs text-base-content/40 mt-1">{@event.name}</p>
+          </div>
+
+          <div class="text-right">
+            <p class="text-xs text-base-content/40 uppercase tracking-wider font-semibold mb-1">
+              Total
+            </p>
+            <p class="text-2xl font-bold text-base-content">
+              R$ {Float.round(@order.total_cents / 100, 2)
+              |> :erlang.float_to_binary(decimals: 2)
+              |> String.replace(".", ",")}
+            </p>
+          </div>
+        </div>
+
+        <div class="divider my-0"></div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-5 text-sm">
+          <%!-- Nome do participante --%>
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-base-content/40 mb-1">
+              Participante
+            </p>
+            <div class="flex items-center gap-2">
+              <.icon name="hero-user" class="size-4 text-base-content/40 shrink-0" />
+              <span class="text-base-content font-medium">{@order.name}</span>
+            </div>
+          </div>
+
+          <%!-- E-mail --%>
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-base-content/40 mb-1">
+              E-mail
+            </p>
+            <div class="flex items-center gap-2">
+              <.icon name="hero-envelope" class="size-4 text-base-content/40 shrink-0" />
+              <span class="text-base-content">{@order.email}</span>
+            </div>
+          </div>
+
+          <%!-- Método de pagamento --%>
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-base-content/40 mb-1">
+              Método de Pagamento
+            </p>
+            <div class="flex items-center gap-2">
+              <.icon name="hero-credit-card" class="size-4 text-base-content/40 shrink-0" />
+              <span class="text-base-content capitalize">
+                {case @order.payment_method do
+                  "credit_card" -> "Cartão de Crédito"
+                  "debit_card" -> "Cartão de Débito"
+                  "boleto" -> "Boleto"
+                  "bank_transfer" -> "Transferência Bancária"
+                  "pix" -> "Pix"
+                  "cash" -> "Dinheiro"
+                  nil -> "Não informado"
+                  other -> other
+                end}
+              </span>
+            </div>
+          </div>
+
+          <%!-- Expiração --%>
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-base-content/40 mb-1">
+              Expiração
+            </p>
+            <div class="flex items-center gap-2">
+              <.icon name="hero-clock" class="size-4 text-base-content/40 shrink-0" />
+              <span class="text-base-content">
+                {if @order.expires_at,
+                  do: Calendar.strftime(@order.expires_at, "%d/%m/%Y %H:%M UTC"),
+                  else: "—"}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%!-- Card de itens do pedido --%>
+    <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
+      <div class="card-body p-6">
+        <h2 class="text-base font-semibold text-base-content mb-4 flex items-center gap-2">
+          <.icon name="hero-ticket" class="size-4 text-base-content/40" /> Itens do Pedido
+        </h2>
+
+        <%= if @order.order_items == [] do %>
+          <div class="flex items-center gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm">
+            <.icon name="hero-inbox" class="size-5 text-base-content/40 shrink-0" />
+            <p class="text-base-content/60">Nenhum item neste pedido.</p>
+          </div>
+        <% else %>
+          <div class="overflow-x-auto">
+            <table class="table table-sm w-full">
+              <thead>
+                <tr class="border-b border-base-200 text-xs uppercase tracking-wider text-base-content/50">
+                  <th class="px-2 py-2">Tipo de Ingresso</th>
+                  <th class="px-2 py-2">Variação</th>
+                  <th class="px-2 py-2 text-center">Qtd.</th>
+                  <th class="px-2 py-2 text-right">Preço Unit.</th>
+                  <th class="px-2 py-2 text-right">Subtotal</th>
+                  <th class="px-2 py-2">Código do Ingresso</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  :for={oi <- @order.order_items}
+                  class="border-b border-base-100 last:border-0"
+                >
+                  <td class="px-2 py-3">
+                    <span class="text-sm font-medium text-base-content">
+                      {if oi.item, do: oi.item.name, else: "—"}
+                    </span>
+                  </td>
+                  <td class="px-2 py-3">
+                    <span class="text-sm text-base-content/70">
+                      {if oi.item_variation, do: oi.item_variation.name, else: "—"}
+                    </span>
+                  </td>
+                  <td class="px-2 py-3 text-center">
+                    <span class="text-sm text-base-content">{oi.quantity}</span>
+                  </td>
+                  <td class="px-2 py-3 text-right">
+                    <span class="text-sm text-base-content">
+                      R$ {Float.round(oi.unit_price_cents / 100, 2)
+                      |> :erlang.float_to_binary(decimals: 2)
+                      |> String.replace(".", ",")}
+                    </span>
+                  </td>
+                  <td class="px-2 py-3 text-right">
+                    <span class="text-sm font-semibold text-base-content">
+                      R$ {Float.round(oi.quantity * oi.unit_price_cents / 100, 2)
+                      |> :erlang.float_to_binary(decimals: 2)
+                      |> String.replace(".", ",")}
+                    </span>
+                  </td>
+                  <td class="px-2 py-3">
+                    <span class="font-mono text-xs bg-base-200 px-2 py-1 rounded text-base-content/70">
+                      {oi.ticket_code || "—"}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%!-- Card de auditoria / linha do tempo --%>
+    <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
+      <div class="card-body p-6">
+        <h2 class="text-base font-semibold text-base-content mb-4 flex items-center gap-2">
+          <.icon name="hero-clock" class="size-4 text-base-content/40" /> Auditoria
+        </h2>
+        <ol class="relative border-l border-base-300 ml-2 space-y-4">
+          <li class="ml-4">
+            <div class="absolute -left-1.5 mt-1.5 size-3 rounded-full border border-base-100 bg-base-300">
+            </div>
+            <p class="text-xs text-base-content/40 font-medium uppercase tracking-wider">
+              Pedido criado
+            </p>
+            <p class="text-sm text-base-content mt-0.5">
+              {Calendar.strftime(@order.inserted_at, "%d/%m/%Y às %H:%M UTC")}
+            </p>
+          </li>
+          <li class="ml-4">
+            <div class="absolute -left-1.5 mt-1.5 size-3 rounded-full border border-base-100 bg-primary/40">
+            </div>
+            <p class="text-xs text-base-content/40 font-medium uppercase tracking-wider">
+              Última atualização
+            </p>
+            <p class="text-sm text-base-content mt-0.5">
+              {Calendar.strftime(@order.updated_at, "%d/%m/%Y às %H:%M UTC")}
+            </p>
+          </li>
+        </ol>
+      </div>
+    </div>
+
+    <%!-- Rodapé de ações --%>
+    <div class="flex flex-wrap items-center justify-between gap-3 mt-6">
+      <.link
+        navigate={~p"/admin/organizations/#{@org}/events/#{@event}/orders"}
+        class="btn btn-ghost btn-sm gap-1"
+      >
+        <.icon name="hero-arrow-left" class="size-4" /> Voltar à Lista
+      </.link>
+
+      <div class="flex items-center gap-2 flex-wrap justify-end">
+        <button
+          :if={@order.status == "confirmed"}
+          phx-click="resend_tickets"
+          class="btn btn-outline btn-sm gap-1"
+        >
+          <.icon name="hero-envelope" class="size-4" /> Reenviar Ingressos
+        </button>
+
+        <button
+          :if={@order.status in ["pending", "confirmed"]}
+          phx-click="cancel_order"
+          data-confirm="Cancelar este pedido? Esta ação não pode ser desfeita."
+          class="btn btn-error btn-sm gap-1"
+        >
+          <.icon name="hero-x-circle" class="size-4" /> Cancelar Pedido
+        </button>
+      </div>
+    </div>
+  </div>
+</.dashboard_layout>
