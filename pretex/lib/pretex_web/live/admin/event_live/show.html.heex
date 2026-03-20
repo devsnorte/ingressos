@@ -298,17 +298,37 @@
     <%!-- Card de tipos de ingresso --%>
     <div class="card bg-base-100 border border-base-200 shadow-sm">
       <div class="card-body p-6">
-        <h2 class="text-base font-semibold text-base-content mb-4 flex items-center gap-2">
-          <.icon name="hero-ticket" class="size-4 text-base-content/40" /> Tipos de Ingresso
-        </h2>
+        <div class="flex items-center justify-between gap-4 mb-4">
+          <h2 class="text-base font-semibold text-base-content flex items-center gap-2">
+            <.icon name="hero-ticket" class="size-4 text-base-content/40" /> Tipos de Ingresso
+          </h2>
+          <.link
+            navigate={~p"/admin/organizations/#{@org}/events/#{@event}/catalog"}
+            class="btn btn-primary btn-xs gap-1"
+          >
+            <.icon name="hero-plus" class="size-3" /> Adicionar Ingresso
+          </.link>
+        </div>
 
         <div
           :if={@ticket_count == 0}
           id="no-ticket-types-notice"
-          class="flex items-start gap-3 rounded-lg bg-warning/10 border border-warning/30 p-4 text-sm text-warning-content"
+          class="flex items-start gap-3 rounded-lg bg-warning/10 border border-warning/30 p-4 text-sm"
         >
           <.icon name="hero-exclamation-triangle" class="size-5 shrink-0 text-warning mt-0.5" />
-          <p>Adicione pelo menos um tipo de ingresso para publicar este evento.</p>
+          <div>
+            <p class="font-medium text-base-content">Nenhum tipo de ingresso configurado</p>
+            <p class="text-base-content/60 mt-1">
+              Adicione pelo menos um tipo de ingresso no
+              <.link
+                navigate={~p"/admin/organizations/#{@org}/events/#{@event}/catalog"}
+                class="text-primary font-medium hover:underline"
+              >
+                Catálogo de Itens
+              </.link>
+              para poder publicar este evento.
+            </p>
+          </div>
         </div>
         <p :if={@ticket_count != 0} id="ticket-count" class="text-sm text-base-content/70">
           {@ticket_count} tipo(s) de ingresso configurado(s).
