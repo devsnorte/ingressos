@@ -130,13 +130,25 @@ defmodule PretexWeb.EventsLive.Checkout do
                 </span>
               </div>
 
-              <%!-- Subtotal line (shown when there are fees) --%>
+              <%!-- Subtotal line (shown when there are fees or discount) --%>
               <div
-                :if={@fee_preview != []}
+                :if={@fee_preview != [] or @discount_preview > 0}
                 class="flex justify-between items-center pt-2 text-sm text-base-content/70"
               >
                 <span>Subtotal</span>
                 <span>{format_price(@cart_total)}</span>
+              </div>
+
+              <%!-- Automatic discount row --%>
+              <div
+                :if={@discount_preview > 0}
+                class="flex justify-between items-center text-sm text-success"
+              >
+                <span class="flex items-center gap-1">
+                  <.icon name="hero-tag" class="size-3" />
+                  {@applied_discount_rule_name || "Desconto Automático"}
+                </span>
+                <span>- {format_price(@discount_preview)}</span>
               </div>
 
               <%!-- Fee preview rows --%>
@@ -206,7 +218,9 @@ defmodule PretexWeb.EventsLive.Checkout do
               <div class="flex justify-between items-center pt-3 mt-2 border-t-2 border-base-200">
                 <span class="font-bold text-base-content">Total</span>
                 <span class="text-xl font-bold text-primary">
-                  {format_price(max(0, @cart_total + @fee_total - @voucher_discount))}
+                  {format_price(
+                    max(0, @cart_total + @fee_total - @discount_preview - @voucher_discount)
+                  )}
                 </span>
               </div>
             </div>
@@ -477,6 +491,8 @@ defmodule PretexWeb.EventsLive.Checkout do
       |> assign(:voucher, nil)
       |> assign(:voucher_error, nil)
       |> assign(:voucher_discount, 0)
+      |> assign(:discount_preview, 0)
+      |> assign(:applied_discount_rule_name, nil)
 
     {:ok, socket}
   end
@@ -505,12 +521,36 @@ defmodule PretexWeb.EventsLive.Checkout do
               fee_preview = Pretex.Fees.compute_fees_for_cart(event, subtotal)
               fee_total = Pretex.Fees.total_fees_cents(fee_preview)
 
+              cart_items =
+                Enum.map(cart.cart_items, fn ci ->
+                  %{
+                    item_id: ci.item_id,
+                    item_variation_id: ci.item_variation_id,
+                    quantity: ci.quantity,
+                    unit_price_cents:
+                      if(ci.item_variation && ci.item_variation.price_cents,
+                        do: ci.item_variation.price_cents,
+                        else: ci.item.price_cents
+                      )
+                  }
+                end)
+
+              discount_preview = Pretex.Discounts.compute_discount_for_cart(event.id, cart_items)
+
+              {discount_rule_name, _} =
+                case Pretex.Discounts.best_discount(event.id, cart_items) do
+                  {:ok, %{rule: r}} -> {r.name, nil}
+                  _ -> {nil, nil}
+                end
+
               socket
               |> assign(:cart, cart)
               |> assign(:cart_total, subtotal)
               |> assign(:payment_options, payment_options)
               |> assign(:fee_preview, fee_preview)
               |> assign(:fee_total, fee_total)
+              |> assign(:discount_preview, discount_preview)
+              |> assign(:applied_discount_rule_name, discount_rule_name)
             else
               socket
               |> put_flash(:error, "Seu carrinho expirou. Por favor comece novamente.")
