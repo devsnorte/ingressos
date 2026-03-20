@@ -158,11 +158,55 @@ defmodule PretexWeb.EventsLive.Checkout do
                 <span>{format_price(fee.amount_cents)}</span>
               </div>
 
+              <%!-- Voucher code input (shown when no voucher is applied) --%>
+              <div :if={is_nil(@voucher)} class="pt-2">
+                <form phx-submit="apply_voucher" class="flex gap-2">
+                  <input
+                    type="text"
+                    name="code"
+                    value=""
+                    placeholder="Código do cupom"
+                    class="input input-bordered input-sm flex-1 uppercase"
+                    autocomplete="off"
+                  />
+                  <button type="submit" class="btn btn-outline btn-sm">
+                    Aplicar
+                  </button>
+                </form>
+                <p :if={@voucher_error} class="text-xs text-error mt-1">
+                  {@voucher_error}
+                </p>
+              </div>
+
+              <%!-- Applied voucher badge + discount row --%>
+              <div :if={@voucher} class="pt-2 space-y-2">
+                <div class="flex items-center justify-between gap-2 rounded-lg bg-success/10 border border-success/30 px-3 py-2">
+                  <div class="flex items-center gap-2 text-sm">
+                    <.icon name="hero-tag" class="size-4 text-success shrink-0" />
+                    <span class="font-medium text-success">Cupom aplicado:</span>
+                    <span class="font-mono font-bold text-success">{@voucher.code}</span>
+                  </div>
+                  <button
+                    type="button"
+                    phx-click="remove_voucher"
+                    class="btn btn-ghost btn-xs text-error"
+                  >
+                    Remover
+                  </button>
+                </div>
+                <div class="flex justify-between items-center text-sm text-success">
+                  <span class="flex items-center gap-1">
+                    <.icon name="hero-receipt-percent" class="size-3" /> Cupom {@voucher.code}
+                  </span>
+                  <span>- {format_price(@voucher_discount)}</span>
+                </div>
+              </div>
+
               <%!-- Total line --%>
               <div class="flex justify-between items-center pt-3 mt-2 border-t-2 border-base-200">
                 <span class="font-bold text-base-content">Total</span>
                 <span class="text-xl font-bold text-primary">
-                  {format_price(@cart_total + @fee_total)}
+                  {format_price(max(0, @cart_total + @fee_total - @voucher_discount))}
                 </span>
               </div>
             </div>
@@ -429,6 +473,10 @@ defmodule PretexWeb.EventsLive.Checkout do
       |> assign(:payment, nil)
       |> assign(:fee_preview, [])
       |> assign(:fee_total, 0)
+      |> assign(:voucher_code, "")
+      |> assign(:voucher, nil)
+      |> assign(:voucher_error, nil)
+      |> assign(:voucher_discount, 0)
 
     {:ok, socket}
   end
@@ -637,7 +685,8 @@ defmodule PretexWeb.EventsLive.Checkout do
         name: name,
         email: email,
         payment_method: payment_method,
-        payment_provider_id: provider_id && String.to_integer(provider_id)
+        payment_provider_id: provider_id && String.to_integer(provider_id),
+        voucher_code: socket.assigns.voucher_code
       }
 
       case Orders.create_order_from_cart(cart, attrs) do
@@ -667,6 +716,65 @@ defmodule PretexWeb.EventsLive.Checkout do
            |> put_flash(:error, "Não foi possível criar o pedido: #{error_msg}")}
       end
     end
+  end
+
+  def handle_event("apply_voucher", %{"code" => code}, socket) do
+    event = socket.assigns.event
+    code = String.trim(code)
+
+    if code == "" do
+      {:noreply, assign(socket, :voucher_error, "Por favor insira um código de cupom.")}
+    else
+      case Pretex.Vouchers.validate_voucher_for_cart(event.id, code) do
+        {:ok, voucher} ->
+          subtotal = socket.assigns.cart_total + socket.assigns.fee_total
+          discount = Pretex.Vouchers.preview_discount(voucher, subtotal)
+
+          {:noreply,
+           socket
+           |> assign(:voucher_code, String.upcase(String.trim(code)))
+           |> assign(:voucher, voucher)
+           |> assign(:voucher_error, nil)
+           |> assign(:voucher_discount, discount)}
+
+        {:error, :not_found} ->
+          {:noreply,
+           socket
+           |> assign(:voucher_error, "Cupom não encontrado.")
+           |> assign(:voucher, nil)
+           |> assign(:voucher_discount, 0)}
+
+        {:error, :expired} ->
+          {:noreply,
+           socket
+           |> assign(:voucher_error, "Cupom expirado.")
+           |> assign(:voucher, nil)
+           |> assign(:voucher_discount, 0)}
+
+        {:error, :exhausted} ->
+          {:noreply,
+           socket
+           |> assign(:voucher_error, "Cupom esgotado.")
+           |> assign(:voucher, nil)
+           |> assign(:voucher_discount, 0)}
+
+        {:error, :already_applied} ->
+          {:noreply,
+           socket
+           |> assign(:voucher_error, "Já existe um cupom aplicado a este pedido.")
+           |> assign(:voucher, nil)
+           |> assign(:voucher_discount, 0)}
+      end
+    end
+  end
+
+  def handle_event("remove_voucher", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:voucher_code, "")
+     |> assign(:voucher, nil)
+     |> assign(:voucher_error, nil)
+     |> assign(:voucher_discount, 0)}
   end
 
   def handle_event("retry_payment", _params, socket) do

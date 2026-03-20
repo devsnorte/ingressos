@@ -232,7 +232,41 @@ defmodule Pretex.Orders do
             {:error, reason} -> Repo.rollback(reason)
           end
 
-        Repo.preload(order_with_fees, order_items: [:item, :item_variation], fees: [])
+        # Apply voucher if provided
+        voucher_code =
+          Map.get(attrs, :voucher_code) || Map.get(attrs, "voucher_code")
+
+        order_after_voucher =
+          if voucher_code && String.trim(voucher_code) != "" do
+            case Pretex.Vouchers.get_voucher_by_code(cart.event_id, voucher_code) do
+              {:ok, voucher} ->
+                case Pretex.Vouchers.redeem_voucher(
+                       voucher,
+                       order_with_fees,
+                       order_with_fees.total_cents
+                     ) do
+                  {:ok, redemption} ->
+                    new_total = max(0, order_with_fees.total_cents - redemption.discount_cents)
+
+                    {:ok, updated} =
+                      order_with_fees
+                      |> Ecto.Changeset.change(total_cents: new_total)
+                      |> Repo.update()
+
+                    updated
+
+                  {:error, _} ->
+                    order_with_fees
+                end
+
+              {:error, _} ->
+                order_with_fees
+            end
+          else
+            order_with_fees
+          end
+
+        Repo.preload(order_after_voucher, order_items: [:item, :item_variation], fees: [])
       end)
     end
   end
