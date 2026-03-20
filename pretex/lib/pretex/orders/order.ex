@@ -39,7 +39,8 @@ defmodule Pretex.Orders.Order do
       :payment_method,
       :expires_at,
       :payment_provider_id,
-      :locked_by_organizer
+      :locked_by_organizer,
+      :customer_id
     ])
     |> validate_required([:email, :name])
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must be a valid email")
