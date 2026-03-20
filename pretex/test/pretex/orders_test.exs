@@ -1,69 +1,15 @@
 defmodule Pretex.OrdersTest do
   use Pretex.DataCase, async: true
 
+  import Pretex.OrganizationsFixtures
+  import Pretex.EventsFixtures
+  import Pretex.CatalogFixtures
+
   alias Pretex.Orders
   alias Pretex.Orders.CartSession
   alias Pretex.Orders.CartItem
   alias Pretex.Orders.Order
   alias Pretex.Catalog
-  alias Pretex.Events
-  alias Pretex.Organizations
-
-  # ---------------------------------------------------------------------------
-  # Helpers
-  # ---------------------------------------------------------------------------
-
-  defp org_fixture(attrs \\ %{}) do
-    {:ok, org} =
-      attrs
-      |> Enum.into(%{name: "Test Org", slug: "test-org-#{System.unique_integer([:positive])}"})
-      |> Organizations.create_organization()
-
-    org
-  end
-
-  defp event_fixture(org, attrs \\ %{}) do
-    base = %{
-      name: "My Event #{System.unique_integer([:positive])}",
-      starts_at: ~U[2030-06-01 10:00:00Z],
-      ends_at: ~U[2030-06-01 18:00:00Z],
-      venue: "Main Stage"
-    }
-
-    {:ok, event} = Events.create_event(org, Enum.into(attrs, base))
-    event
-  end
-
-  defp published_event_fixture(org, attrs \\ %{}) do
-    event = event_fixture(org, attrs)
-
-    {:ok, _} = Catalog.create_item(event, %{name: "Ingresso Geral", price_cents: 5000})
-    {:ok, published} = Events.publish_event(event)
-    published
-  end
-
-  defp item_fixture(event, attrs \\ %{}) do
-    base = %{
-      name: "Test Ticket #{System.unique_integer([:positive])}",
-      price_cents: 2000,
-      item_type: "ticket",
-      status: "active"
-    }
-
-    {:ok, item} = Catalog.create_item(event, Enum.into(attrs, base))
-    item
-  end
-
-  defp variation_fixture(item, attrs \\ %{}) do
-    base = %{
-      name: "Variation #{System.unique_integer([:positive])}",
-      price_cents: 3000,
-      status: "active"
-    }
-
-    {:ok, variation} = Catalog.create_variation(item, Enum.into(attrs, base))
-    variation
-  end
 
   defp cart_fixture(event) do
     {:ok, cart} = Orders.create_cart(event)

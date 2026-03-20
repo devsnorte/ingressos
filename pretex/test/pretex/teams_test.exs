@@ -1,8 +1,9 @@
 defmodule Pretex.TeamsTest do
   use Pretex.DataCase, async: true
 
+  import Pretex.OrganizationsFixtures
+
   alias Pretex.Accounts
-  alias Pretex.Organizations
   alias Pretex.Teams
   alias Pretex.Teams.Membership
   alias Pretex.Teams.Invitation
@@ -10,15 +11,6 @@ defmodule Pretex.TeamsTest do
   # ---------------------------------------------------------------------------
   # Fixtures
   # ---------------------------------------------------------------------------
-
-  defp org_fixture(attrs \\ %{}) do
-    {:ok, org} =
-      attrs
-      |> Enum.into(%{name: "Test Org", slug: unique_slug()})
-      |> Organizations.create_organization()
-
-    org
-  end
 
   defp user_fixture(attrs \\ %{}) do
     {:ok, user} =
@@ -36,10 +28,6 @@ defmodule Pretex.TeamsTest do
       |> then(&Teams.create_membership(org, user, &1))
 
     membership
-  end
-
-  defp unique_slug do
-    "test-org-#{System.unique_integer([:positive])}"
   end
 
   defp unique_email do

@@ -2,38 +2,14 @@ defmodule PretexWeb.Admin.EventLiveTest do
   use PretexWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
+  import Pretex.OrganizationsFixtures
+  import Pretex.EventsFixtures
+  import Pretex.CatalogFixtures
 
   alias Pretex.Events
-  alias Pretex.Organizations
-
-  # ---------------------------------------------------------------------------
-  # Helpers
-  # ---------------------------------------------------------------------------
-
-  defp org_fixture(attrs \\ %{}) do
-    {:ok, org} =
-      attrs
-      |> Enum.into(%{name: "Test Org", slug: "test-org-#{System.unique_integer([:positive])}"})
-      |> Organizations.create_organization()
-
-    org
-  end
-
-  defp event_fixture(org, attrs \\ %{}) do
-    base = %{
-      name: "Test Event #{System.unique_integer([:positive])}",
-      starts_at: ~U[2030-06-01 10:00:00Z],
-      ends_at: ~U[2030-06-01 18:00:00Z],
-      venue: "Main Stage"
-    }
-
-    {:ok, event} = Events.create_event(org, Enum.into(attrs, base))
-    event
-  end
 
   defp catalog_item_fixture(event) do
-    {:ok, item} = Pretex.Catalog.create_item(event, %{name: "Ingresso Geral", price_cents: 5000})
-    item
+    item_fixture(event, %{name: "Ingresso Geral", price_cents: 5000})
   end
 
   # ---------------------------------------------------------------------------

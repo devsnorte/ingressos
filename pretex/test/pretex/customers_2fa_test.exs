@@ -1,5 +1,5 @@
 defmodule Pretex.Customers2faTest do
-  use Pretex.DataCase
+  use Pretex.DataCase, async: true
 
   alias Pretex.Customers
 

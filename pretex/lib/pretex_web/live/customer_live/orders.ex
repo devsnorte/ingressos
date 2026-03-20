@@ -119,15 +119,14 @@ defmodule PretexWeb.CustomerLive.Orders do
 
   @impl true
   def mount(_params, _session, socket) do
+    {:ok, assign(socket, :page_title, "Meus Pedidos")}
+  end
+
+  @impl true
+  def handle_params(_params, _uri, socket) do
     customer = socket.assigns.current_scope.customer
     orders = Orders.list_orders_for_customer(customer.id)
-
-    socket =
-      socket
-      |> assign(:page_title, "My Orders")
-      |> assign(:orders, orders)
-
-    {:ok, socket}
+    {:noreply, assign(socket, :orders, orders)}
   end
 
   defp format_price(nil), do: "Free"
