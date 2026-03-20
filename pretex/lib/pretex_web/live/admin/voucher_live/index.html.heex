@@ -1,0 +1,484 @@
+<.dashboard_layout
+  current_path={~p"/admin/organizations/#{@org}/events/#{@event}/vouchers"}
+  org={@org}
+  flash={@flash}
+>
+  <div class="mx-auto max-w-5xl px-4 py-8">
+    <%!-- Barra superior --%>
+    <div class="mb-6 flex items-center justify-between gap-4 flex-wrap">
+      <.link
+        navigate={~p"/admin/organizations/#{@org}/events/#{@event}"}
+        class="inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-primary transition-colors"
+      >
+        <.icon name="hero-arrow-left" class="size-4" /> Voltar ao Evento
+      </.link>
+
+      <div class="flex items-center gap-2">
+        <.link
+          patch={~p"/admin/organizations/#{@org}/events/#{@event}/vouchers/bulk"}
+          class="btn btn-outline btn-sm gap-1"
+        >
+          <.icon name="hero-squares-plus" class="size-4" /> Geração em Lote
+        </.link>
+        <.link
+          patch={~p"/admin/organizations/#{@org}/events/#{@event}/vouchers/new"}
+          class="btn btn-primary btn-sm gap-1"
+        >
+          <.icon name="hero-plus" class="size-4" /> Novo Voucher
+        </.link>
+      </div>
+    </div>
+
+    <%!-- Título da página --%>
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-base-content">Vouchers</h1>
+      <p class="text-sm text-base-content/60 mt-1">{@event.name}</p>
+    </div>
+
+    <%!-- Filtros por tag --%>
+    <div :if={@tags != []} class="mb-4 flex items-center gap-2 flex-wrap">
+      <span class="text-xs font-medium text-base-content/50 uppercase tracking-wide">
+        Filtrar por tag:
+      </span>
+      <button
+        phx-click="filter_tag"
+        phx-value-tag=""
+        class={[
+          "badge badge-sm cursor-pointer",
+          is_nil(@tag_filter) && "badge-primary",
+          !is_nil(@tag_filter) && "badge-ghost hover:badge-primary"
+        ]}
+      >
+        Todos
+      </button>
+      <button
+        :for={tag <- @tags}
+        phx-click="filter_tag"
+        phx-value-tag={tag}
+        class={[
+          "badge badge-sm cursor-pointer",
+          @tag_filter == tag && "badge-secondary",
+          @tag_filter != tag && "badge-ghost hover:badge-secondary"
+        ]}
+      >
+        {tag}
+      </button>
+    </div>
+
+    <%!-- Tabela de vouchers --%>
+    <div class="card bg-base-100 border border-base-200 shadow-sm overflow-hidden">
+      <div id="vouchers" phx-update="stream">
+        <%!-- Estado vazio --%>
+        <div
+          id="vouchers-empty-state"
+          class="hidden only:flex flex-col items-center justify-center py-20 text-center px-4"
+        >
+          <.icon name="hero-ticket" class="size-12 text-base-content/20 mb-4" />
+          <p class="text-base font-semibold text-base-content/50">Nenhum voucher cadastrado.</p>
+          <p class="text-sm text-base-content/40 mt-1">
+            Crie vouchers individuais ou gere em lote para oferecer descontos e acesso especial.
+          </p>
+          <.link
+            patch={~p"/admin/organizations/#{@org}/events/#{@event}/vouchers/new"}
+            class="btn btn-primary btn-sm mt-6 gap-1"
+          >
+            <.icon name="hero-plus" class="size-4" /> Novo Voucher
+          </.link>
+        </div>
+
+        <div
+          :for={{dom_id, voucher} <- @streams.vouchers}
+          id={dom_id}
+          class="flex flex-col sm:flex-row sm:items-center gap-3 px-5 py-4 border-b border-base-200 last:border-0 hover:bg-base-50 transition-colors"
+        >
+          <%!-- Código e efeito --%>
+          <div class="flex-1 min-w-0">
+            <p class="font-mono font-bold text-base-content tracking-wider">{voucher.code}</p>
+            <div class="flex items-center gap-2 mt-1 flex-wrap">
+              <span class="badge badge-ghost badge-sm">
+                {case voucher.effect do
+                  "fixed_discount" -> "Desconto Fixo"
+                  "percentage_discount" -> "Desconto Percentual"
+                  "custom_price" -> "Preço Personalizado"
+                  "reveal" -> "Revelar Item"
+                  "grant_access" -> "Acesso Especial"
+                  other -> other
+                end}
+              </span>
+              <span :if={voucher.tag} class="badge badge-secondary badge-sm">
+                {voucher.tag}
+              </span>
+            </div>
+          </div>
+
+          <%!-- Valor --%>
+          <div class="shrink-0 text-right min-w-[80px]">
+            <p class="font-mono font-semibold text-base-content text-sm">
+              {case voucher.effect do
+                "fixed_discount" ->
+                  reais = div(voucher.value, 100)
+                  cents = rem(voucher.value, 100)
+                  "R$ #{reais},#{String.pad_leading(Integer.to_string(cents), 2, "0")}"
+
+                "percentage_discount" ->
+                  int_part = div(voucher.value, 100)
+                  dec_part = rem(voucher.value, 100)
+                  "#{int_part},#{String.pad_leading(Integer.to_string(dec_part), 2, "0")}%"
+
+                "custom_price" ->
+                  reais = div(voucher.value, 100)
+                  cents = rem(voucher.value, 100)
+                  "R$ #{reais},#{String.pad_leading(Integer.to_string(cents), 2, "0")}"
+
+                _ ->
+                  "—"
+              end}
+            </p>
+          </div>
+
+          <%!-- Usos --%>
+          <div class="shrink-0 text-center min-w-[70px]">
+            <p class="text-sm font-semibold text-base-content">
+              {voucher.used_count}/{if voucher.max_uses, do: voucher.max_uses, else: "∞"}
+            </p>
+            <p class="text-xs text-base-content/40">usos</p>
+          </div>
+
+          <%!-- Expiração --%>
+          <div class="shrink-0 text-right min-w-[110px]">
+            <p class="text-xs text-base-content/60">
+              {if voucher.valid_until,
+                do: Calendar.strftime(voucher.valid_until, "%d/%m/%Y %H:%M"),
+                else: "Sem expiração"}
+            </p>
+          </div>
+
+          <%!-- Status ativo --%>
+          <div class="shrink-0">
+            <span class={[
+              "badge badge-sm",
+              voucher.active && "badge-success",
+              !voucher.active && "badge-error"
+            ]}>
+              {if voucher.active, do: "Ativo", else: "Inativo"}
+            </span>
+          </div>
+
+          <%!-- Ações --%>
+          <div class="flex items-center gap-2 shrink-0">
+            <button
+              id={"toggle-#{voucher.id}"}
+              phx-click="toggle_active"
+              phx-value-id={voucher.id}
+              class="btn btn-ghost btn-xs"
+              title={if voucher.active, do: "Desativar", else: "Ativar"}
+            >
+              {if voucher.active, do: "Desativar", else: "Ativar"}
+            </button>
+
+            <.link
+              patch={
+                ~p"/admin/organizations/#{@org}/events/#{@event}/vouchers/#{voucher.id}/edit"
+              }
+              class="btn btn-ghost btn-xs"
+            >
+              Editar
+            </.link>
+
+            <button
+              id={"delete-#{voucher.id}"}
+              phx-click="delete"
+              phx-value-id={voucher.id}
+              data-confirm="Excluir este voucher? Esta ação não pode ser desfeita."
+              class="btn btn-ghost btn-xs text-error hover:bg-error hover:text-error-content"
+            >
+              Excluir
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%!-- Modal: Novo / Editar Voucher --%>
+  <div :if={@live_action in [:new, :edit]}>
+    <div
+      id="voucher-modal-backdrop"
+      class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+      phx-click="close_modal"
+    >
+    </div>
+
+    <div
+      id="voucher-modal"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        class="w-full max-w-lg bg-base-100 rounded-2xl shadow-2xl border border-base-200 overflow-hidden max-h-[90vh] flex flex-col"
+        phx-click-away="close_modal"
+      >
+        <%!-- Cabeçalho do modal --%>
+        <div class="flex items-center justify-between px-6 py-4 border-b border-base-200 shrink-0">
+          <h2 class="text-lg font-bold text-base-content">
+            {if @live_action == :new, do: "Novo Voucher", else: "Editar Voucher"}
+          </h2>
+          <button
+            type="button"
+            phx-click="close_modal"
+            class="btn btn-ghost btn-sm btn-circle"
+            aria-label="Fechar"
+          >
+            <.icon name="hero-x-mark" class="size-5" />
+          </button>
+        </div>
+
+        <%!-- Corpo do modal --%>
+        <div class="px-6 py-5 overflow-y-auto">
+          <.form
+            for={@form}
+            id="voucher-form"
+            phx-change="validate"
+            phx-submit="save"
+            class="space-y-4"
+          >
+            <%!-- Código --%>
+            <div>
+              <.input
+                field={@form[:code]}
+                type="text"
+                label="Código"
+                placeholder="Ex: DESCONTO10"
+                required
+              />
+              <p class="text-xs text-base-content/50 mt-1">
+                O código será convertido para maiúsculas automaticamente.
+              </p>
+            </div>
+
+            <%!-- Efeito --%>
+            <.input
+              field={@form[:effect]}
+              type="select"
+              label="Efeito"
+              options={[
+                {"Desconto Fixo", "fixed_discount"},
+                {"Desconto Percentual", "percentage_discount"},
+                {"Preço Personalizado", "custom_price"},
+                {"Revelar Item", "reveal"},
+                {"Acesso Especial", "grant_access"}
+              ]}
+            />
+
+            <%!-- Valor --%>
+            <div>
+              <.input
+                field={@form[:value]}
+                type="number"
+                label="Valor"
+                min="0"
+              />
+              <p class="text-xs text-base-content/50 mt-1">
+                {case @form[:effect].value do
+                  "fixed_discount" -> "Em centavos: 1000 = R$ 10,00 · 500 = R$ 5,00"
+                  "percentage_discount" -> "Em pontos base: 500 = 5,00% · 1000 = 10,00%"
+                  "custom_price" -> "Preço final em centavos: 5000 = R$ 50,00"
+                  _ -> "Não utilizado para este efeito."
+                end}
+              </p>
+            </div>
+
+            <%!-- Limite de usos totais --%>
+            <div>
+              <.input
+                field={@form[:max_uses]}
+                type="number"
+                label="Limite Total de Usos (opcional)"
+                min="1"
+                placeholder="Deixe em branco para ilimitado"
+              />
+            </div>
+
+            <%!-- Limite por código --%>
+            <.input
+              field={@form[:max_uses_per_code]}
+              type="number"
+              label="Limite por Código"
+              min="1"
+            />
+
+            <%!-- Validade --%>
+            <.input
+              field={@form[:valid_until]}
+              type="datetime-local"
+              label="Válido até (opcional)"
+            />
+
+            <%!-- Tag --%>
+            <div>
+              <.input
+                field={@form[:tag]}
+                type="text"
+                label="Tag (opcional)"
+                placeholder="Ex: influencer, parceiro, vip"
+              />
+              <p class="text-xs text-base-content/50 mt-1">
+                Use tags para agrupar e filtrar vouchers.
+              </p>
+            </div>
+
+            <%!-- Ativo --%>
+            <.input
+              field={@form[:active]}
+              type="checkbox"
+              label="Ativo"
+            />
+            <p class="text-xs text-base-content/50 -mt-3 ml-1">
+              Vouchers inativos não podem ser utilizados no checkout.
+            </p>
+
+            <%!-- Botões --%>
+            <div class="flex justify-end gap-3 pt-2">
+              <button type="button" phx-click="close_modal" class="btn btn-ghost btn-sm">
+                Cancelar
+              </button>
+              <.button type="submit" variant="primary" phx-disable-with="Salvando...">
+                {if @live_action == :new, do: "Criar Voucher", else: "Salvar Alterações"}
+              </.button>
+            </div>
+          </.form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%!-- Modal: Geração em Lote --%>
+  <div :if={@live_action == :bulk}>
+    <div
+      id="bulk-modal-backdrop"
+      class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+      phx-click="close_modal"
+    >
+    </div>
+
+    <div
+      id="bulk-modal"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        class="w-full max-w-lg bg-base-100 rounded-2xl shadow-2xl border border-base-200 overflow-hidden max-h-[90vh] flex flex-col"
+        phx-click-away="close_modal"
+      >
+        <%!-- Cabeçalho do modal --%>
+        <div class="flex items-center justify-between px-6 py-4 border-b border-base-200 shrink-0">
+          <h2 class="text-lg font-bold text-base-content">Geração em Lote</h2>
+          <button
+            type="button"
+            phx-click="close_modal"
+            class="btn btn-ghost btn-sm btn-circle"
+            aria-label="Fechar"
+          >
+            <.icon name="hero-x-mark" class="size-5" />
+          </button>
+        </div>
+
+        <%!-- Corpo do modal --%>
+        <div class="px-6 py-5 overflow-y-auto">
+          <p class="text-sm text-base-content/60 mb-4">
+            Gere múltiplos vouchers com um prefixo comum e sufixo aleatório de 6 caracteres.
+          </p>
+
+          <.form
+            for={@bulk_form}
+            id="bulk-form"
+            phx-change="validate_bulk"
+            phx-submit="save_bulk"
+            class="space-y-4"
+          >
+            <%!-- Prefixo --%>
+            <div>
+              <.input
+                field={@bulk_form[:prefix]}
+                type="text"
+                label="Prefixo"
+                placeholder="Ex: VERAO25"
+              />
+              <p class="text-xs text-base-content/50 mt-1">
+                O código final será: PREFIXO + 6 caracteres aleatórios (ex: VERAO25AB3K9F).
+              </p>
+            </div>
+
+            <%!-- Quantidade --%>
+            <.input
+              field={@bulk_form[:quantity]}
+              type="number"
+              label="Quantidade"
+              min="1"
+              max="1000"
+              required
+            />
+
+            <%!-- Efeito --%>
+            <.input
+              field={@bulk_form[:effect]}
+              type="select"
+              label="Efeito"
+              options={[
+                {"Desconto Fixo", "fixed_discount"},
+                {"Desconto Percentual", "percentage_discount"},
+                {"Preço Personalizado", "custom_price"},
+                {"Revelar Item", "reveal"},
+                {"Acesso Especial", "grant_access"}
+              ]}
+            />
+
+            <%!-- Valor --%>
+            <.input
+              field={@bulk_form[:value]}
+              type="number"
+              label="Valor"
+              min="0"
+            />
+
+            <%!-- Limite de usos totais --%>
+            <.input
+              field={@bulk_form[:max_uses]}
+              type="number"
+              label="Limite de Usos por Voucher (opcional)"
+              min="1"
+              placeholder="Deixe em branco para ilimitado"
+            />
+
+            <%!-- Validade --%>
+            <.input
+              field={@bulk_form[:valid_until]}
+              type="datetime-local"
+              label="Válido até (opcional)"
+            />
+
+            <%!-- Tag --%>
+            <.input
+              field={@bulk_form[:tag]}
+              type="text"
+              label="Tag (opcional)"
+              placeholder="Ex: lote1, parceiro, vip"
+            />
+
+            <%!-- Botões --%>
+            <div class="flex justify-end gap-3 pt-2">
+              <button type="button" phx-click="close_modal" class="btn btn-ghost btn-sm">
+                Cancelar
+              </button>
+              <.button type="submit" variant="primary" phx-disable-with="Gerando...">
+                Gerar Vouchers
+              </.button>
+            </div>
+          </.form>
+        </div>
+      </div>
+    </div>
+  </div>
+</.dashboard_layout>
