@@ -5,6 +5,7 @@ defmodule PretexWeb.Components.Dashboard do
   """
   use Phoenix.Component
   import PretexWeb.CoreComponents, only: [icon: 1]
+  import PretexWeb.Layouts, only: [flash_group: 1]
 
   # 1. dashboard_layout/1
   # Shell wrapping sidebar + content area
@@ -44,11 +45,27 @@ defmodule PretexWeb.Components.Dashboard do
   def sidebar(assigns) do
     nav_items = [
       %{icon: "hero-home", label: "Dashboard", path: "/admin/organizations/#{assigns.org.id}"},
-      %{icon: "hero-calendar-days", label: "Events", path: "/admin/organizations/#{assigns.org.id}/events"},
+      %{
+        icon: "hero-calendar-days",
+        label: "Events",
+        path: "/admin/organizations/#{assigns.org.id}/events"
+      },
       %{icon: "hero-users", label: "Teams", path: "/admin/organizations/#{assigns.org.id}/teams"},
-      %{icon: "hero-ticket", label: "Catalog", path: "/admin/organizations/#{assigns.org.id}/catalog"},
-      %{icon: "hero-rectangle-stack", label: "Quotas", path: "/admin/organizations/#{assigns.org.id}/quotas"},
-      %{icon: "hero-question-mark-circle", label: "Questions", path: "/admin/organizations/#{assigns.org.id}/questions"},
+      %{
+        icon: "hero-ticket",
+        label: "Catalog",
+        path: "/admin/organizations/#{assigns.org.id}/catalog"
+      },
+      %{
+        icon: "hero-rectangle-stack",
+        label: "Quotas",
+        path: "/admin/organizations/#{assigns.org.id}/quotas"
+      },
+      %{
+        icon: "hero-question-mark-circle",
+        label: "Questions",
+        path: "/admin/organizations/#{assigns.org.id}/questions"
+      },
       %{icon: "hero-chart-bar", label: "Reports", path: "#", disabled: true},
       %{icon: "hero-cog-6-tooth", label: "Settings", path: "#", disabled: true}
     ]
@@ -68,7 +85,9 @@ defmodule PretexWeb.Components.Dashboard do
       </div>
 
       <div class="px-4 pt-4 pb-2">
-        <span class="text-xs font-semibold text-base-content/40 uppercase tracking-wider">Main Navigation</span>
+        <span class="text-xs font-semibold text-base-content/40 uppercase tracking-wider">
+          Main Navigation
+        </span>
       </div>
 
       <nav class="flex-1 flex flex-col gap-0.5 px-2">
@@ -85,7 +104,9 @@ defmodule PretexWeb.Components.Dashboard do
       <div class="p-4 mt-auto">
         <div class="rounded-xl bg-primary/5 p-4">
           <div class="text-sm font-semibold text-base-content">Need Help?</div>
-          <div class="text-xs text-base-content/60 mt-1">Check our documentation for guides and tutorials.</div>
+          <div class="text-xs text-base-content/60 mt-1">
+            Check our documentation for guides and tutorials.
+          </div>
           <a href="#" class="btn btn-primary btn-sm btn-outline mt-3 w-full">View Docs</a>
         </div>
       </div>
@@ -272,6 +293,92 @@ defmodule PretexWeb.Components.Dashboard do
           <.icon name={@icon} class="w-5 h-5 text-primary" />
         </div>
       </div>
+    </div>
+    """
+  end
+
+  # ============================================================
+  # Customer layout — clean nav for attendee-facing pages
+  # ============================================================
+  attr :current_scope, :map, default: nil
+  attr :current_path, :string, default: ""
+  attr :flash, :map, default: %{}
+  slot :inner_block, required: true
+
+  def customer_layout(assigns) do
+    ~H"""
+    <div class="min-h-screen bg-base-200">
+      <%!-- Top navbar --%>
+      <nav class="navbar bg-base-100 border-b border-base-300 sticky top-0 z-30">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+          <a href="/" class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+              <.icon name="hero-ticket" class="w-4 h-4 text-primary-content" />
+            </div>
+            <span class="font-bold text-base-content">Pretex</span>
+          </a>
+
+          <div class="hidden sm:flex items-center gap-6 text-sm">
+            <a
+              href="/events"
+              class={[
+                "hover:text-primary transition-colors",
+                @current_path == "/events" && "text-primary font-medium"
+              ]}
+            >
+              Eventos
+            </a>
+            <a
+              :if={@current_scope && @current_scope.customer}
+              href="/account/orders"
+              class={[
+                "hover:text-primary transition-colors",
+                String.starts_with?(@current_path, "/account") && "text-primary font-medium"
+              ]}
+            >
+              Minha Conta
+            </a>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span
+              :if={@current_scope && @current_scope.customer}
+              class="text-sm text-base-content/60 hidden md:inline"
+            >
+              {@current_scope.customer.email}
+            </span>
+            <a
+              :if={@current_scope && @current_scope.customer}
+              href="/customers/log-out"
+              method="delete"
+              class="btn btn-ghost btn-sm"
+            >
+              Sair
+            </a>
+            <a
+              :if={!@current_scope || !@current_scope.customer}
+              href="/customers/log-in"
+              class="btn btn-ghost btn-sm"
+            >
+              Entrar
+            </a>
+            <a
+              :if={!@current_scope || !@current_scope.customer}
+              href="/customers/register"
+              class="btn btn-primary btn-sm"
+            >
+              Criar Conta
+            </a>
+          </div>
+        </div>
+      </nav>
+
+      <%!-- Main content --%>
+      <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {render_slot(@inner_block)}
+      </main>
+
+      <.flash_group flash={@flash} />
     </div>
     """
   end

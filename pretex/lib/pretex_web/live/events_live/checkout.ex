@@ -7,8 +7,12 @@ defmodule PretexWeb.EventsLive.Checkout do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+    <.customer_layout
+      current_scope={@current_scope}
+      current_path={"/events/#{@event.slug}/checkout"}
+      flash={@flash}
+    >
+      <div class="mx-auto max-w-3xl">
         <%!-- Step indicator --%>
         <div class="mb-8">
           <nav class="flex items-center justify-center gap-4">
@@ -25,7 +29,7 @@ defmodule PretexWeb.EventsLive.Checkout do
               ]}>
                 1
               </span>
-              Your Info
+              Informações
             </div>
 
             <div class="h-px w-12 bg-base-200" />
@@ -43,157 +47,158 @@ defmodule PretexWeb.EventsLive.Checkout do
               ]}>
                 2
               </span>
-              Review & Pay
+              Pagamento
             </div>
           </nav>
         </div>
 
-        <%= if @live_action == :info do %>
-          <%!-- Info step --%>
-          <div class="rounded-2xl border border-base-200 bg-base-100 shadow-sm p-6">
-            <h2 class="text-xl font-bold text-base-content mb-6">Your Information</h2>
+        <%!-- Info step --%>
+        <div
+          :if={@live_action == :info}
+          class="rounded-2xl border border-base-200 bg-base-100 shadow-sm p-6"
+        >
+          <h2 class="text-xl font-bold text-base-content mb-6">Suas Informações</h2>
 
-            <.form
-              for={@form}
-              id="checkout-info-form"
-              phx-submit="submit_info"
-              phx-change="validate_info"
-              class="space-y-5"
-            >
-              <.input
-                field={@form[:name]}
-                type="text"
-                label="Full Name"
-                placeholder="Your full name"
-                required
-              />
-              <.input
-                field={@form[:email]}
-                type="email"
-                label="Email"
-                placeholder="you@example.com"
-                required
-              />
+          <.form
+            for={@form}
+            id="checkout-info-form"
+            phx-submit="submit_info"
+            phx-change="validate_info"
+            class="space-y-5"
+          >
+            <.input
+              field={@form[:name]}
+              type="text"
+              label="Nome Completo"
+              placeholder="Seu nome completo"
+              required
+            />
+            <.input
+              field={@form[:email]}
+              type="email"
+              label="E-mail"
+              placeholder="voce@exemplo.com"
+              required
+            />
 
-              <div class="pt-4 flex gap-3">
-                <button
-                  type="button"
-                  phx-click="back_to_event"
-                  class="btn btn-ghost flex-1"
-                >
-                  <.icon name="hero-arrow-left" class="size-4" /> Back
-                </button>
-                <button type="submit" class="btn btn-primary flex-1">
-                  Continue to Review <.icon name="hero-arrow-right" class="size-4" />
-                </button>
-              </div>
-            </.form>
-          </div>
-        <% end %>
-
-        <%= if @live_action == :summary do %>
-          <%!-- Summary step --%>
-          <div class="space-y-6">
-            <%!-- Order summary --%>
-            <div class="rounded-2xl border border-base-200 bg-base-100 shadow-sm overflow-hidden">
-              <div class="p-5 border-b border-base-200 bg-base-200/30">
-                <h2 class="text-lg font-bold text-base-content">Order Summary</h2>
-              </div>
-              <div class="p-5 space-y-3">
-                <div class="text-sm text-base-content/60 mb-3">
-                  <span class="font-medium text-base-content">{@event.name}</span>
-                </div>
-
-                <%= for cart_item <- @cart.cart_items do %>
-                  <div class="flex justify-between items-center text-sm py-2 border-b border-base-100 last:border-0">
-                    <div>
-                      <p class="font-medium text-base-content">{cart_item.item.name}</p>
-                      <%= if cart_item.item_variation do %>
-                        <p class="text-xs text-base-content/50">{cart_item.item_variation.name}</p>
-                      <% end %>
-                      <p class="text-xs text-base-content/50 mt-0.5">
-                        Qty: {cart_item.quantity}
-                      </p>
-                    </div>
-                    <span class="font-semibold text-base-content">
-                      {format_price(cart_item.quantity * item_unit_price(cart_item))}
-                    </span>
-                  </div>
-                <% end %>
-
-                <div class="flex justify-between items-center pt-3 mt-2 border-t-2 border-base-200">
-                  <span class="font-bold text-base-content">Total</span>
-                  <span class="text-xl font-bold text-primary">{format_price(@cart_total)}</span>
-                </div>
-              </div>
-            </div>
-
-            <%!-- Attendee info --%>
-            <div class="rounded-2xl border border-base-200 bg-base-100 shadow-sm p-5">
-              <div class="flex justify-between items-center mb-3">
-                <h3 class="font-semibold text-base-content">Attendee Info</h3>
-                <button
-                  phx-click="back_to_info"
-                  class="btn btn-ghost btn-xs text-primary"
-                >
-                  Edit
-                </button>
-              </div>
-              <div class="text-sm text-base-content/70 space-y-1">
-                <p><span class="font-medium text-base-content">Name:</span> {@attendee_name}</p>
-                <p><span class="font-medium text-base-content">Email:</span> {@attendee_email}</p>
-              </div>
-            </div>
-
-            <%!-- Payment method --%>
-            <div class="rounded-2xl border border-base-200 bg-base-100 shadow-sm p-5">
-              <h3 class="font-semibold text-base-content mb-4">Payment Method</h3>
-              <div class="grid grid-cols-2 gap-3">
-                <%= for {method, label, icon} <- payment_methods() do %>
-                  <button
-                    id={"pay-#{method}"}
-                    phx-click="select_payment"
-                    phx-value-method={method}
-                    class={[
-                      "flex items-center gap-3 rounded-xl border-2 p-4 text-sm font-medium transition-all duration-150 text-left",
-                      if(@payment_method == method,
-                        do: "border-primary bg-primary/5 text-primary",
-                        else:
-                          "border-base-200 bg-base-100 text-base-content/70 hover:border-primary/40 hover:bg-primary/5"
-                      )
-                    ]}
-                  >
-                    <.icon name={icon} class="size-5 shrink-0" />
-                    <span>{label}</span>
-                    <%= if @payment_method == method do %>
-                      <.icon name="hero-check-circle" class="size-4 ml-auto text-primary" />
-                    <% end %>
-                  </button>
-                <% end %>
-              </div>
-            </div>
-
-            <%!-- Place order --%>
-            <div class="flex gap-3">
+            <div class="pt-4 flex gap-3">
               <button
-                phx-click="back_to_info"
+                type="button"
+                phx-click="back_to_event"
                 class="btn btn-ghost flex-1"
               >
-                <.icon name="hero-arrow-left" class="size-4" /> Back
+                <.icon name="hero-arrow-left" class="size-4" /> Voltar
               </button>
-              <button
-                id="place-order-btn"
-                phx-click="place_order"
-                disabled={is_nil(@payment_method)}
-                class="btn btn-primary flex-1 gap-2"
+              <button type="submit" class="btn btn-primary flex-1">
+                Continuar <.icon name="hero-arrow-right" class="size-4" />
+              </button>
+            </div>
+          </.form>
+        </div>
+
+        <%!-- Summary step --%>
+        <div :if={@live_action == :summary} class="space-y-6">
+          <%!-- Order summary --%>
+          <div class="rounded-2xl border border-base-200 bg-base-100 shadow-sm overflow-hidden">
+            <div class="p-5 border-b border-base-200 bg-base-200/30">
+              <h2 class="text-lg font-bold text-base-content">Resumo do Pedido</h2>
+            </div>
+            <div class="p-5 space-y-3">
+              <div class="text-sm text-base-content/60 mb-3">
+                <span class="font-medium text-base-content">{@event.name}</span>
+              </div>
+
+              <div
+                :for={cart_item <- @cart.cart_items}
+                class="flex justify-between items-center text-sm py-2 border-b border-base-100 last:border-0"
               >
-                <.icon name="hero-lock-closed" class="size-4" /> Complete Order
+                <div>
+                  <p class="font-medium text-base-content">{cart_item.item.name}</p>
+                  <p :if={cart_item.item_variation} class="text-xs text-base-content/50">
+                    {cart_item.item_variation.name}
+                  </p>
+                  <p class="text-xs text-base-content/50 mt-0.5">
+                    Qtd: {cart_item.quantity}
+                  </p>
+                </div>
+                <span class="font-semibold text-base-content">
+                  {format_price(cart_item.quantity * item_unit_price(cart_item))}
+                </span>
+              </div>
+
+              <div class="flex justify-between items-center pt-3 mt-2 border-t-2 border-base-200">
+                <span class="font-bold text-base-content">Total</span>
+                <span class="text-xl font-bold text-primary">{format_price(@cart_total)}</span>
+              </div>
+            </div>
+          </div>
+
+          <%!-- Attendee info --%>
+          <div class="rounded-2xl border border-base-200 bg-base-100 shadow-sm p-5">
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="font-semibold text-base-content">Dados do Participante</h3>
+              <button
+                phx-click="back_to_info"
+                class="btn btn-ghost btn-xs text-primary"
+              >
+                Editar
+              </button>
+            </div>
+            <div class="text-sm text-base-content/70 space-y-1">
+              <p><span class="font-medium text-base-content">Nome:</span> {@attendee_name}</p>
+              <p><span class="font-medium text-base-content">E-mail:</span> {@attendee_email}</p>
+            </div>
+          </div>
+
+          <%!-- Payment method --%>
+          <div class="rounded-2xl border border-base-200 bg-base-100 shadow-sm p-5">
+            <h3 class="font-semibold text-base-content mb-4">Forma de Pagamento</h3>
+            <div class="grid grid-cols-2 gap-3">
+              <button
+                :for={{method, label, icon} <- payment_methods()}
+                id={"pay-#{method}"}
+                phx-click="select_payment"
+                phx-value-method={method}
+                class={[
+                  "flex items-center gap-3 rounded-xl border-2 p-4 text-sm font-medium transition-all duration-150 text-left",
+                  if(@payment_method == method,
+                    do: "border-primary bg-primary/5 text-primary",
+                    else:
+                      "border-base-200 bg-base-100 text-base-content/70 hover:border-primary/40 hover:bg-primary/5"
+                  )
+                ]}
+              >
+                <.icon name={icon} class="size-5 shrink-0" />
+                <span>{label}</span>
+                <.icon
+                  :if={@payment_method == method}
+                  name="hero-check-circle"
+                  class="size-4 ml-auto text-primary"
+                />
               </button>
             </div>
           </div>
-        <% end %>
+
+          <%!-- Place order --%>
+          <div class="flex gap-3">
+            <button
+              phx-click="back_to_info"
+              class="btn btn-ghost flex-1"
+            >
+              <.icon name="hero-arrow-left" class="size-4" /> Voltar
+            </button>
+            <button
+              id="place-order-btn"
+              phx-click="place_order"
+              disabled={is_nil(@payment_method)}
+              class="btn btn-primary flex-1 gap-2"
+            >
+              <.icon name="hero-lock-closed" class="size-4" /> Concluir Pedido
+            </button>
+          </div>
+        </div>
       </div>
-    </Layouts.app>
+    </.customer_layout>
     """
   end
 
@@ -366,10 +371,10 @@ defmodule PretexWeb.EventsLive.Checkout do
 
   defp payment_methods do
     [
-      {"credit_card", "Credit Card", "hero-credit-card"},
+      {"credit_card", "Cartão de Crédito", "hero-credit-card"},
       {"pix", "Pix", "hero-qr-code"},
       {"boleto", "Boleto", "hero-document-text"},
-      {"bank_transfer", "Bank Transfer", "hero-building-library"}
+      {"bank_transfer", "Transferência", "hero-building-library"}
     ]
   end
 

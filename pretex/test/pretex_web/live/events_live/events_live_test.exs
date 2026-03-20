@@ -107,7 +107,7 @@ defmodule PretexWeb.EventsLiveTest do
       {:ok, _view, html} = live(conn, ~p"/events")
 
       assert html =~ "/events/#{event.slug}"
-      assert html =~ "Get Tickets"
+      assert html =~ "Ver Ingressos"
     end
 
     test "shows organization name on event card", %{conn: conn} do
@@ -125,7 +125,7 @@ defmodule PretexWeb.EventsLiveTest do
       {:ok, _view, html} = live(conn, ~p"/events")
 
       # Should render without crashing; empty state or no event cards
-      assert html =~ "Upcoming Events"
+      assert html =~ "Eventos"
     end
 
     test "works for unauthenticated users", %{conn: conn} do
@@ -207,8 +207,8 @@ defmodule PretexWeb.EventsLiveTest do
 
       {:ok, _view, html} = live(conn, ~p"/events/#{event.slug}")
 
-      assert html =~ "Your Cart"
-      assert html =~ "Your cart is empty"
+      assert html =~ "Seu Carrinho"
+      assert html =~ "Seu carrinho está vazio"
     end
 
     test "shows cart items when cart_token is provided", %{conn: conn} do
@@ -254,7 +254,7 @@ defmodule PretexWeb.EventsLiveTest do
       |> render_click()
 
       html = render(view)
-      assert html =~ "Your cart is empty"
+      assert html =~ "Seu carrinho está vazio"
     end
 
     test "shows checkout link when cart has items", %{conn: conn} do
@@ -266,7 +266,7 @@ defmodule PretexWeb.EventsLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/events/#{event.slug}?cart_token=#{cart.session_token}")
 
-      assert html =~ "Checkout"
+      assert html =~ "Finalizar Compra"
       assert html =~ cart.session_token
     end
 
@@ -277,7 +277,7 @@ defmodule PretexWeb.EventsLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/events/#{event.slug}?cart_token=invalid-token-xyz")
 
-      assert html =~ "Your cart is empty"
+      assert html =~ "Seu carrinho está vazio"
     end
   end
 
@@ -295,9 +295,9 @@ defmodule PretexWeb.EventsLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/events/#{event.slug}/checkout?cart_token=#{cart.session_token}")
 
-      assert html =~ "Your Information"
-      assert html =~ "Full Name"
-      assert html =~ "Email"
+      assert html =~ "Suas Informações"
+      assert html =~ "Nome Completo"
+      assert html =~ "E-mail"
     end
 
     test "redirects to event show when no cart_token is provided", %{conn: conn} do
@@ -329,8 +329,8 @@ defmodule PretexWeb.EventsLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/events/#{event.slug}/checkout?cart_token=#{cart.session_token}")
 
-      assert html =~ "Your Info"
-      assert html =~ "Review &amp; Pay"
+      assert html =~ "Informações"
+      assert html =~ "Pagamento"
     end
 
     test "submitting info form transitions to summary step", %{conn: conn} do
@@ -347,8 +347,8 @@ defmodule PretexWeb.EventsLiveTest do
       |> render_submit()
 
       html = render(view)
-      assert html =~ "Order Summary"
-      assert html =~ "Review"
+      assert html =~ "Resumo do Pedido"
+      assert html =~ "Pagamento"
     end
   end
 
@@ -365,7 +365,7 @@ defmodule PretexWeb.EventsLiveTest do
           ~p"/events/#{event.slug}/checkout/summary?cart_token=#{cart.session_token}"
         )
 
-      assert html =~ "Order Summary"
+      assert html =~ "Resumo do Pedido"
       assert html =~ "Summary Ticket"
     end
 
@@ -381,10 +381,10 @@ defmodule PretexWeb.EventsLiveTest do
           ~p"/events/#{event.slug}/checkout/summary?cart_token=#{cart.session_token}"
         )
 
-      assert html =~ "Credit Card"
+      assert html =~ "Cartão de Crédito"
       assert html =~ "Pix"
       assert html =~ "Boleto"
-      assert html =~ "Bank Transfer"
+      assert html =~ "Transferência"
     end
 
     test "selecting a payment method highlights it", %{conn: conn} do
@@ -457,7 +457,7 @@ defmodule PretexWeb.EventsLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/events/#{event.slug}/orders/#{order.confirmation_code}")
 
-      assert html =~ "Order Confirmed"
+      assert html =~ "Pedido Confirmado"
       assert html =~ order.confirmation_code
       assert html =~ "Bob Builder"
       assert html =~ "bob@example.com"
@@ -545,7 +545,7 @@ defmodule PretexWeb.EventsLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/events/#{event.slug}/orders/#{order.confirmation_code}")
 
-      assert html =~ "Browse More Events"
+      assert html =~ "Explorar Mais Eventos"
       assert html =~ "/events"
     end
   end

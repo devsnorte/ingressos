@@ -12,8 +12,8 @@ defmodule PretexWeb.CustomerLive.SettingsTest do
         |> log_in_customer(customer_fixture())
         |> live(~p"/customers/settings")
 
-      assert html =~ "Change Email"
-      assert html =~ "Save Password"
+      assert html =~ "Alterar E-mail"
+      assert html =~ "Salvar Senha"
     end
 
     test "redirects if customer is not logged in", %{conn: conn} do
@@ -70,7 +70,7 @@ defmodule PretexWeb.CustomerLive.SettingsTest do
           "customer" => %{"email" => "with spaces"}
         })
 
-      assert result =~ "Change Email"
+      assert result =~ "Alterar E-mail"
       assert result =~ "must have the @ sign and no spaces"
     end
 
@@ -84,7 +84,7 @@ defmodule PretexWeb.CustomerLive.SettingsTest do
         })
         |> render_submit()
 
-      assert result =~ "Change Email"
+      assert result =~ "Alterar E-mail"
       assert result =~ "did not change"
     end
   end
@@ -136,7 +136,7 @@ defmodule PretexWeb.CustomerLive.SettingsTest do
           }
         })
 
-      assert result =~ "Save Password"
+      assert result =~ "Salvar Senha"
       assert result =~ "should be at least 12 character(s)"
       assert result =~ "does not match password"
     end
@@ -154,7 +154,7 @@ defmodule PretexWeb.CustomerLive.SettingsTest do
         })
         |> render_submit()
 
-      assert result =~ "Save Password"
+      assert result =~ "Salvar Senha"
       assert result =~ "should be at least 12 character(s)"
       assert result =~ "does not match password"
     end

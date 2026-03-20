@@ -14,17 +14,17 @@ defmodule PretexWeb.CustomerLive.Settings2faTest do
   describe "2FA section on settings page" do
     test "settings page renders TOTP section", %{conn: conn} do
       {:ok, _lv, html} = live(conn, ~p"/customers/settings")
-      assert html =~ "Authenticator App"
+      assert html =~ "Aplicativo Autenticador"
     end
 
     test "settings page renders recovery codes section", %{conn: conn} do
       {:ok, _lv, html} = live(conn, ~p"/customers/settings")
-      assert html =~ "Recovery Codes"
+      assert html =~ "Códigos de Recuperação"
     end
 
     test "settings page renders WebAuthn section", %{conn: conn} do
       {:ok, _lv, html} = live(conn, ~p"/customers/settings")
-      assert html =~ "Security Keys"
+      assert html =~ "Chaves de Segurança"
     end
 
     test "shows Enable Authenticator App button when TOTP not enabled", %{conn: conn} do
@@ -47,7 +47,7 @@ defmodule PretexWeb.CustomerLive.Settings2faTest do
       lv |> element("#enable-totp-btn") |> render_click()
 
       html = render(lv)
-      assert html =~ "Scan QR Code"
+      assert html =~ "Escaneie o QR Code"
       assert has_element?(lv, "#totp-qr")
       assert has_element?(lv, "#totp-secret-b32")
     end
@@ -133,7 +133,7 @@ defmodule PretexWeb.CustomerLive.Settings2faTest do
         |> element("#regenerate-codes-btn")
         |> render_click()
 
-      assert html =~ "Save your recovery codes"
+      assert html =~ "Salve seus códigos de recuperação"
       assert has_element?(lv, "#recovery-codes-list")
     end
 
