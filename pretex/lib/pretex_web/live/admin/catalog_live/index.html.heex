@@ -1,44 +1,44 @@
-<Layouts.app flash={@flash}>
+<.dashboard_layout current_path={~p"/admin/organizations/#{@org}/events/#{@event}/catalog"} org={@org} flash={@flash}>
   <div class="mx-auto max-w-4xl px-4 py-8">
-    <%!-- Top bar --%>
+    <%!-- Barra superior --%>
     <div class="mb-6 flex items-center justify-between gap-4 flex-wrap">
       <.link
         navigate={~p"/admin/organizations/#{@org}/events/#{@event}"}
         class="inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-primary transition-colors"
       >
-        <.icon name="hero-arrow-left" class="size-4" /> Back to Event
+        <.icon name="hero-arrow-left" class="size-4" /> Voltar ao Evento
       </.link>
 
       <.link
         patch={~p"/admin/organizations/#{@org}/events/#{@event}/catalog/new"}
         class="btn btn-primary btn-sm gap-1"
       >
-        <.icon name="hero-plus" class="size-4" /> New Item
+        <.icon name="hero-plus" class="size-4" /> Novo Item
       </.link>
     </div>
 
-    <%!-- Page title --%>
+    <%!-- Título da página --%>
     <div class="mb-6">
-      <h1 class="text-2xl font-bold text-base-content">Item Catalog</h1>
+      <h1 class="text-2xl font-bold text-base-content">Catálogo de Itens</h1>
       <p class="text-sm text-base-content/60 mt-1">{@event.name}</p>
     </div>
 
-    <%!-- Items list --%>
+    <%!-- Lista de itens --%>
     <div id="items" phx-update="stream" class="space-y-3 mb-8">
       <div
         id="items-empty-state"
         class="hidden only:flex flex-col items-center justify-center py-20 text-center"
       >
         <.icon name="hero-shopping-bag" class="size-12 text-base-content/20 mb-4" />
-        <p class="text-base font-semibold text-base-content/50">No items yet.</p>
+        <p class="text-base font-semibold text-base-content/50">Nenhum item ainda.</p>
         <p class="text-sm text-base-content/40 mt-1">
-          Add your first item to get started.
+          Adicione seu primeiro item para começar.
         </p>
         <.link
           patch={~p"/admin/organizations/#{@org}/events/#{@event}/catalog/new"}
           class="btn btn-primary btn-sm mt-6 gap-1"
         >
-          <.icon name="hero-plus" class="size-4" /> New Item
+          <.icon name="hero-plus" class="size-4" /> Novo Item
         </.link>
       </div>
 
@@ -59,7 +59,7 @@
                   item.status == "active" && "badge-success",
                   item.status == "inactive" && "badge-ghost"
                 ]}>
-                  {item.status}
+                  {if item.status == "active", do: "Ativo", else: "Inativo"}
                 </span>
                 <span class="badge badge-sm badge-outline capitalize">
                   {item.item_type}
@@ -70,31 +70,23 @@
                 <span class="flex items-center gap-1 font-mono font-semibold text-base-content/70">
                   {format_price(item.price_cents)}
                 </span>
-                <%= if item.category do %>
-                  <span class="flex items-center gap-1">
-                    <.icon name="hero-tag" class="size-3" />
-                    {item.category.name}
-                  </span>
-                <% end %>
-                <%= if item.available_quantity do %>
-                  <span class="flex items-center gap-1">
-                    <.icon name="hero-archive-box" class="size-3" />
-                    {item.available_quantity} available
-                  </span>
-                <% end %>
-                <%= if item.variations != [] do %>
-                  <span class="flex items-center gap-1">
-                    <.icon name="hero-squares-2x2" class="size-3" />
-                    {length(item.variations)} variation(s)
-                  </span>
-                <% end %>
+                <span :if={item.category} class="flex items-center gap-1">
+                  <.icon name="hero-tag" class="size-3" />
+                  {item.category.name}
+                </span>
+                <span :if={item.available_quantity} class="flex items-center gap-1">
+                  <.icon name="hero-archive-box" class="size-3" />
+                  {item.available_quantity} disponível(eis)
+                </span>
+                <span :if={item.variations != []} class="flex items-center gap-1">
+                  <.icon name="hero-squares-2x2" class="size-3" />
+                  {length(item.variations)} variação(ões)
+                </span>
               </div>
 
-              <%= if item.description do %>
-                <p class="text-sm text-base-content/60 mt-2 leading-relaxed line-clamp-2">
-                  {item.description}
-                </p>
-              <% end %>
+              <p :if={item.description} class="text-sm text-base-content/60 mt-2 leading-relaxed line-clamp-2">
+                {item.description}
+              </p>
             </div>
 
             <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
@@ -104,22 +96,22 @@
                 }
                 class="btn btn-ghost btn-xs"
               >
-                Details
+                Detalhes
               </.link>
               <.link
                 patch={~p"/admin/organizations/#{@org}/events/#{@event}/catalog/#{item.id}/edit"}
                 class="btn btn-ghost btn-xs"
               >
-                Edit
+                Editar
               </.link>
               <button
                 id={"delete-#{item.id}"}
                 phx-click="delete"
                 phx-value-id={item.id}
-                data-confirm={"Delete \"#{item.name}\"? This cannot be undone."}
+                data-confirm={"Excluir \"#{item.name}\"? Esta ação não pode ser desfeita."}
                 class="btn btn-ghost btn-xs text-error hover:bg-error hover:text-error-content"
               >
-                Delete
+                Excluir
               </button>
             </div>
           </div>
@@ -127,51 +119,48 @@
       </div>
     </div>
 
-    <%!-- Bundles section --%>
+    <%!-- Seção de pacotes --%>
     <div class="card bg-base-100 border border-base-200 shadow-sm">
       <div class="card-body p-6">
         <h2 class="text-base font-semibold text-base-content mb-4 flex items-center gap-2">
-          <.icon name="hero-gift" class="size-4 text-base-content/40" /> Bundles
+          <.icon name="hero-gift" class="size-4 text-base-content/40" /> Pacotes
         </h2>
 
-        <%= if @bundles == [] do %>
-          <div class="flex items-start gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm">
-            <.icon
-              name="hero-information-circle"
-              class="size-5 shrink-0 text-base-content/40 mt-0.5"
-            />
-            <p class="text-base-content/70">
-              No bundles configured yet. Bundles let you group items together at a special price.
-            </p>
-          </div>
-        <% else %>
-          <div class="space-y-3">
-            <div
-              :for={bundle <- @bundles}
-              class="flex items-center justify-between gap-4 rounded-lg border border-base-200 p-3"
-            >
-              <div class="min-w-0">
-                <p class="font-medium text-base-content truncate">{bundle.name}</p>
-                <p class="text-xs text-base-content/50 font-mono mt-0.5">
-                  {format_price(bundle.price_cents)} · {length(bundle.items)} item(s)
-                </p>
-              </div>
-              <span class={[
-                "badge badge-sm shrink-0 capitalize",
-                bundle.status == "active" && "badge-success",
-                bundle.status == "inactive" && "badge-ghost"
-              ]}>
-                {bundle.status}
-              </span>
+        <div :if={@bundles == []} class="flex items-start gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm">
+          <.icon
+            name="hero-information-circle"
+            class="size-5 shrink-0 text-base-content/40 mt-0.5"
+          />
+          <p class="text-base-content/70">
+            Nenhum pacote configurado ainda. Pacotes permitem agrupar itens com preço especial.
+          </p>
+        </div>
+        <div :if={@bundles != []} class="space-y-3">
+          <div
+            :for={bundle <- @bundles}
+            class="flex items-center justify-between gap-4 rounded-lg border border-base-200 p-3"
+          >
+            <div class="min-w-0">
+              <p class="font-medium text-base-content truncate">{bundle.name}</p>
+              <p class="text-xs text-base-content/50 font-mono mt-0.5">
+                {format_price(bundle.price_cents)} · {length(bundle.items)} item(ns)
+              </p>
             </div>
+            <span class={[
+              "badge badge-sm shrink-0 capitalize",
+              bundle.status == "active" && "badge-success",
+              bundle.status == "inactive" && "badge-ghost"
+            ]}>
+              {if bundle.status == "active", do: "Ativo", else: "Inativo"}
+            </span>
           </div>
-        <% end %>
+        </div>
       </div>
     </div>
   </div>
 
-  <%!-- Modal: New / Edit Item --%>
-  <%= if @live_action in [:new, :edit] do %>
+  <%!-- Modal: Novo / Editar Item --%>
+  <div :if={@live_action in [:new, :edit]}>
     <div
       id="item-modal-backdrop"
       class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
@@ -189,22 +178,22 @@
         class="w-full max-w-lg bg-base-100 rounded-2xl shadow-2xl border border-base-200 overflow-hidden"
         phx-click-away="cancel"
       >
-        <%!-- Modal header --%>
+        <%!-- Cabeçalho do modal --%>
         <div class="flex items-center justify-between px-6 py-4 border-b border-base-200">
           <h2 class="text-lg font-bold text-base-content">
-            {if @live_action == :new, do: "New Item", else: "Edit Item"}
+            {if @live_action == :new, do: "Novo Item", else: "Editar Item"}
           </h2>
           <button
             type="button"
             phx-click="cancel"
             class="btn btn-ghost btn-sm btn-circle"
-            aria-label="Close"
+            aria-label="Fechar"
           >
             <.icon name="hero-x-mark" class="size-5" />
           </button>
         </div>
 
-        <%!-- Modal body --%>
+        <%!-- Corpo do modal --%>
         <div class="px-6 py-5 overflow-y-auto max-h-[70vh]">
           <.form
             for={@form}
@@ -213,25 +202,25 @@
             phx-submit="save"
             class="space-y-4"
           >
-            <.input field={@form[:name]} type="text" label="Name" required />
-            <.input field={@form[:description]} type="textarea" label="Description" rows="2" />
+            <.input field={@form[:name]} type="text" label="Nome" required />
+            <.input field={@form[:description]} type="textarea" label="Descrição" rows="2" />
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <.input
                 field={@form[:item_type]}
                 type="select"
-                label="Type"
+                label="Tipo"
                 options={[
-                  {"Ticket", "ticket"},
-                  {"Merchandise", "merchandise"},
-                  {"Add-on", "addon"}
+                  {"Ingresso", "ticket"},
+                  {"Mercadoria", "merchandise"},
+                  {"Complemento", "addon"}
                 ]}
               />
               <.input
                 field={@form[:status]}
                 type="select"
                 label="Status"
-                options={[{"Active", "active"}, {"Inactive", "inactive"}]}
+                options={[{"Ativo", "active"}, {"Inativo", "inactive"}]}
               />
             </div>
 
@@ -239,14 +228,14 @@
               <.input
                 field={@form[:price_cents]}
                 type="number"
-                label="Price (cents)"
+                label="Preço (centavos)"
                 min="0"
                 step="1"
               />
               <.input
                 field={@form[:available_quantity]}
                 type="number"
-                label="Available Quantity"
+                label="Quantidade Disponível"
                 min="1"
               />
             </div>
@@ -255,33 +244,33 @@
               <.input
                 field={@form[:min_per_order]}
                 type="number"
-                label="Min per Order"
+                label="Mín. por Pedido"
                 min="1"
               />
               <.input
                 field={@form[:max_per_order]}
                 type="number"
-                label="Max per Order"
+                label="Máx. por Pedido"
                 min="1"
               />
             </div>
 
             <div class="flex items-center gap-6">
-              <.input field={@form[:is_addon]} type="checkbox" label="Is Add-on?" />
-              <.input field={@form[:require_voucher]} type="checkbox" label="Require Voucher?" />
+              <.input field={@form[:is_addon]} type="checkbox" label="É Complemento?" />
+              <.input field={@form[:require_voucher]} type="checkbox" label="Exigir Voucher?" />
             </div>
 
             <div class="flex justify-end gap-3 pt-2">
               <button type="button" phx-click="cancel" class="btn btn-ghost btn-sm">
-                Cancel
+                Cancelar
               </button>
-              <.button type="submit" variant="primary" phx-disable-with="Saving…">
-                {if @live_action == :new, do: "Create Item", else: "Save Changes"}
+              <.button type="submit" variant="primary" phx-disable-with="Salvando...">
+                {if @live_action == :new, do: "Criar Item", else: "Salvar Alterações"}
               </.button>
             </div>
           </.form>
         </div>
       </div>
     </div>
-  <% end %>
-</Layouts.app>
+  </div>
+</.dashboard_layout>

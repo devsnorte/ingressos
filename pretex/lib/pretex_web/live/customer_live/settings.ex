@@ -8,254 +8,266 @@ defmodule PretexWeb.CustomerLive.Settings do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="text-center">
-        <.header>
-          Account Settings
-          <:subtitle>Manage your account email address and password settings</:subtitle>
-        </.header>
-      </div>
+    <.customer_layout current_scope={@current_scope} current_path="/account/settings" flash={@flash}>
+      <div class="mx-auto max-w-2xl space-y-8">
+        <div class="text-center">
+          <.header>
+            Configurações
+            <:subtitle>Gerencie seu e-mail e senha</:subtitle>
+          </.header>
+        </div>
 
-      <.form for={@email_form} id="email_form" phx-submit="update_email" phx-change="validate_email">
-        <.input
-          field={@email_form[:email]}
-          type="email"
-          label="Email"
-          autocomplete="username"
-          spellcheck="false"
-          required
-        />
-        <.button variant="primary" phx-disable-with="Changing...">Change Email</.button>
-      </.form>
+        <.form for={@email_form} id="email_form" phx-submit="update_email" phx-change="validate_email">
+          <.input
+            field={@email_form[:email]}
+            type="email"
+            label="E-mail"
+            autocomplete="username"
+            spellcheck="false"
+            required
+          />
+          <.button variant="primary" phx-disable-with="Alterando...">Alterar E-mail</.button>
+        </.form>
 
-      <div class="divider" />
+        <div class="divider" />
 
-      <.form
-        for={@password_form}
-        id="password_form"
-        action={~p"/customers/update-password"}
-        method="post"
-        phx-change="validate_password"
-        phx-submit="update_password"
-        phx-trigger-action={@trigger_submit}
-      >
-        <input
-          name={@password_form[:email].name}
-          type="hidden"
-          id="hidden_customer_email"
-          spellcheck="false"
-          value={@current_email}
-        />
-        <.input
-          field={@password_form[:password]}
-          type="password"
-          label="New password"
-          autocomplete="new-password"
-          spellcheck="false"
-          required
-        />
-        <.input
-          field={@password_form[:password_confirmation]}
-          type="password"
-          label="Confirm new password"
-          autocomplete="new-password"
-          spellcheck="false"
-        />
-        <.button variant="primary" phx-disable-with="Saving...">
-          Save Password
-        </.button>
-      </.form>
+        <.form
+          for={@password_form}
+          id="password_form"
+          action={~p"/customers/update-password"}
+          method="post"
+          phx-change="validate_password"
+          phx-submit="update_password"
+          phx-trigger-action={@trigger_submit}
+        >
+          <input
+            name={@password_form[:email].name}
+            type="hidden"
+            id="hidden_customer_email"
+            spellcheck="false"
+            value={@current_email}
+          />
+          <.input
+            field={@password_form[:password]}
+            type="password"
+            label="Nova senha"
+            autocomplete="new-password"
+            spellcheck="false"
+            required
+          />
+          <.input
+            field={@password_form[:password_confirmation]}
+            type="password"
+            label="Confirmar nova senha"
+            autocomplete="new-password"
+            spellcheck="false"
+          />
+          <.button variant="primary" phx-disable-with="Salvando...">
+            Salvar Senha
+          </.button>
+        </.form>
 
-      <div class="divider" />
+        <div class="divider" />
 
-      <%!-- TOTP Section --%>
-      <div id="totp-section">
-        <h2 class="text-lg font-semibold text-gray-900 mb-1">Authenticator App</h2>
-        <p class="text-sm text-gray-500 mb-4">
-          Use an authenticator app to generate one-time codes for extra security.
-        </p>
+        <%!-- TOTP Section --%>
+        <div id="totp-section">
+          <h2 class="text-lg font-semibold text-base-content mb-1">Aplicativo Autenticador</h2>
+          <p class="text-sm text-base-content/60 mb-4">
+            Use um aplicativo autenticador para gerar códigos de uso único para maior segurança.
+          </p>
 
-        <%= if @show_recovery_codes do %>
-          <div id="recovery-codes-reveal" class="rounded-2xl bg-amber-50 border border-amber-200 p-6">
+          <div
+            :if={@show_recovery_codes}
+            id="recovery-codes-reveal"
+            class="rounded-2xl bg-amber-50 border border-amber-200 p-6"
+          >
             <div class="flex items-center gap-2 mb-3">
               <.icon name="hero-key" class="w-5 h-5 text-amber-600" />
-              <h3 class="font-semibold text-amber-900">Save your recovery codes</h3>
+              <h3 class="font-semibold text-amber-900">Salve seus códigos de recuperação</h3>
             </div>
             <p class="text-sm text-amber-800 mb-4">
-              Store these codes somewhere safe. Each code can only be used once.
-              If you lose access to your authenticator, you can use these to log in.
+              Guarde esses códigos em um local seguro. Cada código só pode ser usado uma vez.
+              Se você perder acesso ao seu autenticador, poderá usá-los para entrar.
             </p>
             <div id="recovery-codes-list" class="grid grid-cols-2 gap-2 mb-4">
-              <%= for code <- @recovery_codes do %>
-                <code class="font-mono text-sm bg-white border border-amber-200 rounded-lg px-3 py-2 text-center">
-                  {code}
-                </code>
-              <% end %>
+              <code
+                :for={code <- @recovery_codes}
+                class="font-mono text-sm bg-white border border-amber-200 rounded-lg px-3 py-2 text-center"
+              >
+                {code}
+              </code>
             </div>
             <.button
               id="confirm-codes-saved"
               variant="primary"
               phx-click="confirm_codes_saved"
             >
-              I have saved these codes
+              Já salvei esses códigos
             </.button>
           </div>
-        <% else %>
-          <%= if @pending_totp_secret do %>
-            <div id="totp-setup" class="rounded-2xl border border-gray-100 bg-white shadow-sm p-6">
-              <h3 class="font-semibold text-gray-900 mb-3">Scan QR Code</h3>
-              <p class="text-sm text-gray-500 mb-4">
-                Scan this QR code with your authenticator app (Google Authenticator,
-                Authy, etc.), then enter the 6-digit code below to confirm.
-              </p>
-              <div id="totp-qr" class="flex justify-center mb-4">
-                {Phoenix.HTML.raw(@totp_qr_svg)}
-              </div>
-              <p class="text-xs text-gray-500 mb-1">Or enter this key manually:</p>
-              <code
-                id="totp-secret-b32"
-                class="block font-mono text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-center mb-4 break-all"
-              >
-                {@totp_secret_b32}
-              </code>
-              <.form
-                for={@totp_verify_form}
-                id="totp-verify-form"
-                phx-submit="verify_totp_setup"
-              >
-                <.input
-                  field={@totp_verify_form[:code]}
-                  type="text"
-                  label="Verification Code"
-                  placeholder="000000"
-                  autocomplete="one-time-code"
-                  inputmode="numeric"
-                  maxlength="6"
-                  required
-                />
-                <div class="flex gap-2 mt-4">
-                  <.button variant="primary" phx-disable-with="Verifying...">
-                    Enable Authenticator
-                  </.button>
-                  <.button id="cancel-totp-setup" phx-click="cancel_totp_setup" type="button">
-                    Cancel
-                  </.button>
-                </div>
-              </.form>
-            </div>
-          <% else %>
-            <%= if Customers.Customer.totp_enabled?(@current_scope.customer) do %>
-              <div
-                id="totp-enabled-badge"
-                class="flex items-center justify-between rounded-2xl border border-green-100 bg-green-50 p-4"
-              >
-                <div class="flex items-center gap-3">
-                  <div class="flex h-8 w-8 items-center justify-center rounded-full bg-green-100">
-                    <.icon name="hero-check" class="w-4 h-4 text-green-600" />
-                  </div>
-                  <div>
-                    <p class="text-sm font-semibold text-green-900">Authenticator App enabled</p>
-                    <p class="text-xs text-green-700">Your account is protected with TOTP.</p>
-                  </div>
-                </div>
-                <.button
-                  id="disable-totp-btn"
-                  phx-click="disable_totp"
-                  data-confirm="Are you sure you want to disable two-factor authentication?"
-                >
-                  Disable
-                </.button>
-              </div>
-            <% else %>
-              <.button
-                id="enable-totp-btn"
-                variant="primary"
-                phx-click="start_totp_setup"
-              >
-                <.icon name="hero-qr-code" class="w-4 h-4 mr-1" /> Enable Authenticator App
-              </.button>
-            <% end %>
-          <% end %>
-        <% end %>
-      </div>
 
-      <div class="divider" />
-
-      <%!-- Recovery Codes Section --%>
-      <div id="recovery-codes-section">
-        <h2 class="text-lg font-semibold text-gray-900 mb-1">Recovery Codes</h2>
-        <p class="text-sm text-gray-500 mb-4">
-          Recovery codes let you access your account if you lose your authenticator.
-          You have <strong>{@remaining_recovery_codes}</strong> unused codes remaining.
-        </p>
-        <.button
-          id="regenerate-codes-btn"
-          phx-click="regenerate_recovery_codes"
-          data-confirm="This will invalidate all existing recovery codes. Continue?"
-        >
-          <.icon name="hero-arrow-path" class="w-4 h-4 mr-1" /> Regenerate Recovery Codes
-        </.button>
-      </div>
-
-      <div class="divider" />
-
-      <%!-- WebAuthn Section --%>
-      <div
-        id="webauthn-register-hook"
-        phx-hook=".WebAuthnRegister"
-        phx-update="ignore"
-      >
-      </div>
-
-      <div id="webauthn-section">
-        <h2 class="text-lg font-semibold text-gray-900 mb-1">Security Keys</h2>
-        <p class="text-sm text-gray-500 mb-4">
-          Add a hardware security key (e.g. YubiKey) or a passkey for passwordless authentication.
-        </p>
-
-        <%= if @webauthn_credentials == [] do %>
-          <p id="no-webauthn-keys" class="text-sm text-gray-400 italic mb-4">
-            No security keys registered yet.
-          </p>
-        <% else %>
-          <ul id="webauthn-credentials-list" class="space-y-2 mb-4">
-            <%= for cred <- @webauthn_credentials do %>
-              <li
-                id={"webauthn-cred-#{cred.id}"}
-                class="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm"
-              >
-                <div class="flex items-center gap-3">
-                  <.icon name="hero-key" class="w-5 h-5 text-gray-400" />
-                  <div>
-                    <p class="text-sm font-medium text-gray-900">
-                      {cred.label || "Security Key"}
-                    </p>
-                    <%= if cred.last_used_at do %>
-                      <p class="text-xs text-gray-400">Last used: {cred.last_used_at}</p>
-                    <% else %>
-                      <p class="text-xs text-gray-400">Never used</p>
-                    <% end %>
-                  </div>
-                </div>
-                <.button
-                  id={"delete-webauthn-#{cred.id}"}
-                  phx-click="delete_webauthn_credential"
-                  phx-value-id={cred.id}
-                  data-confirm="Remove this security key?"
-                >
-                  <.icon name="hero-trash" class="w-4 h-4" />
-                </.button>
-              </li>
-            <% end %>
-          </ul>
-        <% end %>
-
-        <%= if @adding_webauthn_key do %>
           <div
-            id="webauthn-label-form"
-            class="rounded-2xl border border-gray-100 bg-white shadow-sm p-6 mb-4"
+            :if={!@show_recovery_codes && @pending_totp_secret}
+            id="totp-setup"
+            class="rounded-2xl border border-base-300 bg-base-100 shadow-sm p-6"
           >
-            <h3 class="font-semibold text-gray-900 mb-3">Name your security key</h3>
+            <h3 class="font-semibold text-base-content mb-3">Escaneie o QR Code</h3>
+            <p class="text-sm text-base-content/60 mb-4">
+              Escaneie este QR code com seu aplicativo autenticador (Google Authenticator,
+              Authy, etc.) e digite o código de 6 dígitos abaixo para confirmar.
+            </p>
+            <div id="totp-qr" class="flex justify-center mb-4">
+              {Phoenix.HTML.raw(@totp_qr_svg)}
+            </div>
+            <p class="text-xs text-base-content/60 mb-1">Ou insira esta chave manualmente:</p>
+            <code
+              id="totp-secret-b32"
+              class="block font-mono text-sm bg-base-200 border border-base-300 rounded-lg px-3 py-2 text-center mb-4 break-all"
+            >
+              {@totp_secret_b32}
+            </code>
+            <.form
+              for={@totp_verify_form}
+              id="totp-verify-form"
+              phx-submit="verify_totp_setup"
+            >
+              <.input
+                field={@totp_verify_form[:code]}
+                type="text"
+                label="Código de Verificação"
+                placeholder="000000"
+                autocomplete="one-time-code"
+                inputmode="numeric"
+                maxlength="6"
+                required
+              />
+              <div class="flex gap-2 mt-4">
+                <.button variant="primary" phx-disable-with="Verificando...">
+                  Ativar Autenticador
+                </.button>
+                <.button id="cancel-totp-setup" phx-click="cancel_totp_setup" type="button">
+                  Cancelar
+                </.button>
+              </div>
+            </.form>
+          </div>
+
+          <div
+            :if={
+              !@show_recovery_codes && !@pending_totp_secret &&
+                Customers.Customer.totp_enabled?(@current_scope.customer)
+            }
+            id="totp-enabled-badge"
+            class="flex items-center justify-between rounded-2xl border border-green-100 bg-green-50 p-4"
+          >
+            <div class="flex items-center gap-3">
+              <div class="flex h-8 w-8 items-center justify-center rounded-full bg-green-100">
+                <.icon name="hero-check" class="w-4 h-4 text-green-600" />
+              </div>
+              <div>
+                <p class="text-sm font-semibold text-green-900">Aplicativo Autenticador ativado</p>
+                <p class="text-xs text-green-700">Sua conta está protegida com TOTP.</p>
+              </div>
+            </div>
+            <.button
+              id="disable-totp-btn"
+              phx-click="disable_totp"
+              data-confirm="Tem certeza que deseja desativar a autenticação de dois fatores?"
+            >
+              Desativar
+            </.button>
+          </div>
+
+          <.button
+            :if={
+              !@show_recovery_codes && !@pending_totp_secret &&
+                !Customers.Customer.totp_enabled?(@current_scope.customer)
+            }
+            id="enable-totp-btn"
+            variant="primary"
+            phx-click="start_totp_setup"
+          >
+            <.icon name="hero-qr-code" class="w-4 h-4 mr-1" /> Ativar Aplicativo Autenticador
+          </.button>
+        </div>
+
+        <div class="divider" />
+
+        <%!-- Recovery Codes Section --%>
+        <div id="recovery-codes-section">
+          <h2 class="text-lg font-semibold text-base-content mb-1">Códigos de Recuperação</h2>
+          <p class="text-sm text-base-content/60 mb-4">
+            Códigos de recuperação permitem acessar sua conta caso perca seu autenticador.
+            Você tem <strong>{@remaining_recovery_codes}</strong> códigos não utilizados.
+          </p>
+          <.button
+            id="regenerate-codes-btn"
+            phx-click="regenerate_recovery_codes"
+            data-confirm="Isso invalidará todos os códigos de recuperação existentes. Continuar?"
+          >
+            <.icon name="hero-arrow-path" class="w-4 h-4 mr-1" /> Regenerar Códigos de Recuperação
+          </.button>
+        </div>
+
+        <div class="divider" />
+
+        <%!-- WebAuthn Section --%>
+        <div
+          id="webauthn-register-hook"
+          phx-hook=".WebAuthnRegister"
+          phx-update="ignore"
+        >
+        </div>
+
+        <div id="webauthn-section">
+          <h2 class="text-lg font-semibold text-base-content mb-1">Chaves de Segurança</h2>
+          <p class="text-sm text-base-content/60 mb-4">
+            Adicione uma chave de segurança física (ex: YubiKey) ou uma passkey para autenticação sem senha.
+          </p>
+
+          <p
+            :if={@webauthn_credentials == []}
+            id="no-webauthn-keys"
+            class="text-sm text-base-content/40 italic mb-4"
+          >
+            Nenhuma chave de segurança registrada.
+          </p>
+
+          <ul :if={@webauthn_credentials != []} id="webauthn-credentials-list" class="space-y-2 mb-4">
+            <li
+              :for={cred <- @webauthn_credentials}
+              id={"webauthn-cred-#{cred.id}"}
+              class="flex items-center justify-between rounded-xl border border-base-300 bg-base-100 px-4 py-3 shadow-sm"
+            >
+              <div class="flex items-center gap-3">
+                <.icon name="hero-key" class="w-5 h-5 text-base-content/40" />
+                <div>
+                  <p class="text-sm font-medium text-base-content">
+                    {cred.label || "Chave de Segurança"}
+                  </p>
+                  <p :if={cred.last_used_at} class="text-xs text-base-content/40">
+                    Último uso: {cred.last_used_at}
+                  </p>
+                  <p :if={!cred.last_used_at} class="text-xs text-base-content/40">Nunca utilizada</p>
+                </div>
+              </div>
+              <.button
+                id={"delete-webauthn-#{cred.id}"}
+                phx-click="delete_webauthn_credential"
+                phx-value-id={cred.id}
+                data-confirm="Remover esta chave de segurança?"
+              >
+                <.icon name="hero-trash" class="w-4 h-4" />
+              </.button>
+            </li>
+          </ul>
+
+          <div
+            :if={@adding_webauthn_key}
+            id="webauthn-label-form"
+            class="rounded-2xl border border-base-300 bg-base-100 shadow-sm p-6 mb-4"
+          >
+            <h3 class="font-semibold text-base-content mb-3">Nomeie sua chave de segurança</h3>
             <.form
               for={@webauthn_label_form}
               id="webauthn-label-form-inner"
@@ -264,71 +276,71 @@ defmodule PretexWeb.CustomerLive.Settings do
               <.input
                 field={@webauthn_label_form[:label]}
                 type="text"
-                label="Key name (e.g. YubiKey 5)"
-                placeholder="My Security Key"
+                label="Nome da chave (ex: YubiKey 5)"
+                placeholder="Minha Chave de Segurança"
                 required
               />
               <div class="flex gap-2 mt-4">
                 <.button
                   id="confirm-webauthn-label"
                   variant="primary"
-                  phx-disable-with="Waiting for key..."
+                  phx-disable-with="Aguardando chave..."
                 >
-                  Continue
+                  Continuar
                 </.button>
                 <.button
                   id="cancel-webauthn-add"
                   phx-click="cancel_webauthn_registration"
                   type="button"
                 >
-                  Cancel
+                  Cancelar
                 </.button>
               </div>
             </.form>
           </div>
-        <% else %>
-          <.button id="add-webauthn-btn" phx-click="add_webauthn_key">
-            <.icon name="hero-plus" class="w-4 h-4 mr-1" /> Add Security Key
-          </.button>
-        <% end %>
-      </div>
 
-      <script :type={Phoenix.LiveView.ColocatedHook} name=".WebAuthnRegister">
-        export default {
-          mounted() {
-            this.handleEvent("webauthn_register_options", async (opts) => {
-              try {
-                const decoded = {
-                  ...opts,
-                  challenge: this._b64ToBuffer(opts.challenge),
-                  user: { ...opts.user, id: this._b64ToBuffer(opts.user.id) }
-                };
-                const credential = await navigator.credentials.create({ publicKey: decoded });
-                const result = {
-                  id: credential.id,
-                  type: credential.type,
-                  response: {
-                    attestationObject: this._bufToB64(credential.response.attestationObject),
-                    clientDataJSON: this._bufToB64(credential.response.clientDataJSON)
-                  }
-                };
-                this.pushEvent("webauthn_registered", { credential: JSON.stringify(result) });
-              } catch(e) {
-                this.pushEvent("webauthn_error", { error: e.message });
-              }
-            });
-          },
-          _b64ToBuffer(b64) {
-            const bin = atob(b64.replace(/-/g, '+').replace(/_/g, '/'));
-            return Uint8Array.from(bin, c => c.charCodeAt(0)).buffer;
-          },
-          _bufToB64(buf) {
-            return btoa(String.fromCharCode(...new Uint8Array(buf)))
-              .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+          <.button :if={!@adding_webauthn_key} id="add-webauthn-btn" phx-click="add_webauthn_key">
+            <.icon name="hero-plus" class="w-4 h-4 mr-1" /> Adicionar Chave de Segurança
+          </.button>
+        </div>
+
+        <script :type={Phoenix.LiveView.ColocatedHook} name=".WebAuthnRegister">
+          export default {
+            mounted() {
+              this.handleEvent("webauthn_register_options", async (opts) => {
+                try {
+                  const decoded = {
+                    ...opts,
+                    challenge: this._b64ToBuffer(opts.challenge),
+                    user: { ...opts.user, id: this._b64ToBuffer(opts.user.id) }
+                  };
+                  const credential = await navigator.credentials.create({ publicKey: decoded });
+                  const result = {
+                    id: credential.id,
+                    type: credential.type,
+                    response: {
+                      attestationObject: this._bufToB64(credential.response.attestationObject),
+                      clientDataJSON: this._bufToB64(credential.response.clientDataJSON)
+                    }
+                  };
+                  this.pushEvent("webauthn_registered", { credential: JSON.stringify(result) });
+                } catch(e) {
+                  this.pushEvent("webauthn_error", { error: e.message });
+                }
+              });
+            },
+            _b64ToBuffer(b64) {
+              const bin = atob(b64.replace(/-/g, '+').replace(/_/g, '/'));
+              return Uint8Array.from(bin, c => c.charCodeAt(0)).buffer;
+            },
+            _bufToB64(buf) {
+              return btoa(String.fromCharCode(...new Uint8Array(buf)))
+                .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+            }
           }
-        }
-      </script>
-    </Layouts.app>
+        </script>
+      </div>
+    </.customer_layout>
     """
   end
 

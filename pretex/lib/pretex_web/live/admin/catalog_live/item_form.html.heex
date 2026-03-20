@@ -1,28 +1,28 @@
-<Layouts.app flash={@flash}>
+<.dashboard_layout current_path={~p"/admin/organizations/#{@org}/events/#{@event}/catalog"} org={@org} flash={@flash}>
   <div class="mx-auto max-w-3xl px-4 py-8">
-    <%!-- Top bar --%>
+    <%!-- Barra superior --%>
     <div class="mb-6 flex items-center justify-between gap-4 flex-wrap">
       <.link
         navigate={~p"/admin/organizations/#{@org}/events/#{@event}/catalog"}
         class="inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-primary transition-colors"
       >
-        <.icon name="hero-arrow-left" class="size-4" /> Back to Catalog
+        <.icon name="hero-arrow-left" class="size-4" /> Voltar ao Catálogo
       </.link>
     </div>
 
-    <%!-- Page title --%>
+    <%!-- Título da página --%>
     <div class="mb-6">
       <h1 class="text-2xl font-bold text-base-content">
-        {if @live_action == :new, do: "New Item", else: "Edit Item"}
+        {if @live_action == :new, do: "Novo Item", else: "Editar Item"}
       </h1>
       <p class="text-sm text-base-content/60 mt-1">{@event.name}</p>
     </div>
 
-    <%!-- Item form card --%>
+    <%!-- Card do formulário do item --%>
     <div class="card bg-base-100 border border-base-200 shadow-sm mb-6">
       <div class="card-body p-6">
         <h2 class="text-base font-semibold text-base-content mb-4 flex items-center gap-2">
-          <.icon name="hero-shopping-bag" class="size-4 text-base-content/40" /> Item Details
+          <.icon name="hero-shopping-bag" class="size-4 text-base-content/40" /> Detalhes do Item
         </h2>
 
         <.form
@@ -32,25 +32,25 @@
           phx-submit="save"
           class="space-y-4"
         >
-          <.input field={@form[:name]} type="text" label="Name" required />
-          <.input field={@form[:description]} type="textarea" label="Description" rows="3" />
+          <.input field={@form[:name]} type="text" label="Nome" required />
+          <.input field={@form[:description]} type="textarea" label="Descrição" rows="3" />
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <.input
               field={@form[:item_type]}
               type="select"
-              label="Type"
+              label="Tipo"
               options={[
-                {"Ticket", "ticket"},
-                {"Merchandise", "merchandise"},
-                {"Add-on", "addon"}
+                {"Ingresso", "ticket"},
+                {"Mercadoria", "merchandise"},
+                {"Complemento", "addon"}
               ]}
             />
             <.input
               field={@form[:status]}
               type="select"
               label="Status"
-              options={[{"Active", "active"}, {"Inactive", "inactive"}]}
+              options={[{"Ativo", "active"}, {"Inativo", "inactive"}]}
             />
           </div>
 
@@ -59,7 +59,7 @@
               <.input
                 field={@form[:price_cents]}
                 type="number"
-                label="Price (cents)"
+                label="Preço (centavos)"
                 min="0"
                 step="1"
               />
@@ -78,7 +78,7 @@
             <.input
               field={@form[:available_quantity]}
               type="number"
-              label="Available Quantity"
+              label="Quantidade Disponível"
               min="1"
             />
           </div>
@@ -87,20 +87,20 @@
             <.input
               field={@form[:min_per_order]}
               type="number"
-              label="Min per Order"
+              label="Mín. por Pedido"
               min="1"
             />
             <.input
               field={@form[:max_per_order]}
               type="number"
-              label="Max per Order"
+              label="Máx. por Pedido"
               min="1"
             />
           </div>
 
           <div class="flex flex-wrap items-center gap-8 pt-1">
-            <.input field={@form[:is_addon]} type="checkbox" label="Is Add-on?" />
-            <.input field={@form[:require_voucher]} type="checkbox" label="Require Voucher?" />
+            <.input field={@form[:is_addon]} type="checkbox" label="É Complemento?" />
+            <.input field={@form[:require_voucher]} type="checkbox" label="Exigir Voucher?" />
           </div>
 
           <div class="flex justify-end gap-3 pt-2 border-t border-base-200">
@@ -108,23 +108,23 @@
               navigate={~p"/admin/organizations/#{@org}/events/#{@event}/catalog"}
               class="btn btn-ghost btn-sm"
             >
-              Cancel
+              Cancelar
             </.link>
-            <.button type="submit" variant="primary" phx-disable-with="Saving…">
-              {if @live_action == :new, do: "Create Item", else: "Save Changes"}
+            <.button type="submit" variant="primary" phx-disable-with="Salvando...">
+              {if @live_action == :new, do: "Criar Item", else: "Salvar Alterações"}
             </.button>
           </div>
         </.form>
       </div>
     </div>
 
-    <%!-- Variations section (only shown when editing an existing item) --%>
+    <%!-- Seção de variações (somente ao editar item existente) --%>
     <%= if @live_action == :edit do %>
       <div class="card bg-base-100 border border-base-200 shadow-sm">
         <div class="card-body p-6">
           <div class="flex items-center justify-between gap-4 mb-4">
             <h2 class="text-base font-semibold text-base-content flex items-center gap-2">
-              <.icon name="hero-squares-2x2" class="size-4 text-base-content/40" /> Variations
+              <.icon name="hero-squares-2x2" class="size-4 text-base-content/40" /> Variações
             </h2>
             <%= unless @show_variation_form do %>
               <button
@@ -133,12 +133,12 @@
                 phx-click="show_variation_form"
                 class="btn btn-outline btn-sm gap-1"
               >
-                <.icon name="hero-plus" class="size-4" /> Add Variation
+                <.icon name="hero-plus" class="size-4" /> Adicionar Variação
               </button>
             <% end %>
           </div>
 
-          <%!-- Existing variations list --%>
+          <%!-- Lista de variações existentes --%>
           <%= if @item.variations == [] do %>
             <div
               id="no-variations-notice"
@@ -149,7 +149,7 @@
                 class="size-5 shrink-0 text-base-content/40 mt-0.5"
               />
               <p class="text-base-content/70">
-                No variations yet. Add variations to offer different options (e.g. sizes, colours) for this item.
+                Nenhuma variação ainda. Adicione variações para oferecer opções diferentes (ex: tamanhos, cores) para este item.
               </p>
             </div>
           <% else %>
@@ -169,7 +169,7 @@
                       variation.status == "active" && "badge-success",
                       variation.status == "inactive" && "badge-ghost"
                     ]}>
-                      {variation.status}
+                      {if variation.status == "active", do: "Ativo", else: "Inativo"}
                     </span>
                   </div>
                   <div class="flex flex-wrap items-center gap-4 mt-1 text-xs text-base-content/50">
@@ -179,7 +179,7 @@
                     <%= if variation.stock do %>
                       <span class="flex items-center gap-1">
                         <.icon name="hero-archive-box" class="size-3" />
-                        {variation.stock} in stock
+                        {variation.stock} em estoque
                       </span>
                     <% end %>
                   </div>
@@ -190,23 +190,23 @@
                   type="button"
                   phx-click="delete_variation"
                   phx-value-id={variation.id}
-                  data-confirm={"Remove variation \"#{variation.name}\"?"}
+                  data-confirm={"Remover variação \"#{variation.name}\"?"}
                   class="btn btn-ghost btn-xs text-error hover:bg-error hover:text-error-content"
                 >
-                  Remove
+                  Remover
                 </button>
               </div>
             </div>
           <% end %>
 
-          <%!-- Add variation inline form --%>
+          <%!-- Formulário inline para adicionar variação --%>
           <%= if @show_variation_form do %>
             <div
               id="variation-form-panel"
               class="rounded-xl border border-primary/30 bg-primary/5 p-5"
             >
               <h3 class="text-sm font-semibold text-base-content mb-3 flex items-center gap-2">
-                <.icon name="hero-plus-circle" class="size-4 text-primary" /> New Variation
+                <.icon name="hero-plus-circle" class="size-4 text-primary" /> Nova Variação
               </h3>
 
               <.form
@@ -219,7 +219,7 @@
                 <.input
                   field={@variation_form[:name]}
                   type="text"
-                  label="Variation Name"
+                  label="Nome da Variação"
                   required
                 />
 
@@ -228,7 +228,7 @@
                     <.input
                       field={@variation_form[:price_cents]}
                       type="number"
-                      label="Price (cents)"
+                      label="Preço (centavos)"
                       min="0"
                       step="1"
                     />
@@ -255,7 +255,7 @@
                   <.input
                     field={@variation_form[:stock]}
                     type="number"
-                    label="Stock"
+                    label="Estoque"
                     min="0"
                   />
                 </div>
@@ -264,7 +264,7 @@
                   field={@variation_form[:status]}
                   type="select"
                   label="Status"
-                  options={[{"Active", "active"}, {"Inactive", "inactive"}]}
+                  options={[{"Ativo", "active"}, {"Inativo", "inactive"}]}
                 />
 
                 <div class="flex justify-end gap-3 pt-1">
@@ -273,10 +273,10 @@
                     phx-click="hide_variation_form"
                     class="btn btn-ghost btn-sm"
                   >
-                    Cancel
+                    Cancelar
                   </button>
-                  <.button type="submit" variant="primary" phx-disable-with="Adding…">
-                    Add Variation
+                  <.button type="submit" variant="primary" phx-disable-with="Adicionando...">
+                    Adicionar Variação
                   </.button>
                 </div>
               </.form>
@@ -286,4 +286,4 @@
       </div>
     <% end %>
   </div>
-</Layouts.app>
+</.dashboard_layout>

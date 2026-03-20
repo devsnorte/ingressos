@@ -1,34 +1,11 @@
 defmodule Pretex.SubEventsTest do
   use Pretex.DataCase, async: true
 
+  import Pretex.OrganizationsFixtures
+  import Pretex.EventsFixtures
+
   alias Pretex.Events
   alias Pretex.Events.SubEvent
-  alias Pretex.Organizations
-
-  # ---------------------------------------------------------------------------
-  # Helpers
-  # ---------------------------------------------------------------------------
-
-  defp org_fixture(attrs \\ %{}) do
-    {:ok, org} =
-      attrs
-      |> Enum.into(%{name: "Test Org", slug: "test-org-#{System.unique_integer([:positive])}"})
-      |> Organizations.create_organization()
-
-    org
-  end
-
-  defp event_fixture(org, attrs \\ %{}) do
-    base = %{
-      name: "My Event #{System.unique_integer([:positive])}",
-      starts_at: ~U[2030-06-01 10:00:00Z],
-      ends_at: ~U[2030-06-01 18:00:00Z],
-      venue: "Main Stage"
-    }
-
-    {:ok, event} = Events.create_event(org, Enum.into(attrs, base))
-    event
-  end
 
   defp sub_event_fixture(event, attrs \\ %{}) do
     base = %{

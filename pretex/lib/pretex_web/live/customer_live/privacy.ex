@@ -6,12 +6,12 @@ defmodule PretexWeb.CustomerLive.Privacy do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="mx-auto max-w-2xl px-4 py-12 space-y-12">
+    <.customer_layout current_scope={@current_scope} current_path="/account/privacy" flash={@flash}>
+      <div class="mx-auto max-w-2xl space-y-12">
         <div class="text-center">
           <.header>
-            Privacy & Data
-            <:subtitle>Manage your personal data in compliance with LGPD</:subtitle>
+            Privacidade
+            <:subtitle>Gerencie seus dados pessoais em conformidade com a LGPD</:subtitle>
           </.header>
         </div>
 
@@ -26,9 +26,9 @@ defmodule PretexWeb.CustomerLive.Privacy do
               <.icon name="hero-arrow-down-tray" class="size-6 text-info" />
             </div>
             <div class="space-y-1">
-              <h2 class="text-lg font-semibold text-base-content">Export my data</h2>
+              <h2 class="text-lg font-semibold text-base-content">Exportar seus dados</h2>
               <p class="text-sm text-base-content/60">
-                Download a copy of your personal data that Pretex holds. The file will be downloaded as JSON.
+                Baixe uma cópia dos seus dados pessoais armazenados pelo Pretex. O arquivo será baixado em formato JSON.
               </p>
             </div>
           </div>
@@ -38,7 +38,7 @@ defmodule PretexWeb.CustomerLive.Privacy do
               phx-click="export_data"
               class="inline-flex items-center gap-2 rounded-lg bg-info px-5 py-2.5 text-sm font-semibold text-info-content shadow-sm hover:brightness-110 transition-all duration-150"
             >
-              <.icon name="hero-arrow-down-tray" class="size-4" /> Export my data
+              <.icon name="hero-arrow-down-tray" class="size-4" /> Exportar meus dados
             </button>
           </div>
         </div>
@@ -50,9 +50,9 @@ defmodule PretexWeb.CustomerLive.Privacy do
               <.icon name="hero-trash" class="size-6 text-error" />
             </div>
             <div class="space-y-1">
-              <h2 class="text-lg font-semibold text-error">Delete my account</h2>
+              <h2 class="text-lg font-semibold text-error">Excluir conta</h2>
               <p class="text-sm text-base-content/60">
-                Permanently delete your account and all associated data. This action cannot be undone.
+                Exclua permanentemente sua conta e todos os dados associados. Esta ação não pode ser desfeita.
               </p>
             </div>
           </div>
@@ -60,9 +60,9 @@ defmodule PretexWeb.CustomerLive.Privacy do
           <div class="alert alert-warning rounded-xl">
             <.icon name="hero-exclamation-triangle" class="size-5 shrink-0" />
             <p class="text-sm">
-              To confirm deletion, type your email address
+              Para confirmar a exclusão, digite seu endereço de e-mail
               <strong>{@current_scope.customer.email}</strong>
-              below.
+              abaixo.
             </p>
           </div>
 
@@ -75,7 +75,7 @@ defmodule PretexWeb.CustomerLive.Privacy do
             <.input
               field={@delete_form[:email_confirmation]}
               type="email"
-              label="Confirm your email address"
+              label="Confirme seu endereço de e-mail"
               placeholder={@current_scope.customer.email}
               autocomplete="off"
               required
@@ -85,12 +85,12 @@ defmodule PretexWeb.CustomerLive.Privacy do
               type="submit"
               class="inline-flex items-center gap-2 rounded-lg bg-error px-5 py-2.5 text-sm font-semibold text-error-content shadow-sm hover:brightness-110 transition-all duration-150"
             >
-              <.icon name="hero-trash" class="size-4" /> Permanently delete my account
+              <.icon name="hero-trash" class="size-4" /> Excluir minha conta permanentemente
             </button>
           </.form>
         </div>
       </div>
-    </Layouts.app>
+    </.customer_layout>
 
     <script :type={Phoenix.LiveView.ColocatedHook} name=".DataExport">
       export default {

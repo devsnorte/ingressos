@@ -21,7 +21,6 @@ defmodule Pretex.Events.Event do
     field(:is_series, :boolean, default: false)
 
     belongs_to(:organization, Pretex.Organizations.Organization)
-    has_many(:ticket_types, Pretex.Events.TicketType)
     has_many(:sub_events, Pretex.Events.SubEvent, foreign_key: :parent_event_id)
 
     timestamps(type: :utc_datetime)

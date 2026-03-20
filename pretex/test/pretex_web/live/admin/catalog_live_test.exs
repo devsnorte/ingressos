@@ -58,7 +58,7 @@ defmodule PretexWeb.Admin.CatalogLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/catalog")
 
-      assert html =~ "Item Catalog"
+      assert html =~ "Catálogo de Itens"
       assert html =~ event.name
     end
 
@@ -69,7 +69,7 @@ defmodule PretexWeb.Admin.CatalogLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/catalog")
 
-      assert html =~ "No items yet"
+      assert html =~ "Nenhum item ainda."
     end
 
     test "lists items for the event", %{conn: conn} do
@@ -102,7 +102,7 @@ defmodule PretexWeb.Admin.CatalogLiveTest do
       {:ok, view, _html} =
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/catalog")
 
-      assert has_element?(view, "a", "New Item")
+      assert has_element?(view, "a", "Novo Item")
     end
 
     test "shows back link to event", %{conn: conn} do
@@ -125,7 +125,7 @@ defmodule PretexWeb.Admin.CatalogLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/catalog")
 
-      assert html =~ "Bundles"
+      assert html =~ "Pacotes"
     end
 
     test "shows item status badge", %{conn: conn} do
@@ -177,7 +177,7 @@ defmodule PretexWeb.Admin.CatalogLiveTest do
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/catalog/new")
 
       assert has_element?(view, "#item-modal")
-      assert render(view) =~ "New Item"
+      assert render(view) =~ "Novo Item"
     end
 
     test "shows validation errors on blank name", %{conn: conn} do
@@ -265,7 +265,7 @@ defmodule PretexWeb.Admin.CatalogLiveTest do
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/catalog/#{item.id}/edit")
 
       assert has_element?(view, "#item-modal")
-      assert html =~ "Edit Item"
+      assert html =~ "Editar Item"
       assert html =~ "Editable Item"
     end
 
@@ -344,7 +344,7 @@ defmodule PretexWeb.Admin.CatalogLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/catalog/items/new")
 
-      assert html =~ "New Item"
+      assert html =~ "Novo Item"
       assert html =~ event.name
     end
 
@@ -419,7 +419,7 @@ defmodule PretexWeb.Admin.CatalogLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/catalog/items/#{item.id}")
 
-      assert html =~ "Edit Item"
+      assert html =~ "Editar Item"
       assert html =~ "Existing Item"
     end
 
@@ -442,7 +442,7 @@ defmodule PretexWeb.Admin.CatalogLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/catalog/items/#{item.id}")
 
-      assert html =~ "No variations yet"
+      assert html =~ "Nenhuma variação ainda."
     end
 
     test "saves changes and navigates to catalog", %{conn: conn} do

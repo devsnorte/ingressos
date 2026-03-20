@@ -1,15 +1,15 @@
-<Layouts.app flash={@flash}>
+<.dashboard_layout current_path={~p"/admin/organizations/#{@org}/events"} org={@org} flash={@flash}>
   <div class="mx-auto max-w-5xl px-4 py-8">
     <div class="flex items-center justify-between mb-8">
       <div>
-        <h1 class="text-2xl font-bold text-base-content">Events</h1>
+        <h1 class="text-2xl font-bold text-base-content">Eventos</h1>
         <p class="text-sm text-base-content/60 mt-1">{@org.name}</p>
       </div>
       <.link
         navigate={~p"/admin/organizations/#{@org}/events/new"}
         class="btn btn-primary btn-sm gap-2"
       >
-        <.icon name="hero-plus" class="size-4" /> New Event
+        <.icon name="hero-plus" class="size-4" /> Novo Evento
       </.link>
     </div>
 
@@ -19,8 +19,8 @@
         class="hidden only:flex flex-col items-center justify-center py-24 text-center"
       >
         <.icon name="hero-calendar-days" class="size-14 text-base-content/20 mb-4" />
-        <p class="text-base font-semibold text-base-content/50">No events yet.</p>
-        <p class="text-sm text-base-content/40 mt-1">Create your first event to get started.</p>
+        <p class="text-base font-semibold text-base-content/50">Nenhum evento ainda.</p>
+        <p class="text-sm text-base-content/40 mt-1">Crie seu primeiro evento para começar.</p>
       </div>
 
       <div
@@ -44,23 +44,24 @@
                   event.status == "draft" && "badge-warning",
                   event.status == "completed" && "badge-ghost"
                 ]}>
-                  {event.status}
+                  {case event.status do
+                    "published" -> "Publicado"
+                    "draft" -> "Rascunho"
+                    "completed" -> "Concluído"
+                    other -> other
+                  end}
                 </span>
               </div>
 
               <div class="flex flex-wrap items-center gap-4 text-xs text-base-content/50">
-                <%= if event.starts_at do %>
-                  <span class="flex items-center gap-1">
-                    <.icon name="hero-calendar" class="size-3" />
-                    {Calendar.strftime(event.starts_at, "%b %d, %Y")}
-                  </span>
-                <% end %>
-                <%= if event.venue do %>
-                  <span class="flex items-center gap-1">
-                    <.icon name="hero-map-pin" class="size-3" />
-                    {event.venue}
-                  </span>
-                <% end %>
+                <span :if={event.starts_at} class="flex items-center gap-1">
+                  <.icon name="hero-calendar" class="size-3" />
+                  {Calendar.strftime(event.starts_at, "%d/%m/%Y")}
+                </span>
+                <span :if={event.venue} class="flex items-center gap-1">
+                  <.icon name="hero-map-pin" class="size-3" />
+                  {event.venue}
+                </span>
               </div>
             </div>
 
@@ -69,58 +70,55 @@
                 navigate={~p"/admin/organizations/#{@org}/events/#{event}/edit"}
                 class="btn btn-ghost btn-xs"
               >
-                Edit
+                Editar
               </.link>
 
-              <%= if event.status == "draft" do %>
-                <button
-                  id={"publish-#{event.id}"}
-                  phx-click="publish"
-                  phx-value-id={event.id}
-                  data-confirm="Publish this event? Make sure you have ticket types configured."
-                  class="btn btn-success btn-xs"
-                >
-                  Publish
-                </button>
-              <% end %>
+              <button
+                :if={event.status == "draft"}
+                id={"publish-#{event.id}"}
+                phx-click="publish"
+                phx-value-id={event.id}
+                data-confirm="Publicar este evento? Certifique-se de que os tipos de ingresso estão configurados."
+                class="btn btn-success btn-xs"
+              >
+                Publicar
+              </button>
 
-              <%= if event.status == "published" do %>
-                <button
-                  id={"complete-#{event.id}"}
-                  phx-click="complete"
-                  phx-value-id={event.id}
-                  data-confirm="Mark this event as completed?"
-                  class="btn btn-neutral btn-xs"
-                >
-                  Complete
-                </button>
-              <% end %>
+              <button
+                :if={event.status == "published"}
+                id={"complete-#{event.id}"}
+                phx-click="complete"
+                phx-value-id={event.id}
+                data-confirm="Marcar este evento como concluído?"
+                class="btn btn-neutral btn-xs"
+              >
+                Concluir
+              </button>
 
               <button
                 id={"clone-#{event.id}"}
                 phx-click="clone"
                 phx-value-id={event.id}
-                data-confirm={"Clone \"#{event.name}\"?"}
+                data-confirm={"Clonar \"#{event.name}\"?"}
                 class="btn btn-ghost btn-xs"
               >
-                Clone
+                Clonar
               </button>
 
-              <%= if event.status == "draft" do %>
-                <button
-                  id={"delete-#{event.id}"}
-                  phx-click="delete"
-                  phx-value-id={event.id}
-                  data-confirm="Delete this event? This cannot be undone."
-                  class="btn btn-ghost btn-xs text-error hover:bg-error hover:text-error-content"
-                >
-                  Delete
-                </button>
-              <% end %>
+              <button
+                :if={event.status == "draft"}
+                id={"delete-#{event.id}"}
+                phx-click="delete"
+                phx-value-id={event.id}
+                data-confirm="Excluir este evento? Esta ação não pode ser desfeita."
+                class="btn btn-ghost btn-xs text-error hover:bg-error hover:text-error-content"
+              >
+                Excluir
+              </button>
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-</Layouts.app>
+</.dashboard_layout>

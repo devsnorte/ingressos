@@ -1,45 +1,15 @@
 defmodule Pretex.EventsTest do
   use Pretex.DataCase, async: true
 
+  import Pretex.OrganizationsFixtures
+  import Pretex.EventsFixtures
+  import Pretex.CatalogFixtures
+
   alias Pretex.Events
   alias Pretex.Events.Event
-  alias Pretex.Organizations
 
-  # ---------------------------------------------------------------------------
-  # Helpers
-  # ---------------------------------------------------------------------------
-
-  defp org_fixture(attrs \\ %{}) do
-    {:ok, org} =
-      attrs
-      |> Enum.into(%{name: "Test Org", slug: "test-org-#{System.unique_integer([:positive])}"})
-      |> Organizations.create_organization()
-
-    org
-  end
-
-  defp event_fixture(org, attrs \\ %{}) do
-    base = %{
-      name: "My Event #{System.unique_integer([:positive])}",
-      starts_at: ~U[2030-06-01 10:00:00Z],
-      ends_at: ~U[2030-06-01 18:00:00Z],
-      venue: "Main Stage"
-    }
-
-    {:ok, event} = Events.create_event(org, Enum.into(attrs, base))
-    event
-  end
-
-  defp ticket_type_fixture(event, attrs \\ %{}) do
-    changeset =
-      %Pretex.Events.TicketType{}
-      |> Pretex.Events.TicketType.changeset(
-        Enum.into(attrs, %{name: "General", price_cents: 1000})
-      )
-      |> Ecto.Changeset.put_change(:event_id, event.id)
-
-    {:ok, tt} = Pretex.Repo.insert(changeset)
-    tt
+  defp catalog_item_fixture(event) do
+    item_fixture(event, %{name: "Ingresso Geral", price_cents: 5000})
   end
 
   # ---------------------------------------------------------------------------
@@ -78,7 +48,7 @@ defmodule Pretex.EventsTest do
           ends_at: ~U[2020-01-01 18:00:00Z]
         })
 
-      ticket_type_fixture(event)
+      catalog_item_fixture(event)
       {:ok, published} = Events.publish_event(event)
       assert published.status == "published"
 
@@ -192,26 +162,26 @@ defmodule Pretex.EventsTest do
   # ---------------------------------------------------------------------------
 
   describe "publish_event/1" do
-    test "on draft with ticket types succeeds" do
+    test "on draft with catalog items succeeds" do
       org = org_fixture()
       event = event_fixture(org)
-      ticket_type_fixture(event)
+      catalog_item_fixture(event)
 
       assert {:ok, published} = Events.publish_event(event)
       assert published.status == "published"
     end
 
-    test "on draft without ticket types returns :no_ticket_types error" do
+    test "on draft without catalog items returns :no_catalog_items error" do
       org = org_fixture()
       event = event_fixture(org)
 
-      assert {:error, :no_ticket_types} = Events.publish_event(event)
+      assert {:error, :no_catalog_items} = Events.publish_event(event)
     end
 
     test "on already-published event returns :invalid_status error" do
       org = org_fixture()
       event = event_fixture(org)
-      ticket_type_fixture(event)
+      catalog_item_fixture(event)
 
       {:ok, published} = Events.publish_event(event)
       assert {:error, :invalid_status} = Events.publish_event(published)
@@ -226,7 +196,7 @@ defmodule Pretex.EventsTest do
     test "on published event succeeds" do
       org = org_fixture()
       event = event_fixture(org)
-      ticket_type_fixture(event)
+      catalog_item_fixture(event)
 
       {:ok, published} = Events.publish_event(event)
       assert {:ok, completed} = Events.complete_event(published)

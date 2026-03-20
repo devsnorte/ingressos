@@ -17,7 +17,7 @@ defmodule PretexWeb.Admin.OrganizationLiveTest do
 
     test "lists all organizations", %{conn: conn, organization: organization} do
       {:ok, _index_live, html} = live(conn, ~p"/admin/organizations")
-      assert html =~ "Organizations"
+      assert html =~ "Organizações"
       assert html =~ organization.name
     end
 
@@ -27,14 +27,14 @@ defmodule PretexWeb.Admin.OrganizationLiveTest do
       end
 
       {:ok, _index_live, html} = live(conn, ~p"/admin/organizations")
-      assert html =~ "Organizations"
+      assert html =~ "Organizações"
     end
 
     test "saves new organization", %{conn: conn} do
       {:ok, index_live, _html} = live(conn, ~p"/admin/organizations")
 
       index_live
-      |> element("a", "New Organization")
+      |> element("a", "Nova Organização")
       |> render_click()
 
       assert_patch(index_live, ~p"/admin/organizations/new")
@@ -57,7 +57,7 @@ defmodule PretexWeb.Admin.OrganizationLiveTest do
       {:ok, index_live, _html} = live(conn, ~p"/admin/organizations")
 
       index_live
-      |> element("a", "Edit")
+      |> element("a", "Editar")
       |> render_click()
 
       index_live
@@ -74,7 +74,7 @@ defmodule PretexWeb.Admin.OrganizationLiveTest do
       {:ok, index_live, _html} = live(conn, ~p"/admin/organizations")
 
       assert index_live
-             |> element("a", "Delete")
+             |> element("a", "Excluir")
              |> render_click()
 
       refute render(index_live) =~ organization.name

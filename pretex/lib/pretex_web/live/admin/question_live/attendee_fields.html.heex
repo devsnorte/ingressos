@@ -1,22 +1,22 @@
-<Layouts.app flash={@flash}>
+<.dashboard_layout current_path={~p"/admin/organizations/#{@org}/events/#{@event}/questions/attendee-fields"} org={@org} flash={@flash}>
   <div class="mx-auto max-w-3xl px-4 py-8">
-    <%!-- Top bar --%>
+    <%!-- Barra superior --%>
     <div class="mb-6 flex items-center justify-between gap-4 flex-wrap">
       <.link
         navigate={~p"/admin/organizations/#{@org}/events/#{@event}/questions"}
         class="inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-primary transition-colors"
       >
-        <.icon name="hero-arrow-left" class="size-4" /> Back to Questions
+        <.icon name="hero-arrow-left" class="size-4" /> Voltar às Perguntas
       </.link>
     </div>
 
-    <%!-- Page title --%>
+    <%!-- Título da página --%>
     <div class="mb-6">
-      <h1 class="text-2xl font-bold text-base-content">Attendee Fields</h1>
+      <h1 class="text-2xl font-bold text-base-content">Campos do Participante</h1>
       <p class="text-sm text-base-content/60 mt-1">{@event.name}</p>
     </div>
 
-    <%!-- Info banner --%>
+    <%!-- Banner informativo --%>
     <div class="flex items-start gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm mb-6">
       <.icon
         name="hero-information-circle"
@@ -24,98 +24,114 @@
       />
       <div>
         <p class="text-base-content/70">
-          Configure which built-in attendee fields are collected during checkout.
-          <strong class="text-base-content">Name</strong>
-          and <strong class="text-base-content">Email</strong>
-          are always collected and cannot be disabled.
+          Configure quais campos nativos do participante são coletados durante o checkout.
+          <strong class="text-base-content">Nome</strong>
+          e <strong class="text-base-content">E-mail</strong>
+          são sempre coletados e não podem ser desativados.
         </p>
       </div>
     </div>
 
-    <%!-- Field config list --%>
+    <%!-- Lista de configuração de campos --%>
     <div id="attendee-fields" class="space-y-3">
-      <%= for config <- @configs do %>
-        <div
-          id={"field-#{config.field_name}"}
-          class="card bg-base-100 border border-base-200 shadow-sm"
-        >
-          <div class="card-body p-5">
-            <div class="flex items-center gap-4">
-              <%!-- Field icon --%>
-              <div class="w-9 h-9 rounded-lg bg-base-200 flex items-center justify-center shrink-0">
-                <%= cond do %>
-                  <% config.field_name == "name" -> %>
-                    <.icon name="hero-user" class="size-4 text-base-content/50" />
-                  <% config.field_name == "email" -> %>
-                    <.icon name="hero-envelope" class="size-4 text-base-content/50" />
-                  <% config.field_name == "company" -> %>
-                    <.icon name="hero-building-office" class="size-4 text-base-content/50" />
-                  <% config.field_name == "phone" -> %>
-                    <.icon name="hero-phone" class="size-4 text-base-content/50" />
-                  <% config.field_name == "address" -> %>
-                    <.icon name="hero-map-pin" class="size-4 text-base-content/50" />
-                  <% config.field_name == "birth_date" -> %>
-                    <.icon name="hero-calendar" class="size-4 text-base-content/50" />
-                  <% true -> %>
-                    <.icon name="hero-question-mark-circle" class="size-4 text-base-content/50" />
-                <% end %>
-              </div>
+      <div
+        :for={config <- @configs}
+        id={"field-#{config.field_name}"}
+        class="card bg-base-100 border border-base-200 shadow-sm"
+      >
+        <div class="card-body p-5">
+          <div class="flex items-center gap-4">
+            <%!-- Ícone do campo --%>
+            <div class="w-9 h-9 rounded-lg bg-base-200 flex items-center justify-center shrink-0">
+              <.icon
+                :if={config.field_name == "name"}
+                name="hero-user"
+                class="size-4 text-base-content/50"
+              />
+              <.icon
+                :if={config.field_name == "email"}
+                name="hero-envelope"
+                class="size-4 text-base-content/50"
+              />
+              <.icon
+                :if={config.field_name == "company"}
+                name="hero-building-office"
+                class="size-4 text-base-content/50"
+              />
+              <.icon
+                :if={config.field_name == "phone"}
+                name="hero-phone"
+                class="size-4 text-base-content/50"
+              />
+              <.icon
+                :if={config.field_name == "address"}
+                name="hero-map-pin"
+                class="size-4 text-base-content/50"
+              />
+              <.icon
+                :if={config.field_name == "birth_date"}
+                name="hero-calendar"
+                class="size-4 text-base-content/50"
+              />
+              <.icon
+                :if={config.field_name not in ~w(name email company phone address birth_date)}
+                name="hero-question-mark-circle"
+                class="size-4 text-base-content/50"
+              />
+            </div>
 
-              <%!-- Field label and name --%>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 flex-wrap">
-                  <span class="font-semibold text-base-content text-sm">
-                    {field_label(config.field_name)}
-                  </span>
-                  <span class="text-xs font-mono text-base-content/40 bg-base-200 rounded px-1.5 py-0.5">
-                    {config.field_name}
-                  </span>
-                  <%= if config.always_shown do %>
-                    <span class="badge badge-sm badge-neutral gap-1">
-                      <.icon name="hero-lock-closed" class="size-2.5" /> Always shown
-                    </span>
-                  <% end %>
-                </div>
+            <%!-- Rótulo e nome do campo --%>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-semibold text-base-content text-sm">
+                  {field_label(config.field_name)}
+                </span>
+                <span class="text-xs font-mono text-base-content/40 bg-base-200 rounded px-1.5 py-0.5">
+                  {config.field_name}
+                </span>
+                <span :if={config.always_shown} class="badge badge-sm badge-neutral gap-1">
+                  <.icon name="hero-lock-closed" class="size-2.5" /> Sempre visível
+                </span>
               </div>
+            </div>
 
-              <%!-- Toggles --%>
-              <div class="flex items-center gap-6 shrink-0">
-                <%!-- Enabled toggle --%>
-                <label class={[
-                  "flex flex-col items-center gap-1 cursor-pointer",
-                  config.always_shown && "opacity-40 cursor-not-allowed"
-                ]}>
-                  <span class="text-xs text-base-content/50 font-medium">Enabled</span>
-                  <input
-                    type="checkbox"
-                    class="toggle toggle-sm toggle-primary"
-                    checked={config.is_enabled || config.always_shown}
-                    disabled={config.always_shown}
-                    phx-click={if !config.always_shown, do: "toggle_enabled"}
-                    phx-value-field={config.field_name}
-                  />
-                </label>
+            <%!-- Alternadores --%>
+            <div class="flex items-center gap-6 shrink-0">
+              <%!-- Alternador de ativação --%>
+              <label class={[
+                "flex flex-col items-center gap-1 cursor-pointer",
+                config.always_shown && "opacity-40 cursor-not-allowed"
+              ]}>
+                <span class="text-xs text-base-content/50 font-medium">Ativado</span>
+                <input
+                  type="checkbox"
+                  class="toggle toggle-sm toggle-primary"
+                  checked={config.is_enabled || config.always_shown}
+                  disabled={config.always_shown}
+                  phx-click={if !config.always_shown, do: "toggle_enabled"}
+                  phx-value-field={config.field_name}
+                />
+              </label>
 
-                <%!-- Required toggle --%>
-                <label class={[
-                  "flex flex-col items-center gap-1 cursor-pointer",
-                  !config.is_enabled && !config.always_shown && "opacity-40 cursor-not-allowed"
-                ]}>
-                  <span class="text-xs text-base-content/50 font-medium">Required</span>
-                  <input
-                    type="checkbox"
-                    class="toggle toggle-sm toggle-error"
-                    checked={config.is_required}
-                    disabled={!config.is_enabled && !config.always_shown}
-                    phx-click={if config.is_enabled || config.always_shown, do: "toggle_required"}
-                    phx-value-field={config.field_name}
-                  />
-                </label>
-              </div>
+              <%!-- Alternador de obrigatoriedade --%>
+              <label class={[
+                "flex flex-col items-center gap-1 cursor-pointer",
+                !config.is_enabled && !config.always_shown && "opacity-40 cursor-not-allowed"
+              ]}>
+                <span class="text-xs text-base-content/50 font-medium">Obrigatório</span>
+                <input
+                  type="checkbox"
+                  class="toggle toggle-sm toggle-error"
+                  checked={config.is_required}
+                  disabled={!config.is_enabled && !config.always_shown}
+                  phx-click={if config.is_enabled || config.always_shown, do: "toggle_required"}
+                  phx-value-field={config.field_name}
+                />
+              </label>
             </div>
           </div>
         </div>
-      <% end %>
+      </div>
     </div>
   </div>
-</Layouts.app>
+</.dashboard_layout>

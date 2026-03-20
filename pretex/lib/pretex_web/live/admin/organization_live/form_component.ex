@@ -19,13 +19,13 @@ defmodule PretexWeb.Admin.OrganizationLive.FormComponent do
         phx-submit="save"
         class="mt-4 space-y-4"
       >
-        <.input field={@form[:name]} type="text" label="Name" />
+        <.input field={@form[:name]} type="text" label="Nome" />
         <.input field={@form[:slug]} type="text" label="Slug" />
-        <.input field={@form[:display_name]} type="text" label="Display Name" />
-        <.input field={@form[:description]} type="textarea" label="Description" />
-        <.input field={@form[:logo_url]} type="text" label="Logo URL" />
+        <.input field={@form[:display_name]} type="text" label="Nome de Exibição" />
+        <.input field={@form[:description]} type="textarea" label="Descrição" />
+        <.input field={@form[:logo_url]} type="text" label="URL do Logo" />
         <div class="mt-6">
-          <.button phx-disable-with="Saving...">Save Organization</.button>
+          <.button phx-disable-with="Salvando...">Salvar Organização</.button>
         </div>
       </.form>
     </div>

@@ -27,7 +27,7 @@ defmodule PretexWeb.StaffLive.SecurityTest do
         |> log_in_user(user_fixture())
         |> live(~p"/staff/security")
 
-      assert html =~ "Authenticator App"
+      assert html =~ "Aplicativo Autenticador"
     end
 
     test "security page renders recovery codes section", %{conn: conn} do
@@ -36,7 +36,7 @@ defmodule PretexWeb.StaffLive.SecurityTest do
         |> log_in_user(user_fixture())
         |> live(~p"/staff/security")
 
-      assert html =~ "Recovery Codes"
+      assert html =~ "Códigos de Recuperação"
     end
 
     test "security page renders WebAuthn section", %{conn: conn} do
@@ -45,7 +45,7 @@ defmodule PretexWeb.StaffLive.SecurityTest do
         |> log_in_user(user_fixture())
         |> live(~p"/staff/security")
 
-      assert html =~ "Security Keys"
+      assert html =~ "Chaves de Segurança"
     end
 
     test "shows Enable Authenticator App button when TOTP not enabled", %{conn: conn} do
@@ -78,7 +78,7 @@ defmodule PretexWeb.StaffLive.SecurityTest do
       lv |> element("#enable-totp-btn") |> render_click()
 
       html = render(lv)
-      assert html =~ "Scan QR Code"
+      assert html =~ "Escaneie o QR Code"
       assert has_element?(lv, "#totp-qr")
       assert has_element?(lv, "#totp-secret-b32")
     end
@@ -161,7 +161,7 @@ defmodule PretexWeb.StaffLive.SecurityTest do
         |> element("#regenerate-codes-btn")
         |> render_click()
 
-      assert html =~ "Save your recovery codes"
+      assert html =~ "Salve seus códigos de recuperação"
       assert has_element?(lv, "#recovery-codes-list")
     end
 

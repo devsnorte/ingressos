@@ -1,68 +1,12 @@
 defmodule Pretex.QuotasTest do
   use Pretex.DataCase, async: true
 
+  import Pretex.OrganizationsFixtures
+  import Pretex.EventsFixtures
+  import Pretex.CatalogFixtures
+
   alias Pretex.Catalog
   alias Pretex.Catalog.Quota
-  alias Pretex.Events
-  alias Pretex.Organizations
-
-  # ---------------------------------------------------------------------------
-  # Helpers
-  # ---------------------------------------------------------------------------
-
-  defp org_fixture(attrs \\ %{}) do
-    {:ok, org} =
-      attrs
-      |> Enum.into(%{name: "Test Org", slug: "test-org-#{System.unique_integer([:positive])}"})
-      |> Organizations.create_organization()
-
-    org
-  end
-
-  defp event_fixture(org, attrs \\ %{}) do
-    base = %{
-      name: "My Event #{System.unique_integer([:positive])}",
-      starts_at: ~U[2030-06-01 10:00:00Z],
-      ends_at: ~U[2030-06-01 18:00:00Z],
-      venue: "Main Stage"
-    }
-
-    {:ok, event} = Events.create_event(org, Enum.into(attrs, base))
-    event
-  end
-
-  defp item_fixture(event, attrs \\ %{}) do
-    base = %{
-      name: "Test Item #{System.unique_integer([:positive])}",
-      price_cents: 1000,
-      item_type: "ticket",
-      status: "active"
-    }
-
-    {:ok, item} = Catalog.create_item(event, Enum.into(attrs, base))
-    item
-  end
-
-  defp variation_fixture(item, attrs \\ %{}) do
-    base = %{
-      name: "Variation #{System.unique_integer([:positive])}",
-      price_cents: 500,
-      status: "active"
-    }
-
-    {:ok, variation} = Catalog.create_variation(item, Enum.into(attrs, base))
-    variation
-  end
-
-  defp quota_fixture(event, attrs \\ %{}) do
-    base = %{
-      name: "General Quota #{System.unique_integer([:positive])}",
-      capacity: 100
-    }
-
-    {:ok, quota} = Catalog.create_quota(event, Enum.into(attrs, base))
-    quota
-  end
 
   # ---------------------------------------------------------------------------
   # list_quotas/1

@@ -2,43 +2,14 @@ defmodule PretexWeb.Admin.EventLiveTest do
   use PretexWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
+  import Pretex.OrganizationsFixtures
+  import Pretex.EventsFixtures
+  import Pretex.CatalogFixtures
 
   alias Pretex.Events
-  alias Pretex.Organizations
 
-  # ---------------------------------------------------------------------------
-  # Helpers
-  # ---------------------------------------------------------------------------
-
-  defp org_fixture(attrs \\ %{}) do
-    {:ok, org} =
-      attrs
-      |> Enum.into(%{name: "Test Org", slug: "test-org-#{System.unique_integer([:positive])}"})
-      |> Organizations.create_organization()
-
-    org
-  end
-
-  defp event_fixture(org, attrs \\ %{}) do
-    base = %{
-      name: "Test Event #{System.unique_integer([:positive])}",
-      starts_at: ~U[2030-06-01 10:00:00Z],
-      ends_at: ~U[2030-06-01 18:00:00Z],
-      venue: "Main Stage"
-    }
-
-    {:ok, event} = Events.create_event(org, Enum.into(attrs, base))
-    event
-  end
-
-  defp ticket_type_fixture(event) do
-    changeset =
-      %Pretex.Events.TicketType{}
-      |> Pretex.Events.TicketType.changeset(%{name: "General", price_cents: 1000})
-      |> Ecto.Changeset.put_change(:event_id, event.id)
-
-    {:ok, tt} = Pretex.Repo.insert(changeset)
-    tt
+  defp catalog_item_fixture(event) do
+    item_fixture(event, %{name: "Ingresso Geral", price_cents: 5000})
   end
 
   # ---------------------------------------------------------------------------
@@ -60,7 +31,7 @@ defmodule PretexWeb.Admin.EventLiveTest do
       org = org_fixture()
 
       {:ok, _view, html} = live(conn, ~p"/admin/organizations/#{org}/events")
-      assert html =~ "No events yet"
+      assert html =~ "Nenhum evento ainda."
     end
 
     test "shows draft status badge", %{conn: conn} do
@@ -68,10 +39,10 @@ defmodule PretexWeb.Admin.EventLiveTest do
       _event = event_fixture(org)
 
       {:ok, _view, html} = live(conn, ~p"/admin/organizations/#{org}/events")
-      assert html =~ "draft"
+      assert html =~ "Rascunho"
     end
 
-    test "publish button shows no-ticket-type error flash when none configured", %{conn: conn} do
+    test "publish button shows no-catalog-items error flash when none configured", %{conn: conn} do
       org = org_fixture()
       event = event_fixture(org)
 
@@ -81,13 +52,13 @@ defmodule PretexWeb.Admin.EventLiveTest do
       |> element("#publish-#{event.id}")
       |> render_click()
 
-      assert render(view) =~ "at least one ticket type"
+      assert render(view) =~ "pelo menos um item no catálogo"
     end
 
-    test "publish button succeeds when ticket types are configured", %{conn: conn} do
+    test "publish button succeeds when catalog items are configured", %{conn: conn} do
       org = org_fixture()
       event = event_fixture(org)
-      ticket_type_fixture(event)
+      catalog_item_fixture(event)
 
       {:ok, view, _html} = live(conn, ~p"/admin/organizations/#{org}/events")
 
@@ -95,7 +66,7 @@ defmodule PretexWeb.Admin.EventLiveTest do
       |> element("#publish-#{event.id}")
       |> render_click()
 
-      assert render(view) =~ "published"
+      assert render(view) =~ "Publicado"
     end
 
     test "delete removes the event from the stream", %{conn: conn} do
@@ -137,7 +108,7 @@ defmodule PretexWeb.Admin.EventLiveTest do
       org = org_fixture()
 
       {:ok, view, html} = live(conn, ~p"/admin/organizations/#{org}/events/new")
-      assert html =~ "New Event"
+      assert html =~ "Novo Evento"
       assert has_element?(view, "#event-form")
     end
 
@@ -229,7 +200,7 @@ defmodule PretexWeb.Admin.EventLiveTest do
     test "shows complete button for published event", %{conn: conn} do
       org = org_fixture()
       event = event_fixture(org)
-      ticket_type_fixture(event)
+      catalog_item_fixture(event)
 
       {:ok, published} = Events.publish_event(event)
 
@@ -237,18 +208,18 @@ defmodule PretexWeb.Admin.EventLiveTest do
       assert has_element?(view, "#complete-event")
     end
 
-    test "shows no-ticket-types notice when count is zero", %{conn: conn} do
+    test "shows no-catalog-items notice when count is zero", %{conn: conn} do
       org = org_fixture()
       event = event_fixture(org)
 
       {:ok, _view, html} = live(conn, ~p"/admin/organizations/#{org}/events/#{event}")
-      assert html =~ "Add at least one ticket type"
+      assert html =~ "Adicione pelo menos um tipo de ingresso"
     end
 
-    test "shows ticket count when ticket types exist", %{conn: conn} do
+    test "shows ticket count when catalog items exist", %{conn: conn} do
       org = org_fixture()
       event = event_fixture(org)
-      ticket_type_fixture(event)
+      catalog_item_fixture(event)
 
       {:ok, view, _html} = live(conn, ~p"/admin/organizations/#{org}/events/#{event}")
       assert has_element?(view, "#ticket-count")

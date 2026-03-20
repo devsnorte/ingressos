@@ -8,9 +8,9 @@ defmodule PretexWeb.CustomerLive.LoginTest do
     test "renders login page", %{conn: conn} do
       {:ok, _lv, html} = live(conn, ~p"/customers/log-in")
 
-      assert html =~ "Log in"
-      assert html =~ "Register"
-      assert html =~ "Log in with email"
+      assert html =~ "Entrar na sua conta"
+      assert html =~ "Criar conta"
+      assert html =~ "Entrar com e-mail"
     end
   end
 
@@ -85,11 +85,11 @@ defmodule PretexWeb.CustomerLive.LoginTest do
 
       {:ok, _login_live, login_html} =
         lv
-        |> element("main a", "Sign up")
+        |> element("a", "Criar conta")
         |> render_click()
         |> follow_redirect(conn, ~p"/customers/register")
 
-      assert login_html =~ "Register"
+      assert login_html =~ "Criar sua conta"
     end
   end
 
@@ -102,9 +102,9 @@ defmodule PretexWeb.CustomerLive.LoginTest do
     test "shows login page with email filled in", %{conn: conn, customer: customer} do
       {:ok, _lv, html} = live(conn, ~p"/customers/log-in")
 
-      assert html =~ "You need to reauthenticate"
-      refute html =~ "Register"
-      assert html =~ "Log in with email"
+      assert html =~ "Você precisa se autenticar novamente"
+      refute html =~ "Criar conta"
+      assert html =~ "Entrar com e-mail"
 
       assert html =~
                ~s(<input type="email" name="customer[email]" id="login_form_magic_email" value="#{customer.email}")
