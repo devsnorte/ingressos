@@ -229,11 +229,37 @@ defmodule Pretex.Orders do
         # Preload order_items so discount evaluation can inspect them
         order_preloaded = Repo.preload(order, order_items: [:item, :item_variation])
 
+        # Apply best membership discount FIRST (before auto-discounts, vouchers, gift cards)
+        customer_id = order_preloaded.customer_id
+        event_for_org = Repo.get!(Pretex.Events.Event, cart.event_id)
+
+        # Check if cart contains membership items — require customer_id
+        has_membership_item =
+          Enum.any?(cart.cart_items, fn ci -> ci.item.item_type == "membership" end)
+
+        if has_membership_item && is_nil(customer_id) do
+          Repo.rollback(:customer_required_for_membership)
+        end
+
+        order_after_membership =
+          if customer_id do
+            case Pretex.Memberships.apply_best_membership_discount(
+                   order_preloaded,
+                   customer_id,
+                   event_for_org.organization_id
+                 ) do
+              {:ok, updated} -> Repo.preload(updated, order_items: [:item, :item_variation])
+              {:error, _} -> order_preloaded
+            end
+          else
+            order_preloaded
+          end
+
         # Apply best automatic discount BEFORE fees (fees computed on discounted price)
         order =
-          case Pretex.Discounts.apply_best_discount(order_preloaded, cart.event_id) do
+          case Pretex.Discounts.apply_best_discount(order_after_membership, cart.event_id) do
             {:ok, updated} -> updated
-            {:error, _} -> order_preloaded
+            {:error, _} -> order_after_membership
           end
 
         order_with_fees =
@@ -312,11 +338,27 @@ defmodule Pretex.Orders do
             order_after_voucher
           end
 
+        # Activate memberships for any membership items in the order
+        if customer_id do
+          org = Repo.get!(Pretex.Organizations.Organization, event_for_org.organization_id)
+
+          order_after_gift_card
+          |> Repo.preload(order_items: [item: []])
+          |> Map.get(:order_items, [])
+          |> Enum.filter(fn oi -> oi.item.item_type == "membership" && oi.item.membership_type_id != nil end)
+          |> Enum.each(fn oi ->
+            mt = Pretex.Memberships.get_membership_type!(oi.item.membership_type_id)
+            customer = Repo.get!(Pretex.Customers.Customer, customer_id)
+            Pretex.Memberships.activate_membership_from_order(mt, customer, org, order_after_gift_card)
+          end)
+        end
+
         Repo.preload(order_after_gift_card,
           order_items: [:item, :item_variation],
           fees: [],
           discounts: [],
-          gift_card_redemptions: []
+          gift_card_redemptions: [],
+          membership_discounts: []
         )
       end)
     end

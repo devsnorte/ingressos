@@ -1,4 +1,4 @@
-defmodule Pretex.Repo.Migrations.CreateMemberships do
+defmodule Pretex.Repo.Migrations.CreateOrgUserMemberships do
   use Ecto.Migration
 
   def change do

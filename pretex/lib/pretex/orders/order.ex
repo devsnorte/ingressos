@@ -23,6 +23,7 @@ defmodule Pretex.Orders.Order do
     has_one(:voucher_redemption, Pretex.Vouchers.VoucherRedemption)
     has_many(:discounts, Pretex.Discounts.OrderDiscount)
     has_many(:gift_card_redemptions, Pretex.GiftCards.GiftCardRedemption)
+    has_many(:membership_discounts, Pretex.Memberships.OrderMembershipDiscount)
 
     timestamps(type: :utc_datetime)
   end
@@ -38,7 +39,8 @@ defmodule Pretex.Orders.Order do
       :payment_method,
       :expires_at,
       :payment_provider_id,
-      :locked_by_organizer
+      :locked_by_organizer,
+      :customer_id
     ])
     |> validate_required([:email, :name])
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must be a valid email")
