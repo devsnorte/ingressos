@@ -1,4 +1,8 @@
-<.dashboard_layout current_path={~p"/admin/organizations/#{@org}/payments"} org={@org} flash={@flash}>
+<.dashboard_layout
+  current_path={~p"/admin/organizations/#{@org}/payments"}
+  org={@org}
+  flash={@flash}
+>
   <.breadcrumb items={[
     {"Organizações", ~p"/admin/organizations"},
     {@org.name, ~p"/admin/organizations/#{@org}"},
@@ -9,13 +13,15 @@
     <:actions>
       <.link :if={@live_action == :index} patch={~p"/admin/organizations/#{@org}/payments/new"}>
         <.button class="btn btn-primary btn-sm gap-1">
-          <.icon name="hero-plus" class="w-4 h-4" />
-          Adicionar Gateway
+          <.icon name="hero-plus" class="w-4 h-4" /> Adicionar Gateway
         </.button>
       </.link>
-      <.link :if={@live_action in [:select, :new]} patch={~p"/admin/organizations/#{@org}/payments"} class="btn btn-ghost btn-sm gap-1">
-        <.icon name="hero-arrow-left" class="w-4 h-4" />
-        Voltar
+      <.link
+        :if={@live_action in [:select, :new]}
+        patch={~p"/admin/organizations/#{@org}/payments"}
+        class="btn btn-ghost btn-sm gap-1"
+      >
+        <.icon name="hero-arrow-left" class="w-4 h-4" /> Voltar
       </.link>
     </:actions>
   </.page_header>
@@ -42,9 +48,14 @@
               <div class="text-xs text-primary font-medium">Recomendado para Pix</div>
             </div>
           </div>
-          <.icon name="hero-arrow-right" class="w-5 h-5 text-base-content/30 group-hover:text-primary transition" />
+          <.icon
+            name="hero-arrow-right"
+            class="w-5 h-5 text-base-content/30 group-hover:text-primary transition"
+          />
         </div>
-        <p class="text-sm text-base-content/60 mb-3">Pagamentos instantâneos via Pix com a plataforma Woovi (OpenPix). QR Code gerado automaticamente.</p>
+        <p class="text-sm text-base-content/60 mb-3">
+          Pagamentos instantâneos via Pix com a plataforma Woovi (OpenPix). QR Code gerado automaticamente.
+        </p>
         <div class="flex gap-1">
           <span class="badge badge-sm badge-primary badge-outline">pix</span>
         </div>
@@ -64,9 +75,14 @@
               <div class="text-xs text-base-content/50">Cartões e Pix</div>
             </div>
           </div>
-          <.icon name="hero-arrow-right" class="w-5 h-5 text-base-content/30 group-hover:text-primary transition" />
+          <.icon
+            name="hero-arrow-right"
+            class="w-5 h-5 text-base-content/30 group-hover:text-primary transition"
+          />
         </div>
-        <p class="text-sm text-base-content/60 mb-3">Cartão de crédito, débito e Pix via Stripe. Aceita pagamentos internacionais.</p>
+        <p class="text-sm text-base-content/60 mb-3">
+          Cartão de crédito, débito e Pix via Stripe. Aceita pagamentos internacionais.
+        </p>
         <div class="flex gap-1">
           <span class="badge badge-sm badge-outline">cartão</span>
           <span class="badge badge-sm badge-outline">pix</span>
@@ -87,9 +103,14 @@
               <div class="text-xs text-base-content/50">Pix e Boleto</div>
             </div>
           </div>
-          <.icon name="hero-arrow-right" class="w-5 h-5 text-base-content/30 group-hover:text-primary transition" />
+          <.icon
+            name="hero-arrow-right"
+            class="w-5 h-5 text-base-content/30 group-hover:text-primary transition"
+          />
         </div>
-        <p class="text-sm text-base-content/60 mb-3">Gateway brasileiro com Pix e boleto. Taxas competitivas para o mercado nacional.</p>
+        <p class="text-sm text-base-content/60 mb-3">
+          Gateway brasileiro com Pix e boleto. Taxas competitivas para o mercado nacional.
+        </p>
         <div class="flex gap-1">
           <span class="badge badge-sm badge-outline">pix</span>
           <span class="badge badge-sm badge-outline">boleto</span>
@@ -110,9 +131,14 @@
               <div class="text-xs text-base-content/50">Pix, Boleto e Cartão</div>
             </div>
           </div>
-          <.icon name="hero-arrow-right" class="w-5 h-5 text-base-content/30 group-hover:text-primary transition" />
+          <.icon
+            name="hero-arrow-right"
+            class="w-5 h-5 text-base-content/30 group-hover:text-primary transition"
+          />
         </div>
-        <p class="text-sm text-base-content/60 mb-3">Plataforma completa de cobranças. Pix, boleto e cartão de crédito em um só lugar.</p>
+        <p class="text-sm text-base-content/60 mb-3">
+          Plataforma completa de cobranças. Pix, boleto e cartão de crédito em um só lugar.
+        </p>
         <div class="flex gap-1">
           <span class="badge badge-sm badge-outline">pix</span>
           <span class="badge badge-sm badge-outline">boleto</span>
@@ -127,16 +153,24 @@
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-xl bg-base-200 flex items-center justify-center group-hover:bg-primary/10 transition">
-              <.icon name="hero-banknotes" class="w-6 h-6 text-base-content/50 group-hover:text-primary transition" />
+              <.icon
+                name="hero-banknotes"
+                class="w-6 h-6 text-base-content/50 group-hover:text-primary transition"
+              />
             </div>
             <div>
               <div class="font-bold text-lg">Manual / Transferência</div>
               <div class="text-xs text-base-content/50">Sem integração</div>
             </div>
           </div>
-          <.icon name="hero-arrow-right" class="w-5 h-5 text-base-content/30 group-hover:text-primary transition" />
+          <.icon
+            name="hero-arrow-right"
+            class="w-5 h-5 text-base-content/30 group-hover:text-primary transition"
+          />
         </div>
-        <p class="text-sm text-base-content/60 mb-3">Pagamento confirmado manualmente pelo organizador. Transferência bancária, depósito ou dinheiro.</p>
+        <p class="text-sm text-base-content/60 mb-3">
+          Pagamento confirmado manualmente pelo organizador. Transferência bancária, depósito ou dinheiro.
+        </p>
         <div class="flex gap-1">
           <span class="badge badge-sm badge-outline">transferência</span>
           <span class="badge badge-sm badge-outline">dinheiro</span>
@@ -149,7 +183,10 @@
   <%!-- CONFIGURED PROVIDERS LIST (shown on :index) --%>
   <%!-- ============================================================ --%>
   <div :if={@live_action == :index && @providers != []} class="space-y-3">
-    <div :for={provider <- @providers} class="bg-base-100 rounded-xl border border-base-300 p-5 transition hover:shadow-md">
+    <div
+      :for={provider <- @providers}
+      class="bg-base-100 rounded-xl border border-base-300 p-5 transition hover:shadow-md"
+    >
       <div class="flex items-center justify-between gap-4 flex-wrap">
         <%!-- Left: Provider info --%>
         <div class="flex items-center gap-4">
@@ -174,13 +211,22 @@
             <div class="flex items-center gap-2 flex-wrap">
               <span class="font-bold">{provider.name}</span>
               <span :if={provider.is_default} class="badge badge-xs badge-primary">Padrão</span>
-              <span :if={provider.validation_status == "valid"} class="badge badge-xs badge-success gap-0.5">
+              <span
+                :if={provider.validation_status == "valid"}
+                class="badge badge-xs badge-success gap-0.5"
+              >
                 <.icon name="hero-check" class="w-2.5 h-2.5" /> Ativo
               </span>
-              <span :if={provider.validation_status == "pending"} class="badge badge-xs badge-warning gap-0.5">
+              <span
+                :if={provider.validation_status == "pending"}
+                class="badge badge-xs badge-warning gap-0.5"
+              >
                 <.icon name="hero-clock" class="w-2.5 h-2.5" /> Pendente
               </span>
-              <span :if={provider.validation_status == "invalid"} class="badge badge-xs badge-error gap-0.5">
+              <span
+                :if={provider.validation_status == "invalid"}
+                class="badge badge-xs badge-error gap-0.5"
+              >
                 <.icon name="hero-x-mark" class="w-2.5 h-2.5" /> Inválido
               </span>
             </div>
@@ -210,7 +256,10 @@
           >
             <.icon name="hero-star" class="w-3 h-3" /> Tornar Padrão
           </button>
-          <.link patch={~p"/admin/organizations/#{@org}/payments/#{provider}/edit"} class="btn btn-ghost btn-xs gap-1">
+          <.link
+            patch={~p"/admin/organizations/#{@org}/payments/#{provider}/edit"}
+            class="btn btn-ghost btn-xs gap-1"
+          >
             <.icon name="hero-pencil-square" class="w-3 h-3" /> Editar
           </.link>
           <button
@@ -239,17 +288,22 @@
       Recomendamos começar com <strong>Pix via Woovi</strong> ou <strong>Stripe</strong>.
     </p>
     <.link patch={~p"/admin/organizations/#{@org}/payments/new"} class="btn btn-primary gap-2">
-      <.icon name="hero-plus" class="w-4 h-4" />
-      Configurar Gateway
+      <.icon name="hero-plus" class="w-4 h-4" /> Configurar Gateway
     </.link>
   </div>
 
   <%!-- ============================================================ --%>
   <%!-- CREDENTIAL FORM MODAL (shown on :new with type or :edit) --%>
   <%!-- ============================================================ --%>
-  <div :if={(@live_action == :new && @selected_type) || @live_action == :edit} class="modal modal-open">
+  <div
+    :if={(@live_action == :new && @selected_type) || @live_action == :edit}
+    class="modal modal-open"
+  >
     <div class="modal-box max-w-lg">
-      <.link patch={~p"/admin/organizations/#{@org}/payments"} class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+      <.link
+        patch={~p"/admin/organizations/#{@org}/payments"}
+        class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+      >
         ✕
       </.link>
 
@@ -274,7 +328,13 @@
         </div>
       </div>
 
-      <.form for={@form} id="provider-form" phx-change="validate" phx-submit="save" class="space-y-4">
+      <.form
+        for={@form}
+        id="provider-form"
+        phx-change="validate"
+        phx-submit="save"
+        class="space-y-4"
+      >
         <.input field={@form[:name]} type="text" label="Nome (para identificar no painel)" />
 
         <div class="divider text-xs text-base-content/40">Credenciais</div>

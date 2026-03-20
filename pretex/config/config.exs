@@ -78,6 +78,25 @@ config :wax_,
   origin: "http://localhost:4000",
   rp_id: "localhost"
 
+config :pretex, Oban,
+  repo: Pretex.Repo,
+  queues: [
+    default: 10,
+    mail: 5,
+    pdf: 3,
+    exports: 2,
+    payments: 5,
+    webhooks: 10,
+    scheduled: 2
+  ],
+  plugins: [
+    Oban.Plugins.Pruner,
+    {Oban.Plugins.Cron,
+     crontab: [
+       {"*/5 * * * *", Pretex.Workers.ExpireStaleOrders}
+     ]}
+  ]
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

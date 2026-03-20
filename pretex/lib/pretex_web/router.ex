@@ -33,6 +33,14 @@ defmodule PretexWeb.Router do
     get("/", PageController, :home)
   end
 
+  # -- Payment webhooks (no auth, raw body preserved by CacheRawBody plug) ----
+
+  scope "/webhooks", PretexWeb do
+    pipe_through(:api)
+
+    post("/payments/:token", PaymentWebhookController, :receive)
+  end
+
   # -- Staff auth (magic link) -----------------------------------------------
 
   scope "/staff", PretexWeb do
@@ -200,7 +208,9 @@ defmodule PretexWeb.Router do
       live("/events/:slug", EventsLive.Show, :index)
       live("/events/:slug/checkout", EventsLive.Checkout, :info)
       live("/events/:slug/checkout/summary", EventsLive.Checkout, :summary)
+      live("/events/:slug/checkout/payment", EventsLive.Checkout, :payment)
       live("/events/:slug/orders/:code", EventsLive.Confirmation, :index)
+      live("/events/:slug/orders/:code/payment-status", EventsLive.PaymentStatus, :index)
     end
 
     post("/customers/log-in", CustomerSessionController, :create)

@@ -3,7 +3,7 @@ defmodule Pretex.Orders.Order do
   import Ecto.Changeset
 
   @statuses ~w(pending confirmed cancelled expired)
-  @payment_methods ~w(credit_card boleto bank_transfer pix)
+  @payment_methods ~w(credit_card debit_card boleto bank_transfer pix cash)
 
   schema "orders" do
     field(:status, :string, default: "pending")
@@ -13,6 +13,7 @@ defmodule Pretex.Orders.Order do
     field(:expires_at, :utc_datetime)
     field(:payment_method, :string)
     field(:confirmation_code, :string)
+    field(:payment_provider_id, :integer)
 
     belongs_to(:event, Pretex.Events.Event)
     belongs_to(:customer, Pretex.Customers.Customer)
@@ -26,7 +27,7 @@ defmodule Pretex.Orders.Order do
 
   def changeset(order, attrs) do
     order
-    |> cast(attrs, [:email, :name, :payment_method, :expires_at])
+    |> cast(attrs, [:email, :name, :payment_method, :expires_at, :payment_provider_id])
     |> validate_required([:email, :name])
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must be a valid email")
     |> validate_length(:name, min: 2, max: 255)

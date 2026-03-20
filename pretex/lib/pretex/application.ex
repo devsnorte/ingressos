@@ -12,8 +12,7 @@ defmodule Pretex.Application do
       Pretex.Repo,
       {DNSCluster, query: Application.get_env(:pretex, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Pretex.PubSub},
-      # Start a worker by calling: Pretex.Worker.start_link(arg)
-      # {Pretex.Worker, arg},
+      {Oban, Application.fetch_env!(:pretex, Oban)},
       # Start to serve requests, typically the last entry
       PretexWeb.Endpoint
     ]
