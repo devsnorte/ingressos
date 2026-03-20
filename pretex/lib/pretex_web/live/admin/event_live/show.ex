@@ -32,7 +32,7 @@ defmodule PretexWeb.Admin.EventLive.Show do
          |> assign(:event, updated_event)
          |> put_flash(:info, "Evento publicado com sucesso.")}
 
-      {:error, :no_ticket_types} ->
+      {:error, :no_catalog_items} ->
         {:noreply,
          put_flash(
            socket,

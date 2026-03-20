@@ -37,12 +37,7 @@ defmodule Pretex.OrdersTest do
   defp published_event_fixture(org, attrs \\ %{}) do
     event = event_fixture(org, attrs)
 
-    changeset =
-      %Pretex.Events.TicketType{}
-      |> Pretex.Events.TicketType.changeset(%{name: "General", price_cents: 1000})
-      |> Ecto.Changeset.put_change(:event_id, event.id)
-
-    {:ok, _} = Pretex.Repo.insert(changeset)
+    {:ok, _} = Catalog.create_item(event, %{name: "Ingresso Geral", price_cents: 5000})
     {:ok, published} = Events.publish_event(event)
     published
   end

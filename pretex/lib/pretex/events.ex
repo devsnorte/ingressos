@@ -6,7 +6,6 @@ defmodule Pretex.Events do
   alias Pretex.Repo
   alias Pretex.Events.Event
   alias Pretex.Events.SubEvent
-  alias Pretex.Events.TicketType
   alias Pretex.Organizations.Organization
 
   def list_published_events do
@@ -61,12 +60,12 @@ defmodule Pretex.Events do
   end
 
   def publish_event(%Event{status: "draft"} = event) do
-    if has_ticket_types?(event) do
+    if Pretex.Catalog.count_items(event) > 0 do
       event
       |> Ecto.Changeset.change(status: "published")
       |> Repo.update()
     else
-      {:error, :no_ticket_types}
+      {:error, :no_catalog_items}
     end
   end
 
@@ -100,19 +99,14 @@ defmodule Pretex.Events do
     Repo.transaction(fn ->
       case create_event(org, clone_attrs) do
         {:ok, new_event} ->
-          event
-          |> ticket_types_query()
-          |> Repo.all()
-          |> Enum.each(fn tt ->
-            %TicketType{}
-            |> TicketType.changeset(%{
-              name: tt.name,
-              price_cents: tt.price_cents,
-              quantity: tt.quantity,
-              status: tt.status
+          Pretex.Catalog.list_items(event)
+          |> Enum.each(fn item ->
+            Pretex.Catalog.create_item(new_event, %{
+              name: item.name,
+              price_cents: item.price_cents,
+              item_type: item.item_type,
+              status: item.status
             })
-            |> Ecto.Changeset.put_change(:event_id, new_event.id)
-            |> Repo.insert!()
           end)
 
           new_event
@@ -121,14 +115,6 @@ defmodule Pretex.Events do
           Repo.rollback(changeset)
       end
     end)
-  end
-
-  def has_ticket_types?(%Event{id: id}) do
-    Repo.exists?(from(t in TicketType, where: t.event_id == ^id and t.status == "active"))
-  end
-
-  def count_ticket_types(%Event{id: id}) do
-    Repo.aggregate(from(t in TicketType, where: t.event_id == ^id), :count)
   end
 
   defp maybe_auto_complete(%Event{status: "published", ends_at: ends_at} = event)
@@ -144,10 +130,6 @@ defmodule Pretex.Events do
   end
 
   defp maybe_auto_complete(event), do: event
-
-  defp ticket_types_query(%Event{id: id}) do
-    from(t in TicketType, where: t.event_id == ^id)
-  end
 
   # ---------------------------------------------------------------------------
   # Series enable/disable

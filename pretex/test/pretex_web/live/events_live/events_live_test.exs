@@ -33,19 +33,14 @@ defmodule PretexWeb.EventsLiveTest do
     event
   end
 
-  defp ticket_type_fixture(event) do
-    changeset =
-      %Pretex.Events.TicketType{}
-      |> Pretex.Events.TicketType.changeset(%{name: "General", price_cents: 1000})
-      |> Ecto.Changeset.put_change(:event_id, event.id)
-
-    {:ok, tt} = Pretex.Repo.insert(changeset)
-    tt
+  defp catalog_item_fixture(event) do
+    {:ok, item} = Pretex.Catalog.create_item(event, %{name: "Ingresso Geral", price_cents: 5000})
+    item
   end
 
   defp published_event_fixture(org, attrs \\ %{}) do
     event = event_fixture(org, attrs)
-    ticket_type_fixture(event)
+    catalog_item_fixture(event)
     {:ok, published} = Events.publish_event(event)
     published
   end

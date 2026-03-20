@@ -31,16 +31,6 @@ defmodule PretexWeb.Admin.EventLiveTest do
     event
   end
 
-  defp ticket_type_fixture(event) do
-    changeset =
-      %Pretex.Events.TicketType{}
-      |> Pretex.Events.TicketType.changeset(%{name: "General", price_cents: 1000})
-      |> Ecto.Changeset.put_change(:event_id, event.id)
-
-    {:ok, tt} = Pretex.Repo.insert(changeset)
-    tt
-  end
-
   defp catalog_item_fixture(event) do
     {:ok, item} = Pretex.Catalog.create_item(event, %{name: "Ingresso Geral", price_cents: 5000})
     item
@@ -76,7 +66,7 @@ defmodule PretexWeb.Admin.EventLiveTest do
       assert html =~ "Rascunho"
     end
 
-    test "publish button shows no-ticket-type error flash when none configured", %{conn: conn} do
+    test "publish button shows no-catalog-items error flash when none configured", %{conn: conn} do
       org = org_fixture()
       event = event_fixture(org)
 
@@ -86,13 +76,13 @@ defmodule PretexWeb.Admin.EventLiveTest do
       |> element("#publish-#{event.id}")
       |> render_click()
 
-      assert render(view) =~ "at least one ticket type"
+      assert render(view) =~ "pelo menos um item no catálogo"
     end
 
-    test "publish button succeeds when ticket types are configured", %{conn: conn} do
+    test "publish button succeeds when catalog items are configured", %{conn: conn} do
       org = org_fixture()
       event = event_fixture(org)
-      ticket_type_fixture(event)
+      catalog_item_fixture(event)
 
       {:ok, view, _html} = live(conn, ~p"/admin/organizations/#{org}/events")
 
@@ -234,7 +224,7 @@ defmodule PretexWeb.Admin.EventLiveTest do
     test "shows complete button for published event", %{conn: conn} do
       org = org_fixture()
       event = event_fixture(org)
-      ticket_type_fixture(event)
+      catalog_item_fixture(event)
 
       {:ok, published} = Events.publish_event(event)
 
@@ -242,7 +232,7 @@ defmodule PretexWeb.Admin.EventLiveTest do
       assert has_element?(view, "#complete-event")
     end
 
-    test "shows no-ticket-types notice when count is zero", %{conn: conn} do
+    test "shows no-catalog-items notice when count is zero", %{conn: conn} do
       org = org_fixture()
       event = event_fixture(org)
 
