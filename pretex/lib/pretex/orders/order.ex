@@ -21,6 +21,7 @@ defmodule Pretex.Orders.Order do
     has_many(:order_items, Pretex.Orders.OrderItem)
     has_many(:fees, Pretex.Fees.OrderFee)
     has_one(:voucher_redemption, Pretex.Vouchers.VoucherRedemption)
+    has_many(:discounts, Pretex.Discounts.OrderDiscount)
 
     timestamps(type: :utc_datetime)
   end
