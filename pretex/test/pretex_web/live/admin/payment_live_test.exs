@@ -29,8 +29,8 @@ defmodule PretexWeb.Admin.PaymentLiveTest do
       org = org_fixture()
 
       {:ok, _view, html} = live(conn, ~p"/admin/organizations/#{org}/payments")
-      assert html =~ "Nenhum provedor configurado"
-      assert html =~ "Provedores de Pagamento"
+      assert html =~ "Nenhum gateway configurado"
+      assert html =~ "Pagamentos"
     end
 
     test "lista provedores configurados", %{conn: conn} do
@@ -39,7 +39,7 @@ defmodule PretexWeb.Admin.PaymentLiveTest do
 
       {:ok, _view, html} = live(conn, ~p"/admin/organizations/#{org}/payments")
       assert html =~ provider.name
-      assert html =~ "stripe"
+      assert html =~ "Stripe Principal"
       assert html =~ "Pendente"
     end
 
@@ -90,10 +90,11 @@ defmodule PretexWeb.Admin.PaymentLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/admin/organizations/#{org}/payments")
 
-      # Navigate to add provider - goes to manual type selection page
-      {:ok, view, html} = live(conn, ~p"/admin/organizations/#{org}/payments/new/manual")
-      assert html =~ "Configurar"
-      assert html =~ "Nome do provedor"
+      # Navigate to provider selection page
+      {:ok, _view, html} = live(conn, ~p"/admin/organizations/#{org}/payments/new")
+      assert html =~ "Escolha o gateway"
+      assert html =~ "Woovi"
+      assert html =~ "Stripe"
     end
 
     test "cria um novo provedor stripe com sucesso", %{conn: conn} do
@@ -234,7 +235,7 @@ defmodule PretexWeb.Admin.PaymentLiveTest do
       html = render(view)
       assert html =~ "removido"
       # Provider card should be gone (empty state shown)
-      assert html =~ "Nenhum provedor configurado"
+      assert html =~ "Nenhum gateway configurado"
     end
   end
 

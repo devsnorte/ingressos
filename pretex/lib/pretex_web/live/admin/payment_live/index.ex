@@ -28,6 +28,10 @@ defmodule PretexWeb.Admin.PaymentLive.Index do
 
   defp apply_action(socket, :index, _params), do: assign(socket, :selected_type, nil)
 
+  defp apply_action(socket, :select, _params) do
+    assign(socket, :selected_type, nil)
+  end
+
   defp apply_action(socket, :new, %{"type" => type}) do
     provider_info = Enum.find(socket.assigns.available_providers, &(&1.type == type))
 
