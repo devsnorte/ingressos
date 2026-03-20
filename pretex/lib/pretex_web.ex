@@ -88,6 +88,7 @@ defmodule PretexWeb do
       import PretexWeb.CoreComponents
       # Dashboard layout components
       import PretexWeb.Components.Dashboard
+      import PretexWeb.Components.EventPage
 
       # Common modules used in templates
       alias Phoenix.LiveView.JS
