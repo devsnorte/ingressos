@@ -4,7 +4,7 @@
 
   <.page_header title={@organization.name} subtitle={@organization.display_name || @organization.slug}>
     <:actions>
-      <.link patch={~p"/admin/organizations/#{@organization}/edit"}>
+      <.link patch={~p"/admin/organizations/#{@organization}/show/edit"}>
         <.button class="btn btn-outline btn-sm gap-1">
           <.icon name="hero-pencil-square" class="w-4 h-4" />
           Editar
