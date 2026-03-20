@@ -130,9 +130,40 @@ defmodule PretexWeb.EventsLive.Checkout do
                 </span>
               </div>
 
+              <%!-- Subtotal line (shown when there are fees) --%>
+              <div
+                :if={@fee_preview != []}
+                class="flex justify-between items-center pt-2 text-sm text-base-content/70"
+              >
+                <span>Subtotal</span>
+                <span>{format_price(@cart_total)}</span>
+              </div>
+
+              <%!-- Fee preview rows --%>
+              <div
+                :for={fee <- @fee_preview}
+                class="flex justify-between items-center text-sm text-base-content/70"
+              >
+                <span class="flex items-center gap-1">
+                  <.icon name="hero-receipt-percent" class="size-3 text-base-content/40" />
+                  {fee.name}
+                  <span class="text-xs text-base-content/40">
+                    {if fee.value_type == "percentage" do
+                      int_part = div(fee.value, 100)
+                      dec_part = rem(fee.value, 100)
+                      "(#{int_part},#{String.pad_leading(Integer.to_string(dec_part), 2, "0")}%)"
+                    end}
+                  </span>
+                </span>
+                <span>{format_price(fee.amount_cents)}</span>
+              </div>
+
+              <%!-- Total line --%>
               <div class="flex justify-between items-center pt-3 mt-2 border-t-2 border-base-200">
                 <span class="font-bold text-base-content">Total</span>
-                <span class="text-xl font-bold text-primary">{format_price(@cart_total)}</span>
+                <span class="text-xl font-bold text-primary">
+                  {format_price(@cart_total + @fee_total)}
+                </span>
               </div>
             </div>
           </div>
@@ -396,6 +427,8 @@ defmodule PretexWeb.EventsLive.Checkout do
       |> assign(:placing_order, false)
       |> assign(:order, nil)
       |> assign(:payment, nil)
+      |> assign(:fee_preview, [])
+      |> assign(:fee_total, 0)
 
     {:ok, socket}
   end
@@ -420,11 +453,16 @@ defmodule PretexWeb.EventsLive.Checkout do
           cart ->
             if cart.event_id == event.id && cart.status == "active" do
               payment_options = load_payment_options(event)
+              subtotal = Orders.cart_total(cart)
+              fee_preview = Pretex.Fees.compute_fees_for_cart(event, subtotal)
+              fee_total = Pretex.Fees.total_fees_cents(fee_preview)
 
               socket
               |> assign(:cart, cart)
-              |> assign(:cart_total, Orders.cart_total(cart))
+              |> assign(:cart_total, subtotal)
               |> assign(:payment_options, payment_options)
+              |> assign(:fee_preview, fee_preview)
+              |> assign(:fee_total, fee_total)
             else
               socket
               |> put_flash(:error, "Seu carrinho expirou. Por favor comece novamente.")
