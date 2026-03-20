@@ -1,0 +1,351 @@
+<.dashboard_layout
+  current_path={~p"/admin/organizations/#{@org}/gift-cards"}
+  org={@org}
+  flash={@flash}
+>
+  <div class="mx-auto max-w-5xl px-4 py-8">
+    <%!-- Barra superior --%>
+    <div class="mb-6 flex items-center justify-between gap-4 flex-wrap">
+      <.link
+        navigate={~p"/admin/organizations/#{@org}"}
+        class="inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-primary transition-colors"
+      >
+        <.icon name="hero-arrow-left" class="size-4" /> Voltar à Organização
+      </.link>
+
+      <.link
+        patch={~p"/admin/organizations/#{@org}/gift-cards/new"}
+        class="btn btn-primary btn-sm gap-1"
+      >
+        <.icon name="hero-plus" class="size-4" /> Novo Vale-Presente
+      </.link>
+    </div>
+
+    <%!-- Título da página --%>
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-base-content">Vale-Presentes</h1>
+      <p class="text-sm text-base-content/60 mt-1">{@org.name}</p>
+    </div>
+
+    <%!-- Tabela de vale-presentes --%>
+    <div class="card bg-base-100 border border-base-200 shadow-sm overflow-hidden">
+      <div id="gift_cards" phx-update="stream">
+        <%!-- Estado vazio --%>
+        <div
+          id="gift_cards-empty-state"
+          class="hidden only:flex flex-col items-center justify-center py-20 text-center px-4"
+        >
+          <.icon name="hero-gift" class="size-12 text-base-content/20 mb-4" />
+          <p class="text-base font-semibold text-base-content/50">
+            Nenhum vale-presente cadastrado.
+          </p>
+          <p class="text-sm text-base-content/40 mt-1">
+            Crie vale-presentes para oferecer créditos reutilizáveis em todos os eventos da organização.
+          </p>
+          <.link
+            patch={~p"/admin/organizations/#{@org}/gift-cards/new"}
+            class="btn btn-primary btn-sm mt-6 gap-1"
+          >
+            <.icon name="hero-plus" class="size-4" /> Novo Vale-Presente
+          </.link>
+        </div>
+
+        <div
+          :for={{dom_id, gc} <- @streams.gift_cards}
+          id={dom_id}
+          class="flex flex-col sm:flex-row sm:items-center gap-3 px-5 py-4 border-b border-base-200 last:border-0 hover:bg-base-50 transition-colors"
+        >
+          <%!-- Código e nota --%>
+          <div class="flex-1 min-w-0">
+            <p class="font-mono font-bold text-base-content tracking-wider">{gc.code}</p>
+            <p :if={gc.note} class="text-xs text-base-content/50 mt-0.5">{gc.note}</p>
+          </div>
+
+          <%!-- Saldo atual --%>
+          <div class="shrink-0 text-right min-w-[110px]">
+            <p class="font-semibold text-base-content">
+              {format_balance(gc.balance_cents)}
+            </p>
+            <p class="text-xs text-base-content/40">
+              de {format_balance(gc.initial_balance_cents)}
+            </p>
+          </div>
+
+          <%!-- Expiração --%>
+          <div class="shrink-0 text-right min-w-[120px]">
+            <p class="text-xs text-base-content/60">
+              {format_expiry(gc.expires_at)}
+            </p>
+          </div>
+
+          <%!-- Status ativo --%>
+          <div class="shrink-0">
+            <span class={[
+              "badge badge-sm",
+              gc.active && "badge-success",
+              !gc.active && "badge-error"
+            ]}>
+              {if gc.active, do: "Ativo", else: "Inativo"}
+            </span>
+          </div>
+
+          <%!-- Ações --%>
+          <div class="flex items-center gap-2 shrink-0">
+            <button
+              phx-click="toggle_active"
+              phx-value-id={gc.id}
+              class="btn btn-ghost btn-xs"
+              title={if gc.active, do: "Desativar", else: "Ativar"}
+            >
+              {if gc.active, do: "Desativar", else: "Ativar"}
+            </button>
+
+            <.link
+              patch={~p"/admin/organizations/#{@org}/gift-cards/#{gc.id}/top-up"}
+              class="btn btn-ghost btn-xs"
+            >
+              Recarregar
+            </.link>
+
+            <.link
+              patch={~p"/admin/organizations/#{@org}/gift-cards/#{gc.id}/edit"}
+              class="btn btn-ghost btn-xs"
+            >
+              Editar
+            </.link>
+
+            <button
+              phx-click="delete"
+              phx-value-id={gc.id}
+              data-confirm="Excluir este vale-presente? Esta ação não pode ser desfeita."
+              class="btn btn-ghost btn-xs text-error hover:bg-error hover:text-error-content"
+            >
+              Excluir
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%!-- Modal: Novo / Editar Vale-Presente --%>
+  <div :if={@live_action in [:new, :edit]}>
+    <div
+      id="gift-card-modal-backdrop"
+      class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+      phx-click="close_modal"
+    >
+    </div>
+
+    <div
+      id="gift-card-modal"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        class="w-full max-w-lg bg-base-100 rounded-2xl shadow-2xl border border-base-200 overflow-hidden max-h-[90vh] flex flex-col"
+        phx-click-away="close_modal"
+      >
+        <%!-- Cabeçalho do modal --%>
+        <div class="flex items-center justify-between px-6 py-4 border-b border-base-200 shrink-0">
+          <h2 class="text-lg font-bold text-base-content">
+            {if @live_action == :new, do: "Novo Vale-Presente", else: "Editar Vale-Presente"}
+          </h2>
+          <button
+            type="button"
+            phx-click="close_modal"
+            class="btn btn-ghost btn-sm btn-circle"
+            aria-label="Fechar"
+          >
+            <.icon name="hero-x-mark" class="size-5" />
+          </button>
+        </div>
+
+        <%!-- Corpo do modal --%>
+        <div class="px-6 py-5 overflow-y-auto">
+          <.form
+            for={@form}
+            id="gift-card-form"
+            phx-change="validate"
+            phx-submit="save"
+            class="space-y-4"
+          >
+            <%!-- Código --%>
+            <div>
+              <label class="label">
+                <span class="label-text font-medium">Código</span>
+              </label>
+              <div class="flex gap-2">
+                <.input
+                  field={@form[:code]}
+                  type="text"
+                  placeholder="Ex: GC-AB3K9F12"
+                  class="flex-1"
+                />
+                <button
+                  type="button"
+                  phx-click="generate_code"
+                  class="btn btn-outline btn-sm self-end mb-[2px]"
+                >
+                  Gerar
+                </button>
+              </div>
+              <p class="text-xs text-base-content/50 mt-1">
+                O código será convertido para maiúsculas automaticamente. Deve ser único na plataforma.
+              </p>
+            </div>
+
+            <%!-- Saldo (em centavos) --%>
+            <div>
+              <.input
+                field={@form[:balance_cents]}
+                type="number"
+                label="Saldo (em centavos)"
+                min="0"
+                placeholder="Ex: 5000 = R$ 50,00"
+              />
+              <p class="text-xs text-base-content/50 mt-1">
+                1000 = R$ 10,00 · 5000 = R$ 50,00 · 10000 = R$ 100,00
+              </p>
+            </div>
+
+            <%!-- Saldo inicial (em centavos) --%>
+            <div>
+              <.input
+                field={@form[:initial_balance_cents]}
+                type="number"
+                label="Saldo Inicial (em centavos)"
+                min="0"
+                placeholder="Deixe em branco para usar o saldo acima"
+              />
+              <p class="text-xs text-base-content/50 mt-1">
+                Valor original do vale-presente (para exibição). Se não informado, será igual ao saldo.
+              </p>
+            </div>
+
+            <%!-- Expiração --%>
+            <div>
+              <.input
+                field={@form[:expires_at]}
+                type="datetime-local"
+                label="Expiração (opcional)"
+              />
+              <p class="text-xs text-base-content/50 mt-1">
+                Deixe em branco para vale-presente sem prazo de validade.
+              </p>
+            </div>
+
+            <%!-- Nota --%>
+            <.input
+              field={@form[:note]}
+              type="text"
+              label="Nota (opcional)"
+              placeholder="Ex: Presente de aniversário, Compensação de reembolso..."
+            />
+
+            <%!-- Ativo --%>
+            <.input
+              field={@form[:active]}
+              type="checkbox"
+              label="Ativo"
+            />
+            <p class="text-xs text-base-content/50 -mt-3 ml-1">
+              Vale-presentes inativos não podem ser utilizados no checkout.
+            </p>
+
+            <%!-- Botões --%>
+            <div class="flex justify-end gap-3 pt-2">
+              <button type="button" phx-click="close_modal" class="btn btn-ghost btn-sm">
+                Cancelar
+              </button>
+              <.button type="submit" variant="primary" phx-disable-with="Salvando...">
+                {if @live_action == :new, do: "Criar Vale-Presente", else: "Salvar Alterações"}
+              </.button>
+            </div>
+          </.form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%!-- Modal: Recarregar Vale-Presente --%>
+  <div :if={@live_action == :top_up}>
+    <div
+      id="top-up-modal-backdrop"
+      class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+      phx-click="close_modal"
+    >
+    </div>
+
+    <div
+      id="top-up-modal"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        class="w-full max-w-md bg-base-100 rounded-2xl shadow-2xl border border-base-200 overflow-hidden"
+        phx-click-away="close_modal"
+      >
+        <%!-- Cabeçalho do modal --%>
+        <div class="flex items-center justify-between px-6 py-4 border-b border-base-200">
+          <div>
+            <h2 class="text-lg font-bold text-base-content">Recarregar Vale-Presente</h2>
+            <p class="text-sm text-base-content/60 font-mono mt-0.5">
+              {@gift_card && @gift_card.code}
+            </p>
+          </div>
+          <button
+            type="button"
+            phx-click="close_modal"
+            class="btn btn-ghost btn-sm btn-circle"
+            aria-label="Fechar"
+          >
+            <.icon name="hero-x-mark" class="size-5" />
+          </button>
+        </div>
+
+        <%!-- Corpo do modal --%>
+        <div class="px-6 py-5">
+          <div :if={@gift_card} class="mb-4 p-3 rounded-lg bg-base-200 text-sm">
+            <span class="text-base-content/60">Saldo atual:</span>
+            <span class="font-bold text-base-content ml-2">
+              {format_balance(@gift_card.balance_cents)}
+            </span>
+          </div>
+
+          <.form
+            for={@top_up_form}
+            id="top-up-form"
+            phx-submit="save_top_up"
+            class="space-y-4"
+          >
+            <div>
+              <.input
+                field={@top_up_form[:amount_cents]}
+                type="number"
+                label="Valor a adicionar (em centavos)"
+                min="1"
+                placeholder="Ex: 5000 = R$ 50,00"
+                required
+              />
+              <p class="text-xs text-base-content/50 mt-1">
+                1000 = R$ 10,00 · 5000 = R$ 50,00 · 10000 = R$ 100,00
+              </p>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+              <button type="button" phx-click="close_modal" class="btn btn-ghost btn-sm">
+                Cancelar
+              </button>
+              <.button type="submit" variant="primary" phx-disable-with="Recarregando...">
+                Recarregar
+              </.button>
+            </div>
+          </.form>
+        </div>
+      </div>
+    </div>
+  </div>
+</.dashboard_layout>
