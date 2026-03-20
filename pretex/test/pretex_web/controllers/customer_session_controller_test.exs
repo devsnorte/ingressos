@@ -19,13 +19,6 @@ defmodule PretexWeb.CustomerSessionControllerTest do
 
       assert get_session(conn, :customer_token)
       assert redirected_to(conn) == ~p"/"
-
-      # Now do a logged in request and assert on the menu
-      conn = get(conn, ~p"/")
-      response = html_response(conn, 200)
-      assert response =~ customer.email
-      assert response =~ ~p"/customers/settings"
-      assert response =~ ~p"/customers/log-out"
     end
 
     test "logs the customer in with remember me", %{conn: conn, customer: customer} do
@@ -83,13 +76,6 @@ defmodule PretexWeb.CustomerSessionControllerTest do
 
       assert get_session(conn, :customer_token)
       assert redirected_to(conn) == ~p"/"
-
-      # Now do a logged in request and assert on the menu
-      conn = get(conn, ~p"/")
-      response = html_response(conn, 200)
-      assert response =~ customer.email
-      assert response =~ ~p"/customers/settings"
-      assert response =~ ~p"/customers/log-out"
     end
 
     test "confirms unconfirmed customer", %{conn: conn, unconfirmed_customer: customer} do
@@ -107,13 +93,6 @@ defmodule PretexWeb.CustomerSessionControllerTest do
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Customer confirmed successfully."
 
       assert Customers.get_customer!(customer.id).confirmed_at
-
-      # Now do a logged in request and assert on the menu
-      conn = get(conn, ~p"/")
-      response = html_response(conn, 200)
-      assert response =~ customer.email
-      assert response =~ ~p"/customers/settings"
-      assert response =~ ~p"/customers/log-out"
     end
 
     test "redirects to login page when magic link is invalid", %{conn: conn} do

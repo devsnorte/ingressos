@@ -1,604 +1,298 @@
 <Layouts.flash_group flash={@flash} />
 
 <%!-- ============================================================ --%>
-<%!-- SECTION 1: HERO --%>
+<%!-- HERO --%>
 <%!-- ============================================================ --%>
-<section
-  class="relative min-h-screen flex items-center overflow-hidden"
-  style="background: radial-gradient(ellipse 80% 60% at 20% 40%, rgba(94,210,158,0.15) 0%, transparent 70%), radial-gradient(ellipse 60% 50% at 80% 30%, rgba(134,239,172,0.10) 0%, transparent 60%), radial-gradient(ellipse 40% 40% at 50% 80%, rgba(187,247,208,0.08) 0%, transparent 50%), linear-gradient(135deg, rgba(52,211,153,0.03) 0%, transparent 50%);"
->
-  <%!-- Geometric shapes --%>
-  <div class="absolute top-20 left-10 w-64 h-64 border border-primary/10 rounded-full"></div>
-  <div class="absolute bottom-32 right-20 w-40 h-40 border border-primary/5 rotate-45"></div>
-  <div class="absolute top-1/3 right-1/4 w-20 h-20 bg-primary/5 rounded-full"></div>
-  <div class="absolute bottom-1/4 left-1/3 w-32 h-32 border-2 border-primary/5 rounded-2xl rotate-12"></div>
-
-  <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-      <%!-- Left side --%>
-      <div class="space-y-8">
-        <div class="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
-          <span class="relative flex h-2 w-2">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-          </span>
-          Open source · Feito no Norte do Brasil
-        </div>
-
-        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
-          Seus eventos.
-          <br />
-          <span class="text-primary">Sua plataforma.</span>
-          <br />
-          Seu controle.
-        </h1>
-
-        <p class="text-lg lg:text-xl text-base-content/70 max-w-lg leading-relaxed">
-          O Pretex é uma plataforma open source de ingressos construída com Elixir Phoenix.
-          Sem taxas escondidas. Sem intermediários. Sem lock-in.
-        </p>
-
-        <div class="flex flex-wrap gap-4">
-          <a
-            href="https://github.com/devsnorte/pretex"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="btn btn-primary btn-lg gap-2"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true" class="h-5 w-5 fill-current">
-              <path
-                fill-rule="evenodd"
-                clip-rule="evenodd"
-                d="M12 0C5.37 0 0 5.506 0 12.303c0 5.445 3.435 10.043 8.205 11.674.6.107.825-.262.825-.585 0-.292-.015-1.261-.015-2.291C6 21.67 5.22 20.346 4.98 19.654c-.135-.354-.72-1.446-1.23-1.738-.42-.23-1.02-.8-.015-.815.945-.015 1.62.892 1.845 1.261 1.08 1.86 2.805 1.338 3.495 1.015.105-.8.42-1.338.765-1.645-2.67-.308-5.46-1.37-5.46-6.075 0-1.338.465-2.446 1.23-3.307-.12-.308-.54-1.569.12-3.26 0 0 1.005-.323 3.3 1.26.96-.276 1.98-.415 3-.415s2.04.139 3 .416c2.295-1.6 3.3-1.261 3.3-1.261.66 1.691.24 2.952.12 3.26.765.861 1.23 1.953 1.23 3.307 0 4.721-2.805 5.767-5.475 6.075.435.384.81 1.122.81 2.276 0 1.645-.015 2.968-.015 3.383 0 .323.225.707.825.585a12.047 12.047 0 0 0 5.919-4.489A12.536 12.536 0 0 0 24 12.304C24 5.505 18.63 0 12 0Z"
-              />
-            </svg>
-            Ver no GitHub
-          </a>
-          <a href="/events" class="btn btn-outline btn-lg">
-            Explorar Eventos
-          </a>
-        </div>
-
-        <p class="text-sm text-base-content/50 flex items-center gap-2">
-          <.icon name="hero-user-group" class="size-4" />
-          Usado pela comunidade Devs Norte
-        </p>
-      </div>
-
-      <%!-- Right side: Terminal card --%>
-      <div class="hidden lg:block">
-        <div class="bg-neutral rounded-2xl shadow-2xl overflow-hidden border border-base-content/10">
-          <%!-- Terminal title bar --%>
-          <div class="flex items-center gap-2 px-4 py-3 bg-neutral/80 border-b border-base-content/10">
-            <div class="w-3 h-3 rounded-full bg-error"></div>
-            <div class="w-3 h-3 rounded-full bg-warning"></div>
-            <div class="w-3 h-3 rounded-full bg-success"></div>
-            <span class="ml-2 text-xs text-neutral-content/50 font-mono">pretex — zsh</span>
-          </div>
-          <%!-- Terminal body --%>
-          <div class="p-6 font-mono text-sm leading-relaxed text-neutral-content">
-            <div class="flex gap-2">
-              <span class="text-success">$</span>
-              <span>mix phx.new pretex --live</span>
-            </div>
-            <div class="mt-1 text-neutral-content/40 text-xs">* creating pretex/lib/pretex_web...</div>
-            <div class="mt-3 flex gap-2">
-              <span class="text-success">$</span>
-              <span>mix ecto.migrate</span>
-            </div>
-            <div class="mt-1 text-neutral-content/40 text-xs">== Migrated 20250101000000_create_events in 0.04s</div>
-            <div class="mt-3 flex gap-2">
-              <span class="text-success">$</span>
-              <span>mix phx.server</span>
-            </div>
-            <div class="mt-1 text-neutral-content/40 text-xs">[info] Running PretexWeb.Endpoint on http://localhost:4000</div>
-            <div class="mt-4 text-primary font-semibold"># Pronto. Seus eventos no ar.</div>
-            <div class="mt-3 flex gap-2 items-center">
-              <span class="text-success">$</span>
-              <span class="inline-block w-2 h-4 bg-neutral-content/70 animate-pulse"></span>
-            </div>
-          </div>
-        </div>
-      </div>
+<section class="min-h-screen bg-base-100">
+  <%!-- Navigation --%>
+  <nav class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <.icon name="hero-ticket" class="size-7 text-primary" />
+      <span class="text-xl font-bold">Pretex</span>
     </div>
-  </div>
-</section>
-
-<%!-- ============================================================ --%>
-<%!-- SECTION 2: PROBLEM STATEMENT --%>
-<%!-- ============================================================ --%>
-<section class="bg-base-200 py-20 lg:py-28">
-  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="text-center mb-16">
-      <h2 class="text-sm font-semibold text-primary uppercase tracking-wider mb-3">
-        Por que o Pretex existe
-      </h2>
-      <p class="text-3xl sm:text-4xl font-bold">
-        O problema que todo organizador conhece
-      </p>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-      <%!-- Card 1 --%>
-      <div class="card bg-base-100 shadow-md transition hover:shadow-lg hover:-translate-y-1">
-        <div class="card-body items-center text-center">
-          <div class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-            <.icon name="hero-banknotes" class="size-7 text-primary" />
-          </div>
-          <h3 class="card-title text-lg">Taxa em cima de taxa</h3>
-          <p class="text-base-content/70 text-sm leading-relaxed">
-            Plataformas genéricas cobram por ingresso, por organização, por funcionalidade. O seu evento financia o SaaS deles.
-          </p>
-        </div>
-      </div>
-
-      <%!-- Card 2 --%>
-      <div class="card bg-base-100 shadow-md transition hover:shadow-lg hover:-translate-y-1">
-        <div class="card-body items-center text-center">
-          <div class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-            <.icon name="hero-lock-closed" class="size-7 text-primary" />
-          </div>
-          <h3 class="card-title text-lg">Dados que não são seus</h3>
-          <p class="text-base-content/70 text-sm leading-relaxed">
-            Quando a plataforma muda os termos, você perde o histórico dos seus participantes.
-          </p>
-        </div>
-      </div>
-
-      <%!-- Card 3 --%>
-      <div class="card bg-base-100 shadow-md transition hover:shadow-lg hover:-translate-y-1">
-        <div class="card-body items-center text-center">
-          <div class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-            <.icon name="hero-no-symbol" class="size-7 text-primary" />
-          </div>
-          <h3 class="card-title text-lg">Gateway imposto</h3>
-          <p class="text-base-content/70 text-sm leading-relaxed">
-            Quer usar Pix? Mercado Pago? Boa sorte negociando com o suporte de outra empresa.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <p class="text-center mt-12 text-lg text-base-content/70 max-w-2xl mx-auto">
-      O Pretex resolve isso mudando quem tem o controle: <strong class="text-base-content">você</strong>.
-    </p>
-  </div>
-</section>
-
-<%!-- ============================================================ --%>
-<%!-- SECTION 3: FEATURES --%>
-<%!-- ============================================================ --%>
-<section class="py-20 lg:py-28">
-  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="text-center mb-16">
-      <h2 class="text-3xl sm:text-4xl font-bold">
-        Tudo que você precisa.
-        <span class="text-primary">Nada que você não pediu.</span>
-      </h2>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 max-w-5xl mx-auto">
-      <%!-- Left column: Organizadores --%>
-      <div>
-        <div class="flex items-center gap-3 mb-8">
-          <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <.icon name="hero-calendar-days" class="size-5 text-primary" />
-          </div>
-          <h3 class="text-xl font-bold">Para Organizadores</h3>
-        </div>
-        <ul class="space-y-5">
-          <li class="flex gap-3">
-            <.icon name="hero-check-circle-solid" class="size-6 text-primary shrink-0 mt-0.5" />
-            <div>
-              <p class="font-semibold">Multi-organização</p>
-              <p class="text-sm text-base-content/60">Cada comunidade tem seu espaço isolado</p>
-            </div>
-          </li>
-          <li class="flex gap-3">
-            <.icon name="hero-check-circle-solid" class="size-6 text-primary shrink-0 mt-0.5" />
-            <div>
-              <p class="font-semibold">Ingressos e sub-eventos</p>
-              <p class="text-sm text-base-content/60">Trilhas e workshops no mesmo evento</p>
-            </div>
-          </li>
-          <li class="flex gap-3">
-            <.icon name="hero-check-circle-solid" class="size-6 text-primary shrink-0 mt-0.5" />
-            <div>
-              <p class="font-semibold">Vouchers e descontos</p>
-              <p class="text-sm text-base-content/60">Distribua convites sem admin central</p>
-            </div>
-          </li>
-          <li class="flex gap-3">
-            <.icon name="hero-check-circle-solid" class="size-6 text-primary shrink-0 mt-0.5" />
-            <div>
-              <p class="font-semibold">Check-in em tempo real</p>
-              <p class="text-sm text-base-content/60">Leitores simultâneos, contagem ao vivo</p>
-            </div>
-          </li>
-          <li class="flex gap-3">
-            <.icon name="hero-check-circle-solid" class="size-6 text-primary shrink-0 mt-0.5" />
-            <div>
-              <p class="font-semibold">Relatórios</p>
-              <p class="text-sm text-base-content/60">Dados que ficam com você</p>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <%!-- Right column: Desenvolvedores --%>
-      <div>
-        <div class="flex items-center gap-3 mb-8">
-          <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <.icon name="hero-code-bracket" class="size-5 text-primary" />
-          </div>
-          <h3 class="text-xl font-bold">Para Desenvolvedores</h3>
-        </div>
-        <ul class="space-y-5">
-          <li class="flex gap-3">
-            <.icon name="hero-check-circle-solid" class="size-6 text-primary shrink-0 mt-0.5" />
-            <div>
-              <p class="font-semibold">Elixir + Phoenix LiveView</p>
-              <p class="text-sm text-base-content/60">Atualizações em tempo real</p>
-            </div>
-          </li>
-          <li class="flex gap-3">
-            <.icon name="hero-check-circle-solid" class="size-6 text-primary shrink-0 mt-0.5" />
-            <div>
-              <p class="font-semibold">BYOG</p>
-              <p class="text-sm text-base-content/60">Traga seu próprio gateway de pagamento</p>
-            </div>
-          </li>
-          <li class="flex gap-3">
-            <.icon name="hero-check-circle-solid" class="size-6 text-primary shrink-0 mt-0.5" />
-            <div>
-              <p class="font-semibold">Self-hosted</p>
-              <p class="text-sm text-base-content/60">Deploy na sua infraestrutura</p>
-            </div>
-          </li>
-          <li class="flex gap-3">
-            <.icon name="hero-check-circle-solid" class="size-6 text-primary shrink-0 mt-0.5" />
-            <div>
-              <p class="font-semibold">Open source</p>
-              <p class="text-sm text-base-content/60">Fork, contribua, adapte</p>
-            </div>
-          </li>
-          <li class="flex gap-3">
-            <.icon name="hero-check-circle-solid" class="size-6 text-primary shrink-0 mt-0.5" />
-            <div>
-              <p class="font-semibold">API REST completa</p>
-              <p class="text-sm text-base-content/60">Integre com seus sistemas</p>
-            </div>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</section>
-
-<%!-- ============================================================ --%>
-<%!-- SECTION 4: ARCHITECTURE --%>
-<%!-- ============================================================ --%>
-<section class="bg-neutral text-neutral-content py-20 lg:py-28">
-  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="text-center mb-16">
-      <h2 class="text-3xl sm:text-4xl font-bold">Construído para durar</h2>
-      <p class="mt-3 text-lg text-neutral-content/60">Não é um CRUD com tema de evento.</p>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-      <%!-- Card 1 --%>
-      <div class="card bg-neutral-content/5 border border-neutral-content/10 transition hover:shadow-lg hover:-translate-y-1 hover:bg-neutral-content/10">
-        <div class="card-body">
-          <div class="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center mb-3">
-            <.icon name="hero-bolt" class="size-6 text-primary" />
-          </div>
-          <h3 class="card-title text-lg text-neutral-content">Tempo real sem refresh</h3>
-          <p class="text-neutral-content/60 text-sm leading-relaxed">
-            Check-ins simultâneos coordenados via processos isolados. Sem race condition.
-          </p>
-          <div class="mt-4">
-            <span class="badge badge-outline badge-sm text-primary border-primary/30">
-              Phoenix PubSub + LiveView
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <%!-- Card 2 --%>
-      <div class="card bg-neutral-content/5 border border-neutral-content/10 transition hover:shadow-lg hover:-translate-y-1 hover:bg-neutral-content/10">
-        <div class="card-body">
-          <div class="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center mb-3">
-            <.icon name="hero-shield-check" class="size-6 text-primary" />
-          </div>
-          <h3 class="card-title text-lg text-neutral-content">Isolamento por organização</h3>
-          <p class="text-neutral-content/60 text-sm leading-relaxed">
-            Dados, permissões e gateways completamente separados entre organizações.
-          </p>
-          <div class="mt-4">
-            <span class="badge badge-outline badge-sm text-primary border-primary/30">
-              Ecto Contexts + Multi-tenancy
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <%!-- Card 3 --%>
-      <div class="card bg-neutral-content/5 border border-neutral-content/10 transition hover:shadow-lg hover:-translate-y-1 hover:bg-neutral-content/10">
-        <div class="card-body">
-          <div class="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center mb-3">
-            <.icon name="hero-currency-dollar" class="size-6 text-primary" />
-          </div>
-          <h3 class="card-title text-lg text-neutral-content">Pagamento sem intermediário</h3>
-          <p class="text-neutral-content/60 text-sm leading-relaxed">
-            Você configura seu webhook. Sua conta recebe. O Pretex não toca no dinheiro.
-          </p>
-          <div class="mt-4">
-            <span class="badge badge-outline badge-sm text-primary border-primary/30">
-              Adapter Pattern — BYOG
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <%!-- Architecture diagram --%>
-    <div class="mt-16 max-w-3xl mx-auto">
-      <div class="bg-neutral-content/5 border border-neutral-content/10 rounded-2xl p-8 font-mono text-sm">
-        <%!-- Top row: Organizations --%>
-        <div class="grid grid-cols-3 gap-4 text-center">
-          <div class="border border-primary/40 rounded-lg px-3 py-2 bg-primary/10">
-            <p class="text-primary font-semibold">Org A</p>
-            <p class="text-xs text-neutral-content/50 mt-1">Pix / Stripe</p>
-          </div>
-          <div class="border border-primary/40 rounded-lg px-3 py-2 bg-primary/10">
-            <p class="text-primary font-semibold">Org B</p>
-            <p class="text-xs text-neutral-content/50 mt-1">Mercado Pago</p>
-          </div>
-          <div class="border border-primary/40 rounded-lg px-3 py-2 bg-primary/10">
-            <p class="text-primary font-semibold">Org C</p>
-            <p class="text-xs text-neutral-content/50 mt-1">Pix</p>
-          </div>
-        </div>
-
-        <%!-- Connectors --%>
-        <div class="flex justify-center my-3">
-          <div class="flex items-center gap-0">
-            <div class="w-px h-6 bg-neutral-content/20"></div>
-          </div>
-        </div>
-        <div class="flex justify-center">
-          <div class="w-2/3 border-t border-neutral-content/20 relative">
-            <div class="absolute left-1/2 -translate-x-1/2 -top-px w-px h-4 bg-neutral-content/20"></div>
-          </div>
-        </div>
-
-        <%!-- Core --%>
-        <div class="text-center my-4">
-          <div class="inline-block border-2 border-primary rounded-xl px-8 py-3 bg-primary/10">
-            <p class="text-primary font-bold text-base">Pretex Core</p>
-          </div>
-        </div>
-
-        <%!-- Connector to DB --%>
-        <div class="flex justify-center my-3">
-          <div class="w-px h-6 bg-neutral-content/20"></div>
-        </div>
-
-        <%!-- Database --%>
-        <div class="text-center">
-          <div class="inline-block border border-neutral-content/30 rounded-xl px-6 py-2 bg-neutral-content/5">
-            <p class="text-neutral-content/70 font-semibold">PostgreSQL</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<%!-- ============================================================ --%>
-<%!-- SECTION 5: COMMUNITY --%>
-<%!-- ============================================================ --%>
-<section
-  class="py-20 lg:py-28 relative overflow-hidden"
-  style="background: linear-gradient(135deg, rgba(94,210,158,0.05) 0%, rgba(134,239,172,0.08) 50%, rgba(94,210,158,0.03) 100%);"
->
-  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="text-center mb-16 max-w-2xl mx-auto">
-      <h2 class="text-3xl sm:text-4xl font-bold">
-        Feito pela comunidade <span class="text-primary">Devs Norte</span>
-      </h2>
-      <p class="mt-4 text-lg text-base-content/70 leading-relaxed">
-        O Pretex nasceu porque a Devs Norte precisava de uma plataforma para seus próprios eventos.
-        Hoje é open source e aberto para qualquer comunidade.
-      </p>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-      <%!-- Card A: Contribua --%>
-      <div class="card bg-base-100 shadow-md border border-base-300 transition hover:shadow-lg hover:-translate-y-1">
-        <div class="card-body text-center">
-          <div class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <.icon name="hero-code-bracket-square" class="size-7 text-primary" />
-          </div>
-          <h3 class="card-title justify-center text-xl">Contribua</h3>
-          <p class="text-base-content/70 text-sm mb-4">
-            O projeto é open source. Use, modifique e contribua.
-          </p>
-          <div class="card-actions justify-center">
-            <a
-              href="https://github.com/devsnorte/pretex"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="btn btn-primary gap-2"
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true" class="h-5 w-5 fill-current">
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M12 0C5.37 0 0 5.506 0 12.303c0 5.445 3.435 10.043 8.205 11.674.6.107.825-.262.825-.585 0-.292-.015-1.261-.015-2.291C6 21.67 5.22 20.346 4.98 19.654c-.135-.354-.72-1.446-1.23-1.738-.42-.23-1.02-.8-.015-.815.945-.015 1.62.892 1.845 1.261 1.08 1.86 2.805 1.338 3.495 1.015.105-.8.42-1.338.765-1.645-2.67-.308-5.46-1.37-5.46-6.075 0-1.338.465-2.446 1.23-3.307-.12-.308-.54-1.569.12-3.26 0 0 1.005-.323 3.3 1.26.96-.276 1.98-.415 3-.415s2.04.139 3 .416c2.295-1.6 3.3-1.261 3.3-1.261.66 1.691.24 2.952.12 3.26.765.861 1.23 1.953 1.23 3.307 0 4.721-2.805 5.767-5.475 6.075.435.384.81 1.122.81 2.276 0 1.645-.015 2.968-.015 3.383 0 .323.225.707.825.585a12.047 12.047 0 0 0 5.919-4.489A12.536 12.536 0 0 0 24 12.304C24 5.505 18.63 0 12 0Z"
-                />
-              </svg>
-              Ver no GitHub
-            </a>
-          </div>
-        </div>
-      </div>
-
-      <%!-- Card B: Comunidade --%>
-      <div class="card bg-base-100 shadow-md border border-base-300 transition hover:shadow-lg hover:-translate-y-1">
-        <div class="card-body text-center">
-          <div class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <.icon name="hero-chat-bubble-left-right" class="size-7 text-primary" />
-          </div>
-          <h3 class="card-title justify-center text-xl">Comunidade</h3>
-          <p class="text-base-content/70 text-sm mb-4">
-            Tire dúvidas e colabore no roadmap.
-          </p>
-          <div class="card-actions justify-center">
-            <a
-              href="https://devsnorte.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="btn btn-outline btn-primary gap-2"
-            >
-              <.icon name="hero-user-group" class="size-5" />
-              Entrar na comunidade
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<%!-- ============================================================ --%>
-<%!-- SECTION 6: FOOTER --%>
-<%!-- ============================================================ --%>
-<footer class="bg-neutral text-neutral-content">
-  <%!-- Final CTA --%>
-  <div class="border-b border-neutral-content/10">
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-      <h2 class="text-3xl sm:text-4xl font-bold mb-6">Pronto para começar?</h2>
-      <div class="flex flex-wrap justify-center gap-4">
-        <a
-          href="https://github.com/devsnorte/pretex#readme"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="btn btn-outline border-neutral-content/30 text-neutral-content hover:bg-neutral-content hover:text-neutral gap-2"
-        >
-          <.icon name="hero-book-open" class="size-5" />
-          Documentação
+    <div class="flex items-center gap-6">
+      <div class="hidden sm:flex items-center gap-6">
+        <a href="/events" class="text-sm font-medium text-base-content/70 hover:text-base-content transition-colors">
+          Eventos
+        </a>
+        <a href="#sobre" class="text-sm font-medium text-base-content/70 hover:text-base-content transition-colors">
+          Sobre
         </a>
         <a
           href="https://github.com/devsnorte/pretex"
           target="_blank"
           rel="noopener noreferrer"
-          class="btn btn-primary gap-2"
+          class="text-sm font-medium text-base-content/70 hover:text-base-content transition-colors"
         >
-          <svg viewBox="0 0 24 24" aria-hidden="true" class="h-5 w-5 fill-current">
-            <path
-              fill-rule="evenodd"
-              clip-rule="evenodd"
-              d="M12 0C5.37 0 0 5.506 0 12.303c0 5.445 3.435 10.043 8.205 11.674.6.107.825-.262.825-.585 0-.292-.015-1.261-.015-2.291C6 21.67 5.22 20.346 4.98 19.654c-.135-.354-.72-1.446-1.23-1.738-.42-.23-1.02-.8-.015-.815.945-.015 1.62.892 1.845 1.261 1.08 1.86 2.805 1.338 3.495 1.015.105-.8.42-1.338.765-1.645-2.67-.308-5.46-1.37-5.46-6.075 0-1.338.465-2.446 1.23-3.307-.12-.308-.54-1.569.12-3.26 0 0 1.005-.323 3.3 1.26.96-.276 1.98-.415 3-.415s2.04.139 3 .416c2.295-1.6 3.3-1.261 3.3-1.261.66 1.691.24 2.952.12 3.26.765.861 1.23 1.953 1.23 3.307 0 4.721-2.805 5.767-5.475 6.075.435.384.81 1.122.81 2.276 0 1.645-.015 2.968-.015 3.383 0 .323.225.707.825.585a12.047 12.047 0 0 0 5.919-4.489A12.536 12.536 0 0 0 24 12.304C24 5.505 18.63 0 12 0Z"
-            />
-          </svg>
           GitHub
         </a>
       </div>
+      <div class="flex items-center gap-2">
+        <a href="/customers/log-in" class="btn btn-ghost btn-sm">Entrar</a>
+        <a href="/customers/register" class="btn btn-primary btn-sm">Criar Conta</a>
+      </div>
+    </div>
+  </nav>
+
+  <%!-- Hero content --%>
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-24 lg:pt-28 lg:pb-32">
+    <div class="max-w-3xl mx-auto text-center">
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
+        A plataforma de eventos da sua comunidade
+      </h1>
+
+      <p class="mt-6 text-lg lg:text-xl text-base-content/60 max-w-2xl mx-auto leading-relaxed">
+        Crie, gerencie e venda ingressos para seus eventos. Open source, sem taxas, com total controle sobre seus dados e pagamentos.
+      </p>
+
+      <div class="mt-10 flex flex-wrap justify-center gap-4">
+        <a href="/customers/register" class="btn btn-primary btn-lg">
+          Começar Agora
+        </a>
+        <a href="/events" class="btn btn-outline btn-lg">
+          Ver Eventos
+        </a>
+      </div>
+
+      <%!-- Mini stat cards --%>
+      <div class="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-2xl mx-auto">
+        <div class="flex flex-col items-center gap-2 p-5 rounded-2xl bg-base-200/50">
+          <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <.icon name="hero-banknotes" class="size-5 text-primary" />
+          </div>
+          <span class="font-bold text-lg">0% Taxa</span>
+        </div>
+        <div class="flex flex-col items-center gap-2 p-5 rounded-2xl bg-base-200/50">
+          <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <.icon name="hero-bolt" class="size-5 text-primary" />
+          </div>
+          <span class="font-bold text-lg">Tempo Real</span>
+        </div>
+        <div class="flex flex-col items-center gap-2 p-5 rounded-2xl bg-base-200/50">
+          <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <.icon name="hero-code-bracket" class="size-5 text-primary" />
+          </div>
+          <span class="font-bold text-lg">Open Source</span>
+        </div>
+      </div>
     </div>
   </div>
+</section>
 
-  <%!-- Footer columns --%>
+<%!-- ============================================================ --%>
+<%!-- FEATURES --%>
+<%!-- ============================================================ --%>
+<section id="sobre" class="bg-base-200 py-20 lg:py-28">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-16">
+      <h2 class="text-3xl sm:text-4xl font-bold">
+        Tudo para seu evento em um só lugar
+      </h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+      <%!-- Feature 1 --%>
+      <div class="bg-base-100 rounded-2xl shadow-sm p-8 transition hover:shadow-lg hover:-translate-y-1">
+        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-5">
+          <.icon name="hero-calendar-days" class="size-6 text-primary" />
+        </div>
+        <h3 class="text-lg font-bold mb-2">Gestão de Eventos</h3>
+        <p class="text-base-content/60 text-sm leading-relaxed">
+          Crie eventos, sub-eventos, trilhas e workshops com facilidade
+        </p>
+      </div>
+
+      <%!-- Feature 2 --%>
+      <div class="bg-base-100 rounded-2xl shadow-sm p-8 transition hover:shadow-lg hover:-translate-y-1">
+        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-5">
+          <.icon name="hero-ticket" class="size-6 text-primary" />
+        </div>
+        <h3 class="text-lg font-bold mb-2">Venda de Ingressos</h3>
+        <p class="text-base-content/60 text-sm leading-relaxed">
+          Tipos de ingresso, variações, lotes e controle de disponibilidade em tempo real
+        </p>
+      </div>
+
+      <%!-- Feature 3 --%>
+      <div class="bg-base-100 rounded-2xl shadow-sm p-8 transition hover:shadow-lg hover:-translate-y-1">
+        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-5">
+          <.icon name="hero-qr-code" class="size-6 text-primary" />
+        </div>
+        <h3 class="text-lg font-bold mb-2">Check-in Inteligente</h3>
+        <p class="text-base-content/60 text-sm leading-relaxed">
+          QR Code, busca por nome, múltiplos leitores simultâneos
+        </p>
+      </div>
+
+      <%!-- Feature 4 --%>
+      <div class="bg-base-100 rounded-2xl shadow-sm p-8 transition hover:shadow-lg hover:-translate-y-1">
+        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-5">
+          <.icon name="hero-credit-card" class="size-6 text-primary" />
+        </div>
+        <h3 class="text-lg font-bold mb-2">Seu Gateway</h3>
+        <p class="text-base-content/60 text-sm leading-relaxed">
+          Configure Pix, Stripe ou Mercado Pago. Sem intermediários
+        </p>
+      </div>
+
+      <%!-- Feature 5 --%>
+      <div class="bg-base-100 rounded-2xl shadow-sm p-8 transition hover:shadow-lg hover:-translate-y-1">
+        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-5">
+          <.icon name="hero-chart-bar" class="size-6 text-primary" />
+        </div>
+        <h3 class="text-lg font-bold mb-2">Relatórios</h3>
+        <p class="text-base-content/60 text-sm leading-relaxed">
+          Vendas, check-ins e financeiro. Exporte em CSV ou Excel
+        </p>
+      </div>
+
+      <%!-- Feature 6 --%>
+      <div class="bg-base-100 rounded-2xl shadow-sm p-8 transition hover:shadow-lg hover:-translate-y-1">
+        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-5">
+          <.icon name="hero-building-office-2" class="size-6 text-primary" />
+        </div>
+        <h3 class="text-lg font-bold mb-2">Multi-organização</h3>
+        <p class="text-base-content/60 text-sm leading-relaxed">
+          Cada comunidade com seu espaço, dados e configurações isolados
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%!-- ============================================================ --%>
+<%!-- HOW IT WORKS --%>
+<%!-- ============================================================ --%>
+<section class="bg-base-100 py-20 lg:py-28">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-16">
+      <h2 class="text-3xl sm:text-4xl font-bold">Como funciona</h2>
+    </div>
+
+    <div class="max-w-4xl mx-auto">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+        <%!-- Connecting line (hidden on mobile) --%>
+        <div class="hidden md:block absolute top-8 left-[20%] right-[20%] h-px bg-base-300"></div>
+
+        <%!-- Step 1 --%>
+        <div class="text-center relative">
+          <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-base-100 border-2 border-base-300 mb-6 relative z-10">
+            <span class="text-2xl font-bold text-primary">01</span>
+          </div>
+          <h3 class="text-lg font-bold mb-2">Crie sua organização</h3>
+          <p class="text-base-content/60 text-sm leading-relaxed">
+            Registre-se e configure seu espaço com logo e informações
+          </p>
+        </div>
+
+        <%!-- Step 2 --%>
+        <div class="text-center relative">
+          <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-base-100 border-2 border-base-300 mb-6 relative z-10">
+            <span class="text-2xl font-bold text-primary">02</span>
+          </div>
+          <h3 class="text-lg font-bold mb-2">Configure seu evento</h3>
+          <p class="text-base-content/60 text-sm leading-relaxed">
+            Defina ingressos, preços, datas e seu gateway de pagamento
+          </p>
+        </div>
+
+        <%!-- Step 3 --%>
+        <div class="text-center relative">
+          <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-base-100 border-2 border-base-300 mb-6 relative z-10">
+            <span class="text-2xl font-bold text-primary">03</span>
+          </div>
+          <h3 class="text-lg font-bold mb-2">Comece a vender</h3>
+          <p class="text-base-content/60 text-sm leading-relaxed">
+            Compartilhe o link e acompanhe vendas e check-ins em tempo real
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%!-- ============================================================ --%>
+<%!-- COMMUNITY CTA --%>
+<%!-- ============================================================ --%>
+<section class="bg-neutral text-neutral-content py-20 lg:py-28">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <h2 class="text-3xl sm:text-4xl font-bold mb-4">
+      Feito pela comunidade, para a comunidade
+    </h2>
+    <p class="text-lg text-neutral-content/60 max-w-2xl mx-auto mb-10 leading-relaxed">
+      O Pretex é open source e mantido pela comunidade Devs Norte. Contribua, adapte e faça parte.
+    </p>
+
+    <div class="flex flex-wrap justify-center gap-4 mb-12">
+      <a
+        href="https://github.com/devsnorte/pretex"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="btn btn-primary gap-2"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="h-5 w-5 fill-current">
+          <path
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            d="M12 0C5.37 0 0 5.506 0 12.303c0 5.445 3.435 10.043 8.205 11.674.6.107.825-.262.825-.585 0-.292-.015-1.261-.015-2.291C6 21.67 5.22 20.346 4.98 19.654c-.135-.354-.72-1.446-1.23-1.738-.42-.23-1.02-.8-.015-.815.945-.015 1.62.892 1.845 1.261 1.08 1.86 2.805 1.338 3.495 1.015.105-.8.42-1.338.765-1.645-2.67-.308-5.46-1.37-5.46-6.075 0-1.338.465-2.446 1.23-3.307-.12-.308-.54-1.569.12-3.26 0 0 1.005-.323 3.3 1.26.96-.276 1.98-.415 3-.415s2.04.139 3 .416c2.295-1.6 3.3-1.261 3.3-1.261.66 1.691.24 2.952.12 3.26.765.861 1.23 1.953 1.23 3.307 0 4.721-2.805 5.767-5.475 6.075.435.384.81 1.122.81 2.276 0 1.645-.015 2.968-.015 3.383 0 .323.225.707.825.585a12.047 12.047 0 0 0 5.919-4.489A12.536 12.536 0 0 0 24 12.304C24 5.505 18.63 0 12 0Z"
+          />
+        </svg>
+        Ver no GitHub
+      </a>
+      <a
+        href="https://devsnorte.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="btn btn-outline border-neutral-content/30 text-neutral-content hover:bg-neutral-content hover:text-neutral"
+      >
+        Devs Norte
+      </a>
+    </div>
+
+    <p class="text-sm text-neutral-content/40">
+      Pretex é open source. Feito no Norte. Para todo Brasil.
+    </p>
+  </div>
+</section>
+
+<%!-- ============================================================ --%>
+<%!-- FOOTER --%>
+<%!-- ============================================================ --%>
+<footer class="bg-neutral text-neutral-content border-t border-neutral-content/10">
   <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
-      <%!-- Column 1: Pretex --%>
-      <div>
-        <h4 class="font-bold text-sm uppercase tracking-wider mb-4 text-neutral-content/80">Pretex</h4>
-        <ul class="space-y-2 text-sm">
-          <li>
-            <a href="https://github.com/devsnorte/pretex" class="text-neutral-content/60 hover:text-primary transition-colors" target="_blank" rel="noopener noreferrer">
-              GitHub
-            </a>
-          </li>
-          <li>
-            <a href="https://github.com/devsnorte/pretex/projects" class="text-neutral-content/60 hover:text-primary transition-colors" target="_blank" rel="noopener noreferrer">
-              Roadmap
-            </a>
-          </li>
-          <li>
-            <a href="https://github.com/devsnorte/pretex/blob/main/CHANGELOG.md" class="text-neutral-content/60 hover:text-primary transition-colors" target="_blank" rel="noopener noreferrer">
-              Changelog
-            </a>
-          </li>
-        </ul>
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-6">
+      <div class="flex items-center gap-2">
+        <.icon name="hero-ticket" class="size-5 text-primary" />
+        <span class="font-bold">Pretex</span>
+        <span class="text-sm text-neutral-content/50 ml-2">Plataforma open source de eventos</span>
       </div>
 
-      <%!-- Column 2: Documentação --%>
-      <div>
-        <h4 class="font-bold text-sm uppercase tracking-wider mb-4 text-neutral-content/80">Documentação</h4>
-        <ul class="space-y-2 text-sm">
-          <li>
-            <a href="https://github.com/devsnorte/pretex#readme" class="text-neutral-content/60 hover:text-primary transition-colors" target="_blank" rel="noopener noreferrer">
-              Instalação
-            </a>
-          </li>
-          <li>
-            <a href="https://github.com/devsnorte/pretex/wiki" class="text-neutral-content/60 hover:text-primary transition-colors" target="_blank" rel="noopener noreferrer">
-              API Reference
-            </a>
-          </li>
-          <li>
-            <a href="https://github.com/devsnorte/pretex/wiki" class="text-neutral-content/60 hover:text-primary transition-colors" target="_blank" rel="noopener noreferrer">
-              Gateways
-            </a>
-          </li>
-        </ul>
-      </div>
-
-      <%!-- Column 3: Comunidade --%>
-      <div>
-        <h4 class="font-bold text-sm uppercase tracking-wider mb-4 text-neutral-content/80">Comunidade</h4>
-        <ul class="space-y-2 text-sm">
-          <li>
-            <a href="https://devsnorte.com" class="text-neutral-content/60 hover:text-primary transition-colors" target="_blank" rel="noopener noreferrer">
-              Devs Norte
-            </a>
-          </li>
-          <li>
-            <a href="https://github.com/devsnorte/pretex/blob/main/CONTRIBUTING.md" class="text-neutral-content/60 hover:text-primary transition-colors" target="_blank" rel="noopener noreferrer">
-              Contribuir
-            </a>
-          </li>
-          <li>
-            <a href="https://github.com/devsnorte/pretex/issues" class="text-neutral-content/60 hover:text-primary transition-colors" target="_blank" rel="noopener noreferrer">
-              Reportar Bug
-            </a>
-          </li>
-        </ul>
-      </div>
-
-      <%!-- Column 4: Legal --%>
-      <div>
-        <h4 class="font-bold text-sm uppercase tracking-wider mb-4 text-neutral-content/80">Legal</h4>
-        <ul class="space-y-2 text-sm">
-          <li>
-            <a href="https://github.com/devsnorte/pretex/blob/main/LICENSE" class="text-neutral-content/60 hover:text-primary transition-colors" target="_blank" rel="noopener noreferrer">
-              MIT License
-            </a>
-          </li>
-          <li>
-            <a href="https://github.com/devsnorte/pretex/blob/main/CODE_OF_CONDUCT.md" class="text-neutral-content/60 hover:text-primary transition-colors" target="_blank" rel="noopener noreferrer">
-              Código de Conduta
-            </a>
-          </li>
-        </ul>
+      <div class="flex items-center gap-6">
+        <a href="/events" class="text-sm text-neutral-content/60 hover:text-primary transition-colors">
+          Eventos
+        </a>
+        <a
+          href="https://github.com/devsnorte/pretex"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-sm text-neutral-content/60 hover:text-primary transition-colors"
+        >
+          GitHub
+        </a>
+        <a
+          href="https://devsnorte.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-sm text-neutral-content/60 hover:text-primary transition-colors"
+        >
+          Devs Norte
+        </a>
       </div>
     </div>
 
-    <%!-- Bottom tagline --%>
-    <div class="border-t border-neutral-content/10 mt-12 pt-8 text-center">
-      <p class="text-sm text-neutral-content/50">
-        Pretex é open source. Feito no Norte. Para todo Brasil.
+    <div class="border-t border-neutral-content/10 mt-8 pt-8 text-center">
+      <p class="text-xs text-neutral-content/40">
+        © 2024 Pretex · MIT License
       </p>
     </div>
   </div>

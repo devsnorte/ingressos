@@ -8,8 +8,8 @@ defmodule PretexWeb.CustomerLive.RegistrationTest do
     test "renders registration page", %{conn: conn} do
       {:ok, _lv, html} = live(conn, ~p"/customers/register")
 
-      assert html =~ "Register"
-      assert html =~ "Log in"
+      assert html =~ "Criar sua conta"
+      assert html =~ "Entrar"
     end
 
     test "redirects if already logged in", %{conn: conn} do
@@ -30,7 +30,7 @@ defmodule PretexWeb.CustomerLive.RegistrationTest do
         |> element("#registration_form")
         |> render_change(customer: %{"email" => "with spaces"})
 
-      assert result =~ "Register"
+      assert result =~ "Criar conta"
       assert result =~ "must have the @ sign and no spaces"
     end
   end
@@ -72,11 +72,11 @@ defmodule PretexWeb.CustomerLive.RegistrationTest do
 
       {:ok, _login_live, login_html} =
         lv
-        |> element("main a", "Log in")
+        |> element("a", "Entrar")
         |> render_click()
         |> follow_redirect(conn, ~p"/customers/log-in")
 
-      assert login_html =~ "Log in"
+      assert login_html =~ "Entrar na sua conta"
     end
   end
 end

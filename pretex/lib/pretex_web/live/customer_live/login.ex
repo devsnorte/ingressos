@@ -6,92 +6,129 @@ defmodule PretexWeb.CustomerLive.Login do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="mx-auto max-w-sm space-y-4">
-        <div class="text-center">
-          <.header>
-            <p>Log in</p>
-            <:subtitle>
-              <%= if @current_scope do %>
-                You need to reauthenticate to perform sensitive actions on your account.
-              <% else %>
-                Don't have an account? <.link
-                  navigate={~p"/customers/register"}
-                  class="font-semibold text-brand hover:underline"
-                  phx-no-format
-                >Sign up</.link> for an account now.
-              <% end %>
-            </:subtitle>
-          </.header>
+    <div class="min-h-screen flex">
+      <%!-- Left panel (hidden on mobile) --%>
+      <div class="hidden lg:flex lg:w-1/2 bg-neutral text-neutral-content flex-col justify-between p-12 relative overflow-hidden">
+        <%!-- Decorative circles --%>
+        <div class="absolute top-20 right-10 w-32 h-32 rounded-full bg-primary/10"></div>
+        <div class="absolute bottom-32 left-8 w-20 h-20 rounded-full bg-primary/10"></div>
+        <div class="absolute top-1/2 right-1/3 w-12 h-12 rounded-full bg-primary/5"></div>
+
+        <div>
+          <a href="/" class="flex items-center gap-2 mb-2">
+            <.icon name="hero-ticket" class="size-7 text-primary" />
+            <span class="text-xl font-bold">Pretex</span>
+          </a>
+          <p class="text-sm text-neutral-content/50">Plataforma de eventos open source</p>
         </div>
 
-        <div :if={local_mail_adapter?()} class="alert alert-info">
-          <.icon name="hero-information-circle" class="size-6 shrink-0" />
+        <div class="relative z-10">
+          <blockquote class="text-2xl font-semibold leading-relaxed mb-6">
+            Gerencie seus eventos com total controle. Sem taxas, sem intermediários.
+          </blockquote>
+          <p class="text-neutral-content/50 text-sm">
+            Crie, venda ingressos e acompanhe check-ins em tempo real.
+          </p>
+        </div>
+
+        <div></div>
+      </div>
+
+      <%!-- Right panel --%>
+      <div class="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-base-100">
+        <div class="w-full max-w-sm space-y-6">
+          <%!-- Mobile logo --%>
+          <div class="lg:hidden flex items-center gap-2 mb-4">
+            <a href="/" class="flex items-center gap-2">
+              <.icon name="hero-ticket" class="size-6 text-primary" />
+              <span class="text-lg font-bold">Pretex</span>
+            </a>
+          </div>
+
           <div>
-            <p>You are running the local mail adapter.</p>
-            <p>
-              To see sent emails, visit <.link href="/dev/mailbox" class="underline">the mailbox page</.link>.
+            <h1 class="text-2xl font-bold">Entrar na sua conta</h1>
+            <p :if={!@current_scope} class="mt-2 text-sm text-base-content/60">
+              Não tem conta? <.link
+                navigate={~p"/customers/register"}
+                class="font-semibold text-primary hover:underline"
+                phx-no-format
+              >Criar conta</.link>
+            </p>
+            <p :if={@current_scope} class="mt-2 text-sm text-base-content/60">
+              Você precisa se autenticar novamente para realizar ações sensíveis na sua conta.
             </p>
           </div>
+
+          <div :if={local_mail_adapter?()} class="alert alert-info">
+            <.icon name="hero-information-circle" class="size-6 shrink-0" />
+            <div>
+              <p>Você está usando o adaptador de e-mail local.</p>
+              <p>
+                Para ver e-mails enviados, visite <.link href="/dev/mailbox" class="underline">a caixa de entrada</.link>.
+              </p>
+            </div>
+          </div>
+
+          <.form
+            :let={f}
+            for={@form}
+            id="login_form_magic"
+            action={~p"/customers/log-in"}
+            phx-submit="submit_magic"
+          >
+            <.input
+              readonly={!!@current_scope}
+              field={f[:email]}
+              type="email"
+              label="E-mail"
+              autocomplete="username"
+              spellcheck="false"
+              required
+              phx-mounted={JS.focus()}
+            />
+            <.button class="btn btn-primary w-full">
+              Entrar com e-mail <span aria-hidden="true">&rarr;</span>
+            </.button>
+          </.form>
+
+          <div class="divider text-sm text-base-content/40">ou</div>
+
+          <.form
+            :let={f}
+            for={@form}
+            id="login_form_password"
+            action={~p"/customers/log-in"}
+            phx-submit="submit_password"
+            phx-trigger-action={@trigger_submit}
+          >
+            <.input
+              readonly={!!@current_scope}
+              field={f[:email]}
+              type="email"
+              label="E-mail"
+              autocomplete="username"
+              spellcheck="false"
+              required
+            />
+            <.input
+              field={@form[:password]}
+              type="password"
+              label="Senha"
+              autocomplete="current-password"
+              spellcheck="false"
+            />
+            <.button class="btn btn-primary w-full" name={@form[:remember_me].name} value="true">
+              Entrar e manter conectado <span aria-hidden="true">&rarr;</span>
+            </.button>
+            <.button class="btn btn-ghost w-full mt-2">
+              Entrar apenas desta vez
+            </.button>
+          </.form>
+
+          <Layouts.flash_group flash={@flash} />
         </div>
-
-        <.form
-          :let={f}
-          for={@form}
-          id="login_form_magic"
-          action={~p"/customers/log-in"}
-          phx-submit="submit_magic"
-        >
-          <.input
-            readonly={!!@current_scope}
-            field={f[:email]}
-            type="email"
-            label="Email"
-            autocomplete="username"
-            spellcheck="false"
-            required
-            phx-mounted={JS.focus()}
-          />
-          <.button class="btn btn-primary w-full">
-            Log in with email <span aria-hidden="true">→</span>
-          </.button>
-        </.form>
-
-        <div class="divider">or</div>
-
-        <.form
-          :let={f}
-          for={@form}
-          id="login_form_password"
-          action={~p"/customers/log-in"}
-          phx-submit="submit_password"
-          phx-trigger-action={@trigger_submit}
-        >
-          <.input
-            readonly={!!@current_scope}
-            field={f[:email]}
-            type="email"
-            label="Email"
-            autocomplete="username"
-            spellcheck="false"
-            required
-          />
-          <.input
-            field={@form[:password]}
-            type="password"
-            label="Password"
-            autocomplete="current-password"
-            spellcheck="false"
-          />
-          <.button class="btn btn-primary w-full" name={@form[:remember_me].name} value="true">
-            Log in and stay logged in <span aria-hidden="true">→</span>
-          </.button>
-          <.button class="btn btn-primary btn-soft w-full mt-2">
-            Log in only this time
-          </.button>
-        </.form>
       </div>
-    </Layouts.app>
+    </div>
     """
   end
 
