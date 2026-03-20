@@ -10,7 +10,7 @@ alias Pretex.Accounts.User
 alias Pretex.Teams.Membership
 alias Pretex.Customers.Customer
 alias Pretex.Events.Event
-alias Pretex.Events.TicketType
+
 alias Pretex.Events.SubEvent
 alias Pretex.Catalog.ItemCategory
 alias Pretex.Catalog.Item
@@ -265,43 +265,15 @@ created_events =
           existing
       end
 
-    # Insert a placeholder TicketType so publish_event passes the guard
-    %TicketType{}
-    |> TicketType.changeset(%{name: "Ingresso", price_cents: 0, status: "active"})
-    |> Ecto.Changeset.put_change(:event_id, event.id)
-    |> Repo.insert(on_conflict: :nothing, conflict_target: [])
-
-    event =
-      cond do
-        publish and event.status == "draft" ->
-          {:ok, e} = Pretex.Events.publish_event(event)
-          e
-
-        complete and event.status in ["draft", "published"] ->
-          event =
-            if event.status == "draft" do
-              {:ok, e} = Pretex.Events.publish_event(event)
-              e
-            else
-              event
-            end
-
-          {:ok, e} = Pretex.Events.complete_event(event)
-          e
-
-        true ->
-          event
-      end
-
-    {attrs.slug, event}
+    {attrs.slug, {event, publish, complete}}
   end)
   |> Map.new()
 
-elixirconf = created_events["elixirconf-brasil-2026"]
-workshop = created_events["workshop-elixir-intensivo"]
-pynorte_meetup = created_events["pynorte-meetup-agosto-2026"]
-pynorte_2025 = created_events["pynorte-2025"]
-devfest = created_events["devfest-norte-2026"]
+{elixirconf, _, _} = created_events["elixirconf-brasil-2026"]
+{workshop, _, _} = created_events["workshop-elixir-intensivo"]
+{pynorte_meetup, _, _} = created_events["pynorte-meetup-agosto-2026"]
+{pynorte_2025, _, _} = created_events["pynorte-2025"]
+{_devfest, _, _} = created_events["devfest-norte-2026"]
 
 IO.puts("   done (#{length(events_data)} events)")
 
@@ -387,8 +359,11 @@ cat_ec_extras = defp_upsert_category.(elixirconf, "Extras", 2)
 # Workshop categories
 cat_ws_vagas = defp_upsert_category.(workshop, "Vagas", 0)
 
-# PyNorte categories
+# PyNorte Meetup categories
 cat_pn_ingressos = defp_upsert_category.(pynorte_meetup, "Ingressos", 0)
+
+# PyNorte 2025 categories (completed/historical)
+cat_pn25_ingressos = defp_upsert_category.(pynorte_2025, "Ingressos", 0)
 
 IO.puts("   done")
 
@@ -565,6 +540,54 @@ item_pn_supporter =
     status: "active",
     category_id: cat_pn_ingressos.id
   })
+
+# ── PyNorte 2025 items (historical, event is completed) ───────────
+
+_item_pn25_free =
+  defp_upsert_item.(pynorte_2025, %{
+    name: "Entrada Gratuita",
+    description: "Entrada gratuita para o PyNorte 2025.",
+    price_cents: 0,
+    available_quantity: 200,
+    item_type: "ticket",
+    min_per_order: 1,
+    max_per_order: 1,
+    status: "active",
+    category_id: cat_pn25_ingressos.id
+  })
+
+IO.puts("   done")
+
+# ─────────────────────────────────────────────────────────────────
+# Publish / complete events now that catalog items exist
+# ─────────────────────────────────────────────────────────────────
+
+IO.puts("→ Publishing/completing events...")
+
+Enum.each(created_events, fn {slug, {event, publish, complete}} ->
+  fresh = Repo.get!(Event, event.id)
+
+  cond do
+    complete and fresh.status in ["draft", "published"] ->
+      fresh =
+        if fresh.status == "draft" do
+          {:ok, e} = Pretex.Events.publish_event(fresh)
+          e
+        else
+          fresh
+        end
+
+      {:ok, _} = Pretex.Events.complete_event(fresh)
+
+    publish and fresh.status == "draft" ->
+      {:ok, _} = Pretex.Events.publish_event(fresh)
+
+    true ->
+      :ok
+  end
+
+  IO.puts("   #{slug}: done")
+end)
 
 IO.puts("   done")
 
