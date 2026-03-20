@@ -30,11 +30,11 @@ defmodule PretexWeb.Admin.OrganizationLive.Show do
          |> assign(:organization, updated_org)
          |> put_flash(
            :info,
-           if(new_value, do: "2FA requirement enabled.", else: "2FA requirement disabled.")
+           if(new_value, do: "Exigência de 2FA ativada.", else: "Exigência de 2FA desativada.")
          )}
 
       {:error, _changeset} ->
-        {:noreply, put_flash(socket, :error, "Failed to update 2FA requirement.")}
+        {:noreply, put_flash(socket, :error, "Falha ao atualizar exigência de 2FA.")}
     end
   end
 

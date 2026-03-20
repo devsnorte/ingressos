@@ -1,87 +1,162 @@
-<div class="min-h-screen bg-base-200">
-  <nav class="navbar bg-base-100 border-b border-base-300">
-    <div class="container mx-auto px-4 flex items-center justify-between">
-      <a href="/" class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-          <.icon name="hero-ticket" class="w-4 h-4 text-primary-content" />
-        </div>
-        <span class="font-bold">Pretex</span>
-        <span class="badge badge-sm">Admin</span>
-      </a>
-      <.link href="/staff/log-out" method="delete" class="btn btn-ghost btn-sm">Sair</.link>
-    </div>
-  </nav>
-  <main class="container mx-auto px-4 py-8">
-    <.header>
-      {@organization.name}
-      <:subtitle>{@organization.slug}</:subtitle>
-      <:actions>
-        <.link patch={~p"/admin/organizations/#{@organization}/edit"} phx-click={JS.push_focus()}>
-          <.button>Editar organização</.button>
-        </.link>
-        <.link navigate={~p"/admin/organizations"}>
-          <.button>Voltar</.button>
-        </.link>
-      </:actions>
-    </.header>
+<.dashboard_layout current_path={~p"/admin/organizations/#{@organization}"} org={@organization} flash={@flash}>
+  <%!-- Page header --%>
+  <.breadcrumb items={[{"Organizações", ~p"/admin/organizations"}, {@organization.name, nil}]} />
 
-    <.list>
-      <:item title="Nome de Exibição">{@organization.display_name}</:item>
-      <:item title="Descrição">{@organization.description}</:item>
-      <:item title="Status">{if @organization.is_active, do: "Ativo", else: "Inativo"}</:item>
-      <:item title="Criado em">{@organization.inserted_at}</:item>
-      <:item title="Exigir 2FA">
-        <div class="flex items-center gap-3">
-          <span
-            :if={@organization.require_2fa}
-            id="require-2fa-status"
-            class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800"
-          >
-            <.icon name="hero-shield-check" class="w-3 h-3" /> Ativado
-          </span>
-          <span
-            :if={!@organization.require_2fa}
-            id="require-2fa-status"
-            class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600"
-          >
-            <.icon name="hero-shield-exclamation" class="w-3 h-3" /> Desativado
-          </span>
-          <button
-            id="toggle-require-2fa"
-            phx-click="toggle_require_2fa"
-            class="text-xs underline text-gray-500 hover:text-gray-800"
-            data-confirm={
-              if @organization.require_2fa,
-                do: "Desativar exigência de 2FA para esta organização?",
-                else: "Exigir 2FA para todos os membros desta organização?"
-            }
-          >
-            {if @organization.require_2fa, do: "Desativar", else: "Ativar"}
-          </button>
-        </div>
-      </:item>
-    </.list>
-
-    <div :if={@live_action == :edit} class="modal modal-open">
-      <div class="modal-box">
-        <.link
-          patch={~p"/admin/organizations/#{@organization}"}
-          class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
-        >
-          ✕
-        </.link>
-        <.live_component
-          module={PretexWeb.Admin.OrganizationLive.FormComponent}
-          id={@organization.id}
-          title="Editar Organização"
-          action={@live_action}
-          organization={@organization}
-          patch={~p"/admin/organizations/#{@organization}"}
-        />
-      </div>
-      <.link patch={~p"/admin/organizations/#{@organization}"} class="modal-backdrop">
-        <span class="hidden">Fechar</span>
+  <.page_header title={@organization.name} subtitle={@organization.display_name || @organization.slug}>
+    <:actions>
+      <.link patch={~p"/admin/organizations/#{@organization}/edit"}>
+        <.button class="btn btn-outline btn-sm gap-1">
+          <.icon name="hero-pencil-square" class="w-4 h-4" />
+          Editar
+        </.button>
       </.link>
+    </:actions>
+  </.page_header>
+
+  <%!-- Quick access cards --%>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+    <a
+      href={~p"/admin/organizations/#{@organization}/events"}
+      class="bg-base-100 rounded-xl border border-base-300 p-5 hover:shadow-lg hover:-translate-y-1 transition group"
+    >
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition">
+          <.icon name="hero-calendar-days" class="w-6 h-6 text-primary" />
+        </div>
+        <div>
+          <div class="font-bold text-base-content">Eventos</div>
+          <div class="text-sm text-base-content/50">Gerenciar eventos da organização</div>
+        </div>
+      </div>
+    </a>
+
+    <a
+      href={~p"/admin/organizations/#{@organization}/team"}
+      class="bg-base-100 rounded-xl border border-base-300 p-5 hover:shadow-lg hover:-translate-y-1 transition group"
+    >
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition">
+          <.icon name="hero-users" class="w-6 h-6 text-primary" />
+        </div>
+        <div>
+          <div class="font-bold text-base-content">Equipe</div>
+          <div class="text-sm text-base-content/50">Membros, cargos e permissões</div>
+        </div>
+      </div>
+    </a>
+
+    <div class="bg-base-100 rounded-xl border border-base-300 p-5 opacity-50">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-base-200 flex items-center justify-center">
+          <.icon name="hero-chart-bar" class="w-6 h-6 text-base-content/40" />
+        </div>
+        <div>
+          <div class="font-bold text-base-content/60">Relatórios</div>
+          <div class="text-sm text-base-content/40">Em breve</div>
+        </div>
+      </div>
     </div>
-  </main>
-</div>
+  </div>
+
+  <%!-- Org details card --%>
+  <div class="bg-base-100 rounded-xl border border-base-300 p-6">
+    <h3 class="font-bold text-lg mb-4">Informações da Organização</h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <div class="text-sm text-base-content/50 mb-1">Nome</div>
+        <div class="font-medium">{@organization.name}</div>
+      </div>
+      <div>
+        <div class="text-sm text-base-content/50 mb-1">Slug</div>
+        <div class="font-mono text-sm">{@organization.slug}</div>
+      </div>
+      <div>
+        <div class="text-sm text-base-content/50 mb-1">Nome de Exibição</div>
+        <div class="font-medium">{@organization.display_name || "—"}</div>
+      </div>
+      <div>
+        <div class="text-sm text-base-content/50 mb-1">Status</div>
+        <span :if={@organization.is_active} class="badge badge-success badge-sm gap-1">
+          <.icon name="hero-check-circle" class="w-3 h-3" /> Ativo
+        </span>
+        <span :if={!@organization.is_active} class="badge badge-ghost badge-sm gap-1">
+          Inativo
+        </span>
+      </div>
+      <div :if={@organization.description} class="md:col-span-2">
+        <div class="text-sm text-base-content/50 mb-1">Descrição</div>
+        <div class="text-sm text-base-content/70">{@organization.description}</div>
+      </div>
+      <div>
+        <div class="text-sm text-base-content/50 mb-1">Criado em</div>
+        <div class="text-sm">{Calendar.strftime(@organization.inserted_at, "%d/%m/%Y às %H:%M")}</div>
+      </div>
+    </div>
+  </div>
+
+  <%!-- Security card --%>
+  <div class="bg-base-100 rounded-xl border border-base-300 p-6 mt-4">
+    <h3 class="font-bold text-lg mb-4">Segurança</h3>
+
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="font-medium">Exigir 2FA para membros</div>
+        <div class="text-sm text-base-content/50">
+          Quando ativado, todos os membros da equipe precisam configurar autenticação em duas etapas.
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <span
+          :if={@organization.require_2fa}
+          id="require-2fa-status"
+          class="badge badge-success badge-sm gap-1"
+        >
+          <.icon name="hero-shield-check" class="w-3 h-3" /> Ativado
+        </span>
+        <span
+          :if={!@organization.require_2fa}
+          id="require-2fa-status"
+          class="badge badge-ghost badge-sm gap-1"
+        >
+          Desativado
+        </span>
+        <button
+          id="toggle-require-2fa"
+          phx-click="toggle_require_2fa"
+          class="btn btn-sm btn-outline"
+          data-confirm={
+            if @organization.require_2fa,
+              do: "Desativar exigência de 2FA para esta organização?",
+              else: "Exigir 2FA para todos os membros desta organização?"
+          }
+        >
+          {if @organization.require_2fa, do: "Desativar", else: "Ativar"}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <%!-- Edit modal --%>
+  <div :if={@live_action == :edit} class="modal modal-open">
+    <div class="modal-box">
+      <.link
+        patch={~p"/admin/organizations/#{@organization}"}
+        class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+      >
+        ✕
+      </.link>
+      <.live_component
+        module={PretexWeb.Admin.OrganizationLive.FormComponent}
+        id={@organization.id}
+        title="Editar Organização"
+        action={@live_action}
+        organization={@organization}
+        patch={~p"/admin/organizations/#{@organization}"}
+      />
+    </div>
+    <.link patch={~p"/admin/organizations/#{@organization}"} class="modal-backdrop">
+      <span class="hidden">Fechar</span>
+    </.link>
+  </div>
+</.dashboard_layout>
