@@ -14,6 +14,7 @@ defmodule Pretex.Orders.Order do
     field(:payment_method, :string)
     field(:confirmation_code, :string)
     field(:payment_provider_id, :integer)
+    field(:locked_by_organizer, :boolean, default: false)
 
     belongs_to(:event, Pretex.Events.Event)
     belongs_to(:customer, Pretex.Customers.Customer)
@@ -27,7 +28,14 @@ defmodule Pretex.Orders.Order do
 
   def changeset(order, attrs) do
     order
-    |> cast(attrs, [:email, :name, :payment_method, :expires_at, :payment_provider_id])
+    |> cast(attrs, [
+      :email,
+      :name,
+      :payment_method,
+      :expires_at,
+      :payment_provider_id,
+      :locked_by_organizer
+    ])
     |> validate_required([:email, :name])
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must be a valid email")
     |> validate_length(:name, min: 2, max: 255)

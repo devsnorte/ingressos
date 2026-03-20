@@ -1,0 +1,267 @@
+<.dashboard_layout
+  current_path={~p"/admin/organizations/#{@org}/events/#{@event}/orders"}
+  org={@org}
+  flash={@flash}
+>
+  <div class="mx-auto max-w-2xl px-4 py-8">
+    <%!-- Barra superior --%>
+    <div class="mb-6 flex items-center gap-4">
+      <.link
+        navigate={~p"/admin/organizations/#{@org}/events/#{@event}/orders"}
+        class="inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-primary transition-colors"
+      >
+        <.icon name="hero-arrow-left" class="size-4" /> Voltar aos Pedidos
+      </.link>
+    </div>
+
+    <%!-- Título da página --%>
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-base-content">Novo Pedido Manual</h1>
+      <p class="text-sm text-base-content/60 mt-1">{@event.name}</p>
+    </div>
+
+    <form
+      id="manual-order-form"
+      phx-change="validate"
+      phx-submit="save"
+    >
+      <%!-- Card: Dados do participante --%>
+      <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
+        <div class="card-body p-6">
+          <h2 class="text-base font-semibold text-base-content mb-4 flex items-center gap-2">
+            <.icon name="hero-user" class="size-4 text-base-content/40" /> Dados do Participante
+          </h2>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <%!-- Nome --%>
+            <div class="form-control">
+              <label class="label pb-1">
+                <span class="label-text font-medium">Nome <span class="text-error">*</span></span>
+              </label>
+              <input
+                type="text"
+                name="order[name]"
+                value={@order_params["name"]}
+                placeholder="Nome completo"
+                required
+                class={[
+                  "input input-bordered w-full",
+                  @errors[:name] && "input-error"
+                ]}
+              />
+              <label :if={@errors[:name]} class="label pt-1">
+                <span class="label-text-alt text-error">{List.first(@errors[:name])}</span>
+              </label>
+            </div>
+
+            <%!-- E-mail --%>
+            <div class="form-control">
+              <label class="label pb-1">
+                <span class="label-text font-medium">
+                  E-mail <span class="text-error">*</span>
+                </span>
+              </label>
+              <input
+                type="email"
+                name="order[email]"
+                value={@order_params["email"]}
+                placeholder="email@exemplo.com"
+                required
+                class={[
+                  "input input-bordered w-full",
+                  @errors[:email] && "input-error"
+                ]}
+              />
+              <label :if={@errors[:email]} class="label pt-1">
+                <span class="label-text-alt text-error">{List.first(@errors[:email])}</span>
+              </label>
+            </div>
+          </div>
+
+          <%!-- Status do pedido --%>
+          <div class="form-control mt-2">
+            <label class="label pb-1">
+              <span class="label-text font-medium">
+                Tipo de Pedido <span class="text-error">*</span>
+              </span>
+            </label>
+            <select name="order[status]" class="select select-bordered w-full sm:w-64">
+              <option value="paid" selected={@order_params["status"] == "paid"}>
+                Pago (paid)
+              </option>
+              <option value="comp" selected={@order_params["status"] == "comp"}>
+                Cortesia (comp)
+              </option>
+            </select>
+            <label class="label pt-1">
+              <span class="label-text-alt text-base-content/50">
+                Pedidos de cortesia têm preço zero por convenção, mas você pode definir qualquer valor.
+              </span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <%!-- Card: Itens do pedido --%>
+      <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
+        <div class="card-body p-6">
+          <div class="flex items-center justify-between gap-4 mb-4">
+            <h2 class="text-base font-semibold text-base-content flex items-center gap-2">
+              <.icon name="hero-ticket" class="size-4 text-base-content/40" /> Itens do Pedido
+            </h2>
+            <button
+              id="add-item-header"
+              type="button"
+              phx-click="add_item"
+              class="btn btn-ghost btn-sm gap-1"
+            >
+              <.icon name="hero-plus" class="size-4" /> Adicionar Item
+            </button>
+          </div>
+
+          <%= if @items_catalog == [] do %>
+            <div class="flex items-start gap-3 rounded-lg bg-warning/10 border border-warning/30 p-4 text-sm">
+              <.icon name="hero-exclamation-triangle" class="size-5 shrink-0 text-warning mt-0.5" />
+              <div>
+                <p class="font-medium text-base-content">Nenhum item no catálogo</p>
+                <p class="text-base-content/60 mt-1">
+                  Adicione itens ao catálogo deste evento antes de criar um pedido manual.
+                </p>
+              </div>
+            </div>
+          <% else %>
+            <div class="space-y-3" id="order-items-list">
+              <div
+                :for={{item_params, index} <- Enum.with_index(@order_items_params)}
+                id={"item-row-#{item_params["_key"]}"}
+                class="rounded-lg border border-base-200 bg-base-50 p-4"
+              >
+                <div class="flex items-start gap-3">
+                  <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <%!-- Selecionar item --%>
+                    <div class="form-control sm:col-span-2">
+                      <label class="label pb-1">
+                        <span class="label-text text-xs font-medium text-base-content/60 uppercase tracking-wider">
+                          Ingresso / Item
+                        </span>
+                      </label>
+                      <select
+                        name={"order[items][#{index}][item_id]"}
+                        class="select select-bordered select-sm w-full"
+                      >
+                        <option value="">— Selecione um item —</option>
+                        <option
+                          :for={catalog_item <- @items_catalog}
+                          value={catalog_item.id}
+                          selected={
+                            to_string(item_params["item_id"]) == to_string(catalog_item.id)
+                          }
+                        >
+                          {catalog_item.name}
+                          {if catalog_item.price_cents > 0,
+                            do: " — R$ #{Float.round(catalog_item.price_cents / 100, 2)}",
+                            else: " — Gratuito"}
+                        </option>
+                      </select>
+                    </div>
+
+                    <%!-- Quantidade --%>
+                    <div class="form-control">
+                      <label class="label pb-1">
+                        <span class="label-text text-xs font-medium text-base-content/60 uppercase tracking-wider">
+                          Quantidade
+                        </span>
+                      </label>
+                      <input
+                        type="number"
+                        name={"order[items][#{index}][quantity]"}
+                        value={item_params["quantity"] || "1"}
+                        min="1"
+                        class="input input-bordered input-sm w-full"
+                      />
+                    </div>
+
+                    <%!-- Preço unitário (centavos) --%>
+                    <div class="form-control">
+                      <label class="label pb-1">
+                        <span class="label-text text-xs font-medium text-base-content/60 uppercase tracking-wider">
+                          Preço Unitário (centavos)
+                        </span>
+                      </label>
+                      <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-base-content/50 font-mono">
+                          ¢
+                        </span>
+                        <input
+                          type="number"
+                          name={"order[items][#{index}][unit_price_cents]"}
+                          value={item_params["unit_price_cents"] || "0"}
+                          min="0"
+                          placeholder="Ex: 5000 = R$ 50,00"
+                          class="input input-bordered input-sm w-full pl-7"
+                        />
+                      </div>
+                      <label class="label pt-0.5">
+                        <span class="label-text-alt text-base-content/40">
+                          100 centavos = R$ 1,00
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <%!-- Botão remover --%>
+                  <button
+                    type="button"
+                    phx-click="remove_item"
+                    phx-value-index={index}
+                    class="btn btn-ghost btn-sm btn-circle text-error mt-6 shrink-0"
+                    title="Remover item"
+                  >
+                    <.icon name="hero-trash" class="size-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-3">
+              <button
+                type="button"
+                phx-click="add_item"
+                class="btn btn-outline btn-sm gap-1 w-full"
+              >
+                <.icon name="hero-plus" class="size-4" /> Adicionar Outro Item
+              </button>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <%!-- Aviso sobre cotas --%>
+      <div class="alert alert-info text-sm mb-4">
+        <.icon name="hero-information-circle" class="size-5 shrink-0" />
+        <span>
+          Pedidos manuais <strong>não decrementam</strong> as cotas de disponibilidade do evento.
+          Use com cautela para cortesias e ajustes administrativos.
+        </span>
+      </div>
+
+      <%!-- Botões de ação --%>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <.link
+          navigate={~p"/admin/organizations/#{@org}/events/#{@event}/orders"}
+          class="btn btn-ghost btn-sm gap-1"
+        >
+          <.icon name="hero-x-mark" class="size-4" /> Cancelar
+        </.link>
+
+        <button
+          type="submit"
+          phx-disable-with="Criando pedido..."
+          class="btn btn-primary btn-sm gap-1"
+        >
+          <.icon name="hero-check" class="size-4" /> Criar Pedido Manual
+        </button>
+      </div>
+    </form>
+  </div>
+</.dashboard_layout>

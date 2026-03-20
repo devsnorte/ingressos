@@ -243,6 +243,176 @@ defmodule Pretex.Orders do
   end
 
   @doc """
+  Searches and filters orders for an event.
+  opts:
+    - search: string — filters by name or email (case-insensitive)
+    - status: string — filters by exact status
+  Preloads order_items with item and item_variation.
+  """
+  def search_orders_for_event(%Event{id: event_id}, opts \\ []) do
+    search = Keyword.get(opts, :search)
+    status = Keyword.get(opts, :status)
+
+    Order
+    |> where([o], o.event_id == ^event_id)
+    |> then(fn q ->
+      if search && search != "" do
+        term = "%#{search}%"
+        where(q, [o], ilike(o.name, ^term) or ilike(o.email, ^term))
+      else
+        q
+      end
+    end)
+    |> then(fn q ->
+      if status && status != "" do
+        where(q, [o], o.status == ^status)
+      else
+        q
+      end
+    end)
+    |> order_by([o], desc: o.inserted_at)
+    |> preload(order_items: [:item, :item_variation])
+    |> Repo.all()
+  end
+
+  @doc """
+  Gets an order by id with full details for the organizer view.
+  Preloads: event, order_items (item, item_variation, answers).
+  Raises if not found.
+  """
+  def get_order_with_details!(id) do
+    Order
+    |> preload([:event, order_items: [:item, :item_variation, :answers]])
+    |> Repo.get!(id)
+  end
+
+  @doc """
+  Locks an order for editing by setting locked_by_organizer: true.
+  Returns {:ok, order} | {:error, changeset}.
+  """
+  def lock_order_for_editing(%Order{} = order) do
+    order
+    |> Ecto.Changeset.change(locked_by_organizer: true)
+    |> Repo.update()
+  end
+
+  @doc """
+  Unlocks an order by setting locked_by_organizer: false.
+  Returns {:ok, order} | {:error, changeset}.
+  """
+  def unlock_order(%Order{} = order) do
+    order
+    |> Ecto.Changeset.change(locked_by_organizer: false)
+    |> Repo.update()
+  end
+
+  @doc """
+  Updates attendee info (name and/or email) on an order.
+  Returns {:ok, order} | {:error, changeset}.
+  """
+  def update_order_attendee_info(%Order{} = order, attrs) do
+    order
+    |> Order.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Stub for resending ticket confirmation email.
+  Returns {:ok, :sent} for confirmed orders.
+  Returns {:error, :not_confirmed} if the order is not confirmed.
+  Real email delivery will be implemented in Story 015.
+  """
+  def resend_ticket_email(%Order{status: "confirmed"}) do
+    {:ok, :sent}
+  end
+
+  def resend_ticket_email(%Order{}) do
+    {:error, :not_confirmed}
+  end
+
+  @doc """
+  Creates a manual (admin/comp) order for an event without going through the cart.
+  attrs:
+    - name (required)
+    - email (required)
+    - status: "paid" | "comp" (defaults to "paid")
+    - items: list of %{item_id:, quantity:, unit_price_cents:}
+
+  - Generates ticket_code per order_item and confirmation_code for order
+  - Does NOT decrement quota (manual/comp orders bypass quota)
+  - Sets total_cents as sum of (quantity * unit_price_cents)
+  - Returns {:ok, order} | {:error, reason}
+  """
+  def create_manual_order(%Event{} = event, attrs) do
+    name = Map.get(attrs, :name) || Map.get(attrs, "name")
+    email = Map.get(attrs, :email) || Map.get(attrs, "email")
+    status = Map.get(attrs, :status) || Map.get(attrs, "status") || "paid"
+    items = Map.get(attrs, :items) || Map.get(attrs, "items") || []
+
+    items =
+      Enum.map(items, fn item ->
+        raw_item_id = Map.get(item, :item_id) || Map.get(item, "item_id")
+
+        %{
+          item_id: parse_integer(raw_item_id),
+          quantity: parse_integer(Map.get(item, :quantity) || Map.get(item, "quantity")),
+          unit_price_cents:
+            parse_integer(Map.get(item, :unit_price_cents) || Map.get(item, "unit_price_cents"))
+        }
+      end)
+
+    total_cents =
+      Enum.reduce(items, 0, fn item, acc ->
+        acc + item.quantity * item.unit_price_cents
+      end)
+
+    confirmation_code = generate_confirmation_code()
+
+    Repo.transaction(fn ->
+      order_changeset =
+        %Order{}
+        |> Order.changeset(%{name: name, email: email})
+        |> Ecto.Changeset.put_change(:event_id, event.id)
+        |> Ecto.Changeset.put_change(:status, status)
+        |> Ecto.Changeset.put_change(:total_cents, total_cents)
+        |> Ecto.Changeset.put_change(:confirmation_code, confirmation_code)
+        |> Ecto.Changeset.put_change(
+          :expires_at,
+          DateTime.utc_now()
+          |> DateTime.add(365 * 24 * 60 * 60, :second)
+          |> DateTime.truncate(:second)
+        )
+
+      order =
+        case Repo.insert(order_changeset) do
+          {:ok, o} -> o
+          {:error, cs} -> Repo.rollback(cs)
+        end
+
+      Enum.each(items, fn item ->
+        ticket_code = generate_ticket_code()
+
+        item_changeset =
+          %OrderItem{}
+          |> OrderItem.changeset(%{
+            quantity: item.quantity,
+            unit_price_cents: item.unit_price_cents
+          })
+          |> Ecto.Changeset.put_change(:order_id, order.id)
+          |> Ecto.Changeset.put_change(:item_id, item.item_id)
+          |> Ecto.Changeset.put_change(:ticket_code, ticket_code)
+
+        case Repo.insert(item_changeset) do
+          {:ok, _} -> :ok
+          {:error, cs} -> Repo.rollback(cs)
+        end
+      end)
+
+      Repo.preload(order, order_items: [:item, :item_variation])
+    end)
+  end
+
+  @doc """
   Lists all orders for a customer by customer_id.
   """
   def list_orders_for_customer(customer_id) do
@@ -360,6 +530,10 @@ defmodule Pretex.Orders do
   # ---------------------------------------------------------------------------
   # Private helpers
   # ---------------------------------------------------------------------------
+
+  defp parse_integer(v) when is_integer(v), do: v
+  defp parse_integer(v) when is_binary(v), do: String.to_integer(v)
+  defp parse_integer(nil), do: 0
 
   defp validate_cart_active(%CartSession{status: "active"}), do: :ok
   defp validate_cart_active(_), do: {:error, :cart_not_active}
