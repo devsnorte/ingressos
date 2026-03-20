@@ -183,6 +183,11 @@ defmodule PretexWeb.Router do
         DiscountLive.Index,
         :edit
       )
+
+      live("/organizations/:org_id/gift-cards", GiftCardLive.Index, :index)
+      live("/organizations/:org_id/gift-cards/new", GiftCardLive.Index, :new)
+      live("/organizations/:org_id/gift-cards/:id/edit", GiftCardLive.Index, :edit)
+      live("/organizations/:org_id/gift-cards/:id/top-up", GiftCardLive.Index, :top_up)
     end
   end
 
