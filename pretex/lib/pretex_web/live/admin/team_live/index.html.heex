@@ -1,4 +1,8 @@
-<.dashboard_layout current_path={~p"/admin/organizations/#{@organization.id}/team"} org={@organization} flash={@flash}>
+<.dashboard_layout
+  current_path={~p"/admin/organizations/#{@organization.id}/team"}
+  org={@organization}
+  flash={@flash}
+>
   <.header>
     {@organization.name} — Equipe
     <:subtitle>Gerenciar membros, cargos e permissões</:subtitle>
@@ -94,7 +98,10 @@
   </div>
 
   <%!-- Painel de convite de membro --%>
-  <div :if={@live_action == :invite} class="card bg-base-100 shadow-sm border border-base-200 rounded-2xl mt-6">
+  <div
+    :if={@live_action == :invite}
+    class="card bg-base-100 shadow-sm border border-base-200 rounded-2xl mt-6"
+  >
     <div class="card-body">
       <div class="flex items-center justify-between mb-4">
         <h2 class="card-title text-base">Convidar Novo Membro</h2>
@@ -141,7 +148,10 @@
   </div>
 
   <%!-- Painel de edição de permissões --%>
-  <div :if={@live_action == :permissions && @selected_membership} class="card bg-base-100 shadow-sm border border-base-200 rounded-2xl mt-6">
+  <div
+    :if={@live_action == :permissions && @selected_membership}
+    class="card bg-base-100 shadow-sm border border-base-200 rounded-2xl mt-6"
+  >
     <div class="card-body">
       <div class="flex items-center justify-between mb-4">
         <div>

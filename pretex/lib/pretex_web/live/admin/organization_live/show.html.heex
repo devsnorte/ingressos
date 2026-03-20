@@ -1,13 +1,19 @@
-<.dashboard_layout current_path={~p"/admin/organizations/#{@organization}"} org={@organization} flash={@flash}>
+<.dashboard_layout
+  current_path={~p"/admin/organizations/#{@organization}"}
+  org={@organization}
+  flash={@flash}
+>
   <%!-- Page header --%>
   <.breadcrumb items={[{"Organizações", ~p"/admin/organizations"}, {@organization.name, nil}]} />
 
-  <.page_header title={@organization.name} subtitle={@organization.display_name || @organization.slug}>
+  <.page_header
+    title={@organization.name}
+    subtitle={@organization.display_name || @organization.slug}
+  >
     <:actions>
       <.link patch={~p"/admin/organizations/#{@organization}/show/edit"}>
         <.button class="btn btn-outline btn-sm gap-1">
-          <.icon name="hero-pencil-square" class="w-4 h-4" />
-          Editar
+          <.icon name="hero-pencil-square" class="w-4 h-4" /> Editar
         </.button>
       </.link>
     </:actions>
@@ -90,7 +96,9 @@
       </div>
       <div>
         <div class="text-sm text-base-content/50 mb-1">Criado em</div>
-        <div class="text-sm">{Calendar.strftime(@organization.inserted_at, "%d/%m/%Y às %H:%M")}</div>
+        <div class="text-sm">
+          {Calendar.strftime(@organization.inserted_at, "%d/%m/%Y às %H:%M")}
+        </div>
       </div>
     </div>
   </div>

@@ -9,6 +9,7 @@ defmodule Pretex.Orders do
   alias Pretex.Orders.Order
   alias Pretex.Orders.OrderItem
   alias Pretex.Catalog.QuotaItem
+  alias Pretex.Catalog.Quota
   alias Pretex.Events.Event
 
   # ---------------------------------------------------------------------------
@@ -143,7 +144,7 @@ defmodule Pretex.Orders do
 
   @doc """
   Creates an order from the given cart and attrs.
-  attrs: %{email:, name:, payment_method:}
+  attrs: %{email:, name:, payment_method:, payment_provider_id: (optional)}
 
   - Validates cart is active and not expired
   - Creates Order with OrderItems
@@ -161,6 +162,10 @@ defmodule Pretex.Orders do
       Repo.transaction(fn ->
         total_cents = cart_total(cart)
         payment_method = Map.get(attrs, :payment_method) || Map.get(attrs, "payment_method")
+
+        provider_id =
+          Map.get(attrs, :payment_provider_id) || Map.get(attrs, "payment_provider_id")
+
         expires_at = order_expires_at(payment_method)
         confirmation_code = generate_confirmation_code()
 
@@ -172,6 +177,11 @@ defmodule Pretex.Orders do
           |> Ecto.Changeset.put_change(:total_cents, total_cents)
           |> Ecto.Changeset.put_change(:expires_at, expires_at)
           |> Ecto.Changeset.put_change(:confirmation_code, confirmation_code)
+          |> then(fn cs ->
+            if provider_id,
+              do: Ecto.Changeset.put_change(cs, :payment_provider_id, provider_id),
+              else: cs
+          end)
 
         order =
           case Repo.insert(order_changeset) do
@@ -311,6 +321,42 @@ defmodule Pretex.Orders do
     |> Repo.update_all(set: [status: "expired"])
   end
 
+  @doc """
+  Attempts to reactivate an expired order and confirm it, subject to quota
+  availability. Called by `PollPayment` when an async payment arrives after
+  the order has expired but quota may still be available.
+
+  Returns:
+    - `{:ok, order}` — order reactivated and confirmed
+    - `{:error, :quota_exhausted}` — no quota available for one or more items
+    - `{:error, reason}` — other failure
+  """
+  def reactivate_and_confirm_order(%Order{} = order) do
+    order = Repo.preload(order, :order_items)
+
+    Repo.transaction(fn ->
+      # Check quota availability for each item under a row lock
+      quota_check =
+        Enum.reduce_while(order.order_items, :ok, fn order_item, :ok ->
+          case check_and_reserve_quota(order_item) do
+            :ok -> {:cont, :ok}
+            {:error, :quota_exhausted} -> {:halt, {:error, :quota_exhausted}}
+          end
+        end)
+
+      case quota_check do
+        :ok ->
+          case order |> Ecto.Changeset.change(status: "confirmed") |> Repo.update() do
+            {:ok, confirmed} -> confirmed
+            {:error, cs} -> Repo.rollback(cs)
+          end
+
+        {:error, :quota_exhausted} ->
+          Repo.rollback(:quota_exhausted)
+      end
+    end)
+  end
+
   # ---------------------------------------------------------------------------
   # Private helpers
   # ---------------------------------------------------------------------------
@@ -327,6 +373,7 @@ defmodule Pretex.Orders do
   end
 
   defp order_expires_at("credit_card"), do: future_datetime(15 * 60)
+  defp order_expires_at("debit_card"), do: future_datetime(15 * 60)
   defp order_expires_at("pix"), do: future_datetime(15 * 60)
   defp order_expires_at("boleto"), do: future_datetime(30 * 60)
   defp order_expires_at("bank_transfer"), do: future_datetime(3 * 24 * 60 * 60)
@@ -350,7 +397,7 @@ defmodule Pretex.Orders do
     quota_ids = find_quota_ids(item_id, variation_id)
 
     if quota_ids != [] do
-      from(q in Pretex.Catalog.Quota, where: q.id in ^quota_ids)
+      from(q in Quota, where: q.id in ^quota_ids)
       |> Repo.update_all(inc: [sold_count: quantity])
     end
   end
@@ -359,9 +406,39 @@ defmodule Pretex.Orders do
     quota_ids = find_quota_ids(item_id, variation_id)
 
     if quota_ids != [] do
-      from(q in Pretex.Catalog.Quota, where: q.id in ^quota_ids)
+      from(q in Quota, where: q.id in ^quota_ids)
       |> Repo.update_all(inc: [sold_count: -quantity])
     end
+  end
+
+  # Atomically checks quota availability and increments sold_count for one
+  # order item. Uses SELECT FOR UPDATE to prevent race conditions.
+  defp check_and_reserve_quota(%OrderItem{
+         item_id: item_id,
+         item_variation_id: variation_id,
+         quantity: quantity
+       }) do
+    quota_ids = find_quota_ids(item_id, variation_id)
+
+    result =
+      Enum.reduce_while(quota_ids, :ok, fn quota_id, :ok ->
+        quota =
+          from(q in Quota, where: q.id == ^quota_id, lock: "FOR UPDATE")
+          |> Repo.one()
+
+        available = quota.capacity - quota.sold_count
+
+        if available >= quantity do
+          from(q in Quota, where: q.id == ^quota_id)
+          |> Repo.update_all(inc: [sold_count: quantity])
+
+          {:cont, :ok}
+        else
+          {:halt, {:error, :quota_exhausted}}
+        end
+      end)
+
+    result
   end
 
   defp find_quota_ids(item_id, nil) do

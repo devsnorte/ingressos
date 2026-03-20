@@ -1,4 +1,8 @@
-<.dashboard_layout current_path={~p"/admin/organizations/#{@org}/events/#{@event}/catalog"} org={@org} flash={@flash}>
+<.dashboard_layout
+  current_path={~p"/admin/organizations/#{@org}/events/#{@event}/catalog"}
+  org={@org}
+  flash={@flash}
+>
   <div class="mx-auto max-w-4xl px-4 py-8">
     <%!-- Barra superior --%>
     <div class="mb-6 flex items-center justify-between gap-4 flex-wrap">
@@ -84,7 +88,10 @@
                 </span>
               </div>
 
-              <p :if={item.description} class="text-sm text-base-content/60 mt-2 leading-relaxed line-clamp-2">
+              <p
+                :if={item.description}
+                class="text-sm text-base-content/60 mt-2 leading-relaxed line-clamp-2"
+              >
                 {item.description}
               </p>
             </div>
@@ -126,7 +133,10 @@
           <.icon name="hero-gift" class="size-4 text-base-content/40" /> Pacotes
         </h2>
 
-        <div :if={@bundles == []} class="flex items-start gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm">
+        <div
+          :if={@bundles == []}
+          class="flex items-start gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm"
+        >
           <.icon
             name="hero-information-circle"
             class="size-5 shrink-0 text-base-content/40 mt-0.5"

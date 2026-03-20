@@ -1,4 +1,8 @@
-<.dashboard_layout current_path={~p"/admin/organizations/#{@org}/events/#{@event}/sub-events"} org={@org} flash={@flash}>
+<.dashboard_layout
+  current_path={~p"/admin/organizations/#{@org}/events/#{@event}/sub-events"}
+  org={@org}
+  flash={@flash}
+>
   <div class="mx-auto max-w-3xl px-4 py-8">
     <%!-- Barra superior --%>
     <div class="mb-6 flex items-center justify-between gap-4 flex-wrap">
@@ -121,7 +125,10 @@
                 </span>
               </div>
 
-              <p :if={sub_event.description} class="text-sm text-base-content/60 mt-2 leading-relaxed line-clamp-2">
+              <p
+                :if={sub_event.description}
+                class="text-sm text-base-content/60 mt-2 leading-relaxed line-clamp-2"
+              >
                 {sub_event.description}
               </p>
             </div>
