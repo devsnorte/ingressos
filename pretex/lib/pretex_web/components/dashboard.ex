@@ -4,14 +4,14 @@ defmodule PretexWeb.Components.Dashboard do
   Pure function components — no state, no queries.
   """
   use Phoenix.Component
-  import PretexWeb.CoreComponents, only: [icon: 1]
-  import PretexWeb.Layouts, only: [flash_group: 1]
+  import PretexWeb.CoreComponents, only: [icon: 1, flash: 1]
 
   # 1. dashboard_layout/1
   # Shell wrapping sidebar + content area
   # Uses daisyUI drawer with lg:drawer-open
   attr :current_path, :string, required: true
   attr :org, :map, required: true
+  attr :flash, :map, default: %{}
   slot :inner_block, required: true
 
   def dashboard_layout(assigns) do
@@ -26,6 +26,10 @@ defmodule PretexWeb.Components.Dashboard do
           <span class="font-semibold text-base-content">{@org.display_name || @org.name}</span>
         </div>
         <div class="p-6 lg:p-8 max-w-6xl">
+          <div id="flash-group" aria-live="polite">
+            <.flash kind={:info} flash={@flash} />
+            <.flash kind={:error} flash={@flash} />
+          </div>
           {render_slot(@inner_block)}
         </div>
       </div>
@@ -378,7 +382,10 @@ defmodule PretexWeb.Components.Dashboard do
         {render_slot(@inner_block)}
       </main>
 
-      <.flash_group flash={@flash} />
+      <div id="flash-group" aria-live="polite">
+        <.flash kind={:info} flash={@flash} />
+        <.flash kind={:error} flash={@flash} />
+      </div>
     </div>
     """
   end

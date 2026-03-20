@@ -28,32 +28,71 @@ defmodule PretexWeb.StaffLive.MagicLink do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
-      <div class="mx-auto max-w-sm space-y-6 text-center">
-        <h1 class="text-2xl font-bold">Welcome, {@user.email}</h1>
-        <p class="text-base-content/60 text-sm">Click below to complete your login.</p>
+    <div class="min-h-screen flex">
+      <%!-- Left panel (hidden on mobile) --%>
+      <div class="hidden lg:flex lg:w-1/2 bg-neutral text-neutral-content flex-col justify-between p-12 relative overflow-hidden">
+        <%!-- Decorative circles --%>
+        <div class="absolute top-20 right-10 w-32 h-32 rounded-full bg-primary/10"></div>
+        <div class="absolute bottom-32 left-8 w-20 h-20 rounded-full bg-primary/10"></div>
+        <div class="absolute top-1/2 right-1/3 w-12 h-12 rounded-full bg-primary/5"></div>
 
-        <.form
-          for={@form}
-          id="magic-link-form"
-          action={~p"/staff/log-in/confirm"}
-          phx-submit="confirm"
-          phx-trigger-action={@trigger_submit}
-        >
-          <input type="hidden" name={@form[:token].name} value={@form[:token].value} />
-          <.button
-            name={@form[:remember_me].name}
-            value="true"
-            class="btn btn-primary w-full"
-          >
-            Log in and stay logged in
-          </.button>
-          <.button class="btn btn-primary btn-soft w-full mt-2">
-            Log in only this time
-          </.button>
-        </.form>
+        <div>
+          <a href="/" class="flex items-center gap-2 mb-2">
+            <.icon name="hero-ticket" class="size-7 text-primary" />
+            <span class="text-xl font-bold">Pretex</span>
+          </a>
+          <p class="text-sm text-neutral-content/50">Painel Administrativo</p>
+        </div>
+
+        <div class="relative z-10">
+          <blockquote class="text-2xl font-semibold leading-relaxed mb-6">
+            Gerencie eventos, equipes e configurações da sua organização.
+          </blockquote>
+        </div>
+
+        <div></div>
       </div>
-    </Layouts.app>
+
+      <%!-- Right panel --%>
+      <div class="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-base-100">
+        <div class="w-full max-w-sm space-y-6">
+          <%!-- Mobile logo --%>
+          <div class="lg:hidden flex items-center gap-2 mb-4">
+            <a href="/" class="flex items-center gap-2">
+              <.icon name="hero-ticket" class="size-6 text-primary" />
+              <span class="text-lg font-bold">Pretex</span>
+            </a>
+          </div>
+
+          <div>
+            <h1 class="text-2xl font-bold">Bem-vindo de volta!</h1>
+            <p class="mt-2 text-sm text-base-content/60">{@user.email}</p>
+          </div>
+
+          <.form
+            for={@form}
+            id="magic-link-form"
+            action={~p"/staff/log-in/confirm"}
+            phx-submit="confirm"
+            phx-trigger-action={@trigger_submit}
+          >
+            <input type="hidden" name={@form[:token].name} value={@form[:token].value} />
+            <.button
+              name={@form[:remember_me].name}
+              value="true"
+              class="btn btn-primary w-full"
+            >
+              Entrar e manter conectado
+            </.button>
+            <.button class="btn btn-outline w-full mt-2">
+              Entrar apenas desta vez
+            </.button>
+          </.form>
+
+          <Layouts.flash_group flash={@flash} />
+        </div>
+      </div>
+    </div>
     """
   end
 

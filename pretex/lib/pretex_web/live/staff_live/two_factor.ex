@@ -8,85 +8,119 @@ defmodule PretexWeb.StaffLive.TwoFactor do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
-      <div class="max-w-md mx-auto py-12">
-        <div class="text-center mb-8">
-          <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-100 mb-4">
-            <.icon name="hero-shield-check" class="w-8 h-8 text-indigo-600" />
-          </div>
-          <h1 class="text-2xl font-bold text-gray-900">Two-Factor Authentication</h1>
-          <p class="mt-2 text-sm text-gray-600">
-            Please verify your identity to continue.
-          </p>
+    <div class="min-h-screen flex">
+      <%!-- Left panel (hidden on mobile) --%>
+      <div class="hidden lg:flex lg:w-1/2 bg-neutral text-neutral-content flex-col justify-between p-12 relative overflow-hidden">
+        <%!-- Decorative circles --%>
+        <div class="absolute top-20 right-10 w-32 h-32 rounded-full bg-primary/10"></div>
+        <div class="absolute bottom-32 left-8 w-20 h-20 rounded-full bg-primary/10"></div>
+        <div class="absolute top-1/2 right-1/3 w-12 h-12 rounded-full bg-primary/5"></div>
+
+        <div>
+          <a href="/" class="flex items-center gap-2 mb-2">
+            <.icon name="hero-ticket" class="size-7 text-primary" />
+            <span class="text-xl font-bold">Pretex</span>
+          </a>
+          <p class="text-sm text-neutral-content/50">Painel Administrativo</p>
         </div>
 
-        <%= if @totp_enabled do %>
-          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-4">
-            <h2 class="text-base font-semibold text-gray-900 mb-1">Authenticator App</h2>
-            <p class="text-sm text-gray-500 mb-4">
-              Enter the 6-digit code from your authenticator app.
+        <div class="relative z-10">
+          <blockquote class="text-2xl font-semibold leading-relaxed mb-6">
+            Gerencie eventos, equipes e configurações da sua organização.
+          </blockquote>
+        </div>
+
+        <div></div>
+      </div>
+
+      <%!-- Right panel --%>
+      <div class="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-base-100">
+        <div class="w-full max-w-sm space-y-6">
+          <%!-- Mobile logo --%>
+          <div class="lg:hidden flex items-center gap-2 mb-4">
+            <a href="/" class="flex items-center gap-2">
+              <.icon name="hero-ticket" class="size-6 text-primary" />
+              <span class="text-lg font-bold">Pretex</span>
+            </a>
+          </div>
+
+          <div class="text-center">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+              <.icon name="hero-shield-check" class="w-8 h-8 text-primary" />
+            </div>
+            <h1 class="text-2xl font-bold">Verificação em duas etapas</h1>
+            <p class="mt-2 text-sm text-base-content/60">
+              Verifique sua identidade para continuar.
             </p>
+          </div>
+
+          <%= if @totp_enabled do %>
+            <div>
+              <.form
+                for={@totp_form}
+                id="totp-form"
+                action={~p"/staff/two-factor/complete"}
+                method="post"
+                phx-submit="verify_totp"
+                phx-trigger-action={@trigger_totp}
+              >
+                <input type="hidden" name="method" value="totp" />
+                <.input
+                  field={@totp_form[:code]}
+                  type="text"
+                  label="Código do autenticador"
+                  placeholder="000000"
+                  autocomplete="one-time-code"
+                  inputmode="numeric"
+                  maxlength="6"
+                  required
+                />
+                <.button variant="primary" class="w-full mt-4" phx-disable-with="Verificando...">
+                  Verificar
+                </.button>
+              </.form>
+            </div>
+
+            <div class="divider text-sm text-base-content/40">ou</div>
+          <% end %>
+
+          <div>
             <.form
-              for={@totp_form}
-              id="totp-form"
+              for={@recovery_form}
+              id="recovery-form"
               action={~p"/staff/two-factor/complete"}
               method="post"
-              phx-submit="verify_totp"
-              phx-trigger-action={@trigger_totp}
+              phx-submit="verify_recovery"
+              phx-trigger-action={@trigger_recovery}
             >
-              <input type="hidden" name="method" value="totp" />
+              <input type="hidden" name="method" value="recovery" />
               <.input
-                field={@totp_form[:code]}
+                field={@recovery_form[:code]}
                 type="text"
-                label="Authentication Code"
-                placeholder="000000"
-                autocomplete="one-time-code"
-                inputmode="numeric"
-                maxlength="6"
+                label="Código de recuperação"
+                placeholder="XXXX-XXXX"
+                autocomplete="off"
                 required
               />
-              <.button variant="primary" class="w-full mt-4" phx-disable-with="Verifying...">
-                Verify Code
+              <.button variant="primary" class="w-full mt-4" phx-disable-with="Verificando...">
+                Verificar com código de recuperação
               </.button>
             </.form>
           </div>
-        <% end %>
 
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h2 class="text-base font-semibold text-gray-900 mb-1">Recovery Code</h2>
-          <p class="text-sm text-gray-500 mb-4">
-            Use one of your saved recovery codes if you can't access your authenticator.
-          </p>
-          <.form
-            for={@recovery_form}
-            id="recovery-form"
-            action={~p"/staff/two-factor/complete"}
-            method="post"
-            phx-submit="verify_recovery"
-            phx-trigger-action={@trigger_recovery}
-          >
-            <input type="hidden" name="method" value="recovery" />
-            <.input
-              field={@recovery_form[:code]}
-              type="text"
-              label="Recovery Code"
-              placeholder="XXXX-XXXX"
-              autocomplete="off"
-              required
-            />
-            <.button variant="primary" class="w-full mt-4" phx-disable-with="Verifying...">
-              Use Recovery Code
-            </.button>
-          </.form>
-        </div>
+          <div class="text-center">
+            <.link
+              navigate={~p"/staff/log-out"}
+              class="text-sm text-base-content/60 hover:text-base-content"
+            >
+              Sair
+            </.link>
+          </div>
 
-        <div class="mt-6 text-center">
-          <.link navigate={~p"/staff/log-out"} class="text-sm text-gray-500 hover:text-gray-700">
-            Sign out and use a different account
-          </.link>
+          <Layouts.flash_group flash={@flash} />
         </div>
       </div>
-    </Layouts.app>
+    </div>
     """
   end
 

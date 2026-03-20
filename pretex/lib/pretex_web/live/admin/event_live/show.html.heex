@@ -1,12 +1,12 @@
-<Layouts.app flash={@flash}>
+<.dashboard_layout current_path={~p"/admin/organizations/#{@org}/events/#{@event}"} org={@org} flash={@flash}>
   <div class="mx-auto max-w-3xl px-4 py-8">
-    <%!-- Top bar --%>
+    <%!-- Barra superior --%>
     <div class="mb-6 flex items-center justify-between gap-4 flex-wrap">
       <.link
         navigate={~p"/admin/organizations/#{@org}/events"}
         class="inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-primary transition-colors"
       >
-        <.icon name="hero-arrow-left" class="size-4" /> Back to Events
+        <.icon name="hero-arrow-left" class="size-4" /> Voltar aos Eventos
       </.link>
 
       <div class="flex items-center gap-2 flex-wrap justify-end">
@@ -14,55 +14,51 @@
           navigate={~p"/admin/organizations/#{@org}/events/#{@event}/edit"}
           class="btn btn-ghost btn-sm gap-1"
         >
-          <.icon name="hero-pencil-square" class="size-4" /> Edit
+          <.icon name="hero-pencil-square" class="size-4" /> Editar
         </.link>
 
-        <%= if @event.status == "draft" do %>
-          <button
-            id="publish-event"
-            phx-click="publish"
-            disabled={@ticket_count == 0}
-            data-confirm="Publish this event? It will become visible to attendees."
-            class="btn btn-success btn-sm gap-1"
-          >
-            <.icon name="hero-rocket-launch" class="size-4" /> Publish
-          </button>
-        <% end %>
+        <button
+          :if={@event.status == "draft"}
+          id="publish-event"
+          phx-click="publish"
+          disabled={@ticket_count == 0}
+          data-confirm="Publicar este evento? Ele ficará visível para os participantes."
+          class="btn btn-success btn-sm gap-1"
+        >
+          <.icon name="hero-rocket-launch" class="size-4" /> Publicar
+        </button>
 
-        <%= if @event.status == "published" do %>
-          <button
-            id="complete-event"
-            phx-click="complete"
-            data-confirm="Mark this event as completed? This cannot be undone."
-            class="btn btn-neutral btn-sm gap-1"
-          >
-            <.icon name="hero-check-circle" class="size-4" /> Complete
-          </button>
-        <% end %>
+        <button
+          :if={@event.status == "published"}
+          id="complete-event"
+          phx-click="complete"
+          data-confirm="Marcar este evento como concluído? Esta ação não pode ser desfeita."
+          class="btn btn-neutral btn-sm gap-1"
+        >
+          <.icon name="hero-check-circle" class="size-4" /> Concluir
+        </button>
 
         <button
           id="clone-event"
           phx-click="clone"
-          data-confirm={"Clone \"#{@event.name}\"? A new draft will be created."}
+          data-confirm={"Clonar \"#{@event.name}\"? Um novo rascunho será criado."}
           class="btn btn-ghost btn-sm gap-1"
         >
-          <.icon name="hero-document-duplicate" class="size-4" /> Clone
+          <.icon name="hero-document-duplicate" class="size-4" /> Clonar
         </button>
       </div>
     </div>
 
-    <%!-- Event header card --%>
+    <%!-- Card do evento --%>
     <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
       <div class="card-body p-6">
         <div class="flex items-start justify-between gap-4 mb-5">
           <div class="min-w-0">
             <h1 class="text-2xl font-bold text-base-content break-words">{@event.name}</h1>
             <p class="text-xs text-base-content/40 font-mono mt-1">/{@event.slug}</p>
-            <%= if @event.description do %>
-              <p class="text-base-content/70 mt-3 text-sm leading-relaxed">
-                {@event.description}
-              </p>
-            <% end %>
+            <p :if={@event.description} class="text-base-content/70 mt-3 text-sm leading-relaxed">
+              {@event.description}
+            </p>
           </div>
           <span class={[
             "badge badge-lg shrink-0 capitalize",
@@ -70,56 +66,52 @@
             @event.status == "draft" && "badge-warning",
             @event.status == "completed" && "badge-ghost"
           ]}>
-            {@event.status}
+            {case @event.status do
+              "published" -> "Publicado"
+              "draft" -> "Rascunho"
+              "completed" -> "Concluído"
+              other -> other
+            end}
           </span>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 text-sm">
           <div>
             <p class="text-xs font-semibold uppercase tracking-wider text-base-content/40 mb-1">
-              Starts At
+              Início
             </p>
-            <%= if @event.starts_at do %>
-              <p class="text-base-content flex items-center gap-1">
-                <.icon name="hero-calendar" class="size-4 text-base-content/40" />
-                {Calendar.strftime(@event.starts_at, "%B %d, %Y at %H:%M UTC")}
-              </p>
-            <% else %>
-              <p class="text-base-content/30 italic">Not set</p>
-            <% end %>
+            <p :if={@event.starts_at} class="text-base-content flex items-center gap-1">
+              <.icon name="hero-calendar" class="size-4 text-base-content/40" />
+              {Calendar.strftime(@event.starts_at, "%d de %B de %Y às %H:%M UTC")}
+            </p>
+            <p :if={!@event.starts_at} class="text-base-content/30 italic">Não definido</p>
           </div>
 
           <div>
             <p class="text-xs font-semibold uppercase tracking-wider text-base-content/40 mb-1">
-              Ends At
+              Término
             </p>
-            <%= if @event.ends_at do %>
-              <p class="text-base-content flex items-center gap-1">
-                <.icon name="hero-calendar" class="size-4 text-base-content/40" />
-                {Calendar.strftime(@event.ends_at, "%B %d, %Y at %H:%M UTC")}
-              </p>
-            <% else %>
-              <p class="text-base-content/30 italic">Not set</p>
-            <% end %>
+            <p :if={@event.ends_at} class="text-base-content flex items-center gap-1">
+              <.icon name="hero-calendar" class="size-4 text-base-content/40" />
+              {Calendar.strftime(@event.ends_at, "%d de %B de %Y às %H:%M UTC")}
+            </p>
+            <p :if={!@event.ends_at} class="text-base-content/30 italic">Não definido</p>
           </div>
 
           <div>
             <p class="text-xs font-semibold uppercase tracking-wider text-base-content/40 mb-1">
-              Venue
+              Local
             </p>
-            <%= if @event.venue do %>
-              <p class="text-base-content flex items-center gap-1">
-                <.icon name="hero-map-pin" class="size-4 text-base-content/40" />
-                {@event.venue}
-              </p>
-            <% else %>
-              <p class="text-base-content/30 italic">Not set</p>
-            <% end %>
+            <p :if={@event.venue} class="text-base-content flex items-center gap-1">
+              <.icon name="hero-map-pin" class="size-4 text-base-content/40" />
+              {@event.venue}
+            </p>
+            <p :if={!@event.venue} class="text-base-content/30 italic">Não definido</p>
           </div>
 
           <div>
             <p class="text-xs font-semibold uppercase tracking-wider text-base-content/40 mb-1">
-              Organization
+              Organização
             </p>
             <p class="text-base-content flex items-center gap-1">
               <.icon name="hero-building-office" class="size-4 text-base-content/40" />
@@ -130,11 +122,11 @@
       </div>
     </div>
 
-    <%!-- Branding card --%>
+    <%!-- Card de identidade visual --%>
     <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
       <div class="card-body p-6">
         <h2 class="text-base font-semibold text-base-content mb-4 flex items-center gap-2">
-          <.icon name="hero-swatch" class="size-4 text-base-content/40" /> Branding
+          <.icon name="hero-swatch" class="size-4 text-base-content/40" /> Identidade Visual
         </h2>
         <div class="flex flex-wrap items-center gap-6">
           <div class="flex items-center gap-3">
@@ -144,7 +136,7 @@
             >
             </div>
             <div>
-              <p class="text-xs text-base-content/50 font-medium">Primary Color</p>
+              <p class="text-xs text-base-content/50 font-medium">Cor Primária</p>
               <p class="text-sm font-mono text-base-content">{@event.primary_color}</p>
             </div>
           </div>
@@ -156,7 +148,7 @@
             >
             </div>
             <div>
-              <p class="text-xs text-base-content/50 font-medium">Accent Color</p>
+              <p class="text-xs text-base-content/50 font-medium">Cor de Destaque</p>
               <p class="text-sm font-mono text-base-content">{@event.accent_color}</p>
             </div>
           </div>
@@ -164,71 +156,67 @@
       </div>
     </div>
 
-    <%!-- Sub-events card --%>
+    <%!-- Card de sub-eventos --%>
     <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
       <div class="card-body p-6">
         <div class="flex items-center justify-between gap-4 mb-4">
           <h2 class="text-base font-semibold text-base-content flex items-center gap-2">
-            <.icon name="hero-rectangle-stack" class="size-4 text-base-content/40" /> Sub-Events
+            <.icon name="hero-rectangle-stack" class="size-4 text-base-content/40" /> Sub-Eventos
           </h2>
-          <%= if @event.is_series do %>
-            <.link
-              navigate={~p"/admin/organizations/#{@org}/events/#{@event}/sub-events"}
-              class="btn btn-ghost btn-xs gap-1"
-            >
-              <.icon name="hero-arrow-right" class="size-3" /> Manage Sub-Events
-            </.link>
-          <% end %>
+          <.link
+            :if={@event.is_series}
+            navigate={~p"/admin/organizations/#{@org}/events/#{@event}/sub-events"}
+            class="btn btn-ghost btn-xs gap-1"
+          >
+            <.icon name="hero-arrow-right" class="size-3" /> Gerenciar Sub-Eventos
+          </.link>
         </div>
 
-        <%= if @event.is_series do %>
-          <div class="flex items-start gap-3 rounded-lg bg-success/10 border border-success/30 p-4 text-sm text-success-content">
-            <.icon name="hero-check-circle" class="size-5 shrink-0 text-success mt-0.5" />
-            <p>
-              Series mode is enabled. Use
-              <.link
-                navigate={~p"/admin/organizations/#{@org}/events/#{@event}/sub-events"}
-                class="font-semibold underline underline-offset-2"
-              >
-                Sub-Events
-              </.link>
-              to manage individual sessions, days, or stages.
-            </p>
-          </div>
-        <% else %>
-          <div class="flex items-start gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm">
-            <.icon
-              name="hero-information-circle"
-              class="size-5 shrink-0 text-base-content/40 mt-0.5"
-            />
-            <div class="flex-1">
-              <p class="text-base-content/70">
-                Enable series mode to break this event into multiple sub-events (e.g. different days, rooms, or stages).
-              </p>
-            </div>
+        <div :if={@event.is_series} class="flex items-start gap-3 rounded-lg bg-success/10 border border-success/30 p-4 text-sm text-success-content">
+          <.icon name="hero-check-circle" class="size-5 shrink-0 text-success mt-0.5" />
+          <p>
+            Modo de série está ativado. Use
             <.link
               navigate={~p"/admin/organizations/#{@org}/events/#{@event}/sub-events"}
-              class="btn btn-outline btn-xs gap-1 shrink-0"
+              class="font-semibold underline underline-offset-2"
             >
-              <.icon name="hero-rectangle-stack" class="size-3" /> Enable Series
+              Sub-Eventos
             </.link>
+            para gerenciar sessões, dias ou palcos individuais.
+          </p>
+        </div>
+        <div :if={!@event.is_series} class="flex items-start gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm">
+          <.icon
+            name="hero-information-circle"
+            class="size-5 shrink-0 text-base-content/40 mt-0.5"
+          />
+          <div class="flex-1">
+            <p class="text-base-content/70">
+              Ative o modo de série para dividir este evento em múltiplos sub-eventos (ex: diferentes dias, salas ou palcos).
+            </p>
           </div>
-        <% end %>
+          <.link
+            navigate={~p"/admin/organizations/#{@org}/events/#{@event}/sub-events"}
+            class="btn btn-outline btn-xs gap-1 shrink-0"
+          >
+            <.icon name="hero-rectangle-stack" class="size-3" /> Ativar Série
+          </.link>
+        </div>
       </div>
     </div>
 
-    <%!-- Item Catalog card --%>
+    <%!-- Card do catálogo de itens --%>
     <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
       <div class="card-body p-6">
         <div class="flex items-center justify-between gap-4 mb-4">
           <h2 class="text-base font-semibold text-base-content flex items-center gap-2">
-            <.icon name="hero-shopping-bag" class="size-4 text-base-content/40" /> Item Catalog
+            <.icon name="hero-shopping-bag" class="size-4 text-base-content/40" /> Catálogo de Itens
           </h2>
           <.link
             navigate={~p"/admin/organizations/#{@org}/events/#{@event}/catalog"}
             class="btn btn-ghost btn-xs gap-1"
           >
-            <.icon name="hero-arrow-right" class="size-3" /> Manage Catalog
+            <.icon name="hero-arrow-right" class="size-3" /> Gerenciar Catálogo
           </.link>
         </div>
         <div class="flex items-start gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm">
@@ -237,25 +225,25 @@
             class="size-5 shrink-0 text-base-content/40 mt-0.5"
           />
           <p class="text-base-content/70">
-            Manage items, merchandise, add-ons, and bundles for sale at this event.
+            Gerencie itens, mercadorias, complementos e pacotes à venda neste evento.
           </p>
         </div>
       </div>
     </div>
 
-    <%!-- Quotas card --%>
+    <%!-- Card de cotas --%>
     <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
       <div class="card-body p-6">
         <div class="flex items-center justify-between gap-4 mb-4">
           <h2 class="text-base font-semibold text-base-content flex items-center gap-2">
             <.icon name="hero-chart-bar" class="size-4 text-base-content/40" />
-            Quotas &amp; Availability
+            Cotas e Disponibilidade
           </h2>
           <.link
             navigate={~p"/admin/organizations/#{@org}/events/#{@event}/quotas"}
             class="btn btn-ghost btn-xs gap-1"
           >
-            <.icon name="hero-arrow-right" class="size-3" /> Manage Quotas
+            <.icon name="hero-arrow-right" class="size-3" /> Gerenciar Cotas
           </.link>
         </div>
         <div class="flex items-start gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm">
@@ -264,19 +252,19 @@
             class="size-5 shrink-0 text-base-content/40 mt-0.5"
           />
           <p class="text-base-content/70">
-            Define capacity quotas and track ticket availability across item types.
+            Defina cotas de capacidade e acompanhe a disponibilidade de ingressos por tipo de item.
           </p>
         </div>
       </div>
     </div>
 
-    <%!-- Attendee Questions card --%>
+    <%!-- Card de perguntas do participante --%>
     <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
       <div class="card-body p-6">
         <div class="flex items-center justify-between gap-4 mb-4">
           <h2 class="text-base font-semibold text-base-content flex items-center gap-2">
             <.icon name="hero-question-mark-circle" class="size-4 text-base-content/40" />
-            Attendee Questions
+            Perguntas do Participante
           </h2>
           <div class="flex items-center gap-2">
             <.link
@@ -285,13 +273,13 @@
               }
               class="btn btn-ghost btn-xs gap-1"
             >
-              <.icon name="hero-user" class="size-3" /> Attendee Fields
+              <.icon name="hero-user" class="size-3" /> Campos do Participante
             </.link>
             <.link
               navigate={~p"/admin/organizations/#{@org}/events/#{@event}/questions"}
               class="btn btn-ghost btn-xs gap-1"
             >
-              <.icon name="hero-arrow-right" class="size-3" /> Manage Questions
+              <.icon name="hero-arrow-right" class="size-3" /> Gerenciar Perguntas
             </.link>
           </div>
         </div>
@@ -301,33 +289,31 @@
             class="size-5 shrink-0 text-base-content/40 mt-0.5"
           />
           <p class="text-base-content/70">
-            Collect custom information from attendees at checkout. Configure built-in fields (name, email, etc.) and add custom questions.
+            Colete informações personalizadas dos participantes no checkout. Configure campos nativos (nome, e-mail, etc.) e adicione perguntas personalizadas.
           </p>
         </div>
       </div>
     </div>
 
-    <%!-- Ticket types card --%>
+    <%!-- Card de tipos de ingresso --%>
     <div class="card bg-base-100 border border-base-200 shadow-sm">
       <div class="card-body p-6">
         <h2 class="text-base font-semibold text-base-content mb-4 flex items-center gap-2">
-          <.icon name="hero-ticket" class="size-4 text-base-content/40" /> Ticket Types
+          <.icon name="hero-ticket" class="size-4 text-base-content/40" /> Tipos de Ingresso
         </h2>
 
-        <%= if @ticket_count == 0 do %>
-          <div
-            id="no-ticket-types-notice"
-            class="flex items-start gap-3 rounded-lg bg-warning/10 border border-warning/30 p-4 text-sm text-warning-content"
-          >
-            <.icon name="hero-exclamation-triangle" class="size-5 shrink-0 text-warning mt-0.5" />
-            <p>Add at least one ticket type to publish this event.</p>
-          </div>
-        <% else %>
-          <p id="ticket-count" class="text-sm text-base-content/70">
-            {@ticket_count} ticket type(s) configured.
-          </p>
-        <% end %>
+        <div
+          :if={@ticket_count == 0}
+          id="no-ticket-types-notice"
+          class="flex items-start gap-3 rounded-lg bg-warning/10 border border-warning/30 p-4 text-sm text-warning-content"
+        >
+          <.icon name="hero-exclamation-triangle" class="size-5 shrink-0 text-warning mt-0.5" />
+          <p>Adicione pelo menos um tipo de ingresso para publicar este evento.</p>
+        </div>
+        <p :if={@ticket_count != 0} id="ticket-count" class="text-sm text-base-content/70">
+          {@ticket_count} tipo(s) de ingresso configurado(s).
+        </p>
       </div>
     </div>
   </div>
-</Layouts.app>
+</.dashboard_layout>

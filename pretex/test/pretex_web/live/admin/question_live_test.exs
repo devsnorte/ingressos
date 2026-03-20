@@ -68,7 +68,7 @@ defmodule PretexWeb.Admin.QuestionLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/questions")
 
-      assert html =~ "Attendee Questions"
+      assert html =~ "Perguntas do Participante"
       assert html =~ "Summer Festival"
     end
 
@@ -79,7 +79,7 @@ defmodule PretexWeb.Admin.QuestionLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/questions")
 
-      assert html =~ "No questions yet"
+      assert html =~ "Nenhuma pergunta ainda."
     end
 
     test "lists questions for the event", %{conn: conn} do
@@ -124,7 +124,7 @@ defmodule PretexWeb.Admin.QuestionLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/questions")
 
-      assert html =~ "Required"
+      assert html =~ "Obrigatório"
     end
 
     test "shows New Question button", %{conn: conn} do
@@ -134,7 +134,7 @@ defmodule PretexWeb.Admin.QuestionLiveTest do
       {:ok, view, _html} =
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/questions")
 
-      assert has_element?(view, "a", "New Question")
+      assert has_element?(view, "a", "Nova Pergunta")
     end
 
     test "shows back link to the event", %{conn: conn} do
@@ -198,7 +198,7 @@ defmodule PretexWeb.Admin.QuestionLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/questions")
 
-      assert html =~ "Options"
+      assert html =~ "Opções"
     end
   end
 
@@ -217,7 +217,7 @@ defmodule PretexWeb.Admin.QuestionLiveTest do
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/questions/new")
 
       assert has_element?(view, "#question-modal")
-      assert render(view) =~ "New Question"
+      assert render(view) =~ "Nova Pergunta"
     end
 
     test "shows the question form inside the modal", %{conn: conn} do
@@ -402,7 +402,7 @@ defmodule PretexWeb.Admin.QuestionLiveTest do
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/questions/#{question.id}/edit")
 
       assert has_element?(view, "#question-modal")
-      assert html =~ "Edit Question"
+      assert html =~ "Editar Pergunta"
       assert html =~ "Editable Question"
     end
 
@@ -525,7 +525,7 @@ defmodule PretexWeb.Admin.QuestionLiveTest do
       |> element("#delete-#{question.id}")
       |> render_click()
 
-      assert render(view) =~ "No questions yet"
+      assert render(view) =~ "Nenhuma pergunta ainda."
     end
 
     test "can delete a question that has options", %{conn: conn} do
@@ -579,7 +579,7 @@ defmodule PretexWeb.Admin.QuestionLiveTest do
           ~p"/admin/organizations/#{org}/events/#{event}/questions/attendee-fields"
         )
 
-      assert html =~ "Attendee Fields"
+      assert html =~ "Campos do Participante"
       assert html =~ "Fields Event"
     end
 
@@ -611,7 +611,7 @@ defmodule PretexWeb.Admin.QuestionLiveTest do
           ~p"/admin/organizations/#{org}/events/#{event}/questions/attendee-fields"
         )
 
-      assert html =~ "Always shown"
+      assert html =~ "Sempre visível"
     end
 
     test "shows back link to questions page", %{conn: conn} do
@@ -640,8 +640,8 @@ defmodule PretexWeb.Admin.QuestionLiveTest do
           ~p"/admin/organizations/#{org}/events/#{event}/questions/attendee-fields"
         )
 
-      assert html =~ "Enabled"
-      assert html =~ "Required"
+      assert html =~ "Ativado"
+      assert html =~ "Obrigatório"
     end
 
     test "toggling a non-protected field's enabled state updates the page", %{conn: conn} do

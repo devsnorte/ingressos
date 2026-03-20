@@ -191,7 +191,7 @@ defmodule PretexWeb.Admin.TeamLiveTest do
       assert has_element?(view, "#invite-form")
 
       view
-      |> element("a[href$='/team']", "Cancel")
+      |> element("a[href$='/team']", "Cancelar")
       |> render_click()
 
       refute has_element?(view, "#invite-form")

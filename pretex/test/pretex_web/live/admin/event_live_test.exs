@@ -60,7 +60,7 @@ defmodule PretexWeb.Admin.EventLiveTest do
       org = org_fixture()
 
       {:ok, _view, html} = live(conn, ~p"/admin/organizations/#{org}/events")
-      assert html =~ "No events yet"
+      assert html =~ "Nenhum evento ainda."
     end
 
     test "shows draft status badge", %{conn: conn} do
@@ -68,7 +68,7 @@ defmodule PretexWeb.Admin.EventLiveTest do
       _event = event_fixture(org)
 
       {:ok, _view, html} = live(conn, ~p"/admin/organizations/#{org}/events")
-      assert html =~ "draft"
+      assert html =~ "Rascunho"
     end
 
     test "publish button shows no-ticket-type error flash when none configured", %{conn: conn} do
@@ -95,7 +95,7 @@ defmodule PretexWeb.Admin.EventLiveTest do
       |> element("#publish-#{event.id}")
       |> render_click()
 
-      assert render(view) =~ "published"
+      assert render(view) =~ "Publicado"
     end
 
     test "delete removes the event from the stream", %{conn: conn} do
@@ -137,7 +137,7 @@ defmodule PretexWeb.Admin.EventLiveTest do
       org = org_fixture()
 
       {:ok, view, html} = live(conn, ~p"/admin/organizations/#{org}/events/new")
-      assert html =~ "New Event"
+      assert html =~ "Novo Evento"
       assert has_element?(view, "#event-form")
     end
 
@@ -242,7 +242,7 @@ defmodule PretexWeb.Admin.EventLiveTest do
       event = event_fixture(org)
 
       {:ok, _view, html} = live(conn, ~p"/admin/organizations/#{org}/events/#{event}")
-      assert html =~ "Add at least one ticket type"
+      assert html =~ "Adicione pelo menos um tipo de ingresso"
     end
 
     test "shows ticket count when ticket types exist", %{conn: conn} do

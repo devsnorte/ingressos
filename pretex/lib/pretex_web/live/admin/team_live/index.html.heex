@@ -1,29 +1,29 @@
-<Layouts.app flash={@flash}>
+<.dashboard_layout current_path={~p"/admin/organizations/#{@organization.id}/team"} org={@organization} flash={@flash}>
   <.header>
-    {@organization.name} — Team
-    <:subtitle>Manage members, roles, and permissions</:subtitle>
+    {@organization.name} — Equipe
+    <:subtitle>Gerenciar membros, cargos e permissões</:subtitle>
     <:actions>
       <.link patch={~p"/admin/organizations/#{@organization.id}/team/invite"}>
         <.button>
-          <.icon name="hero-user-plus" class="size-4 mr-1" /> Invite Member
+          <.icon name="hero-user-plus" class="size-4 mr-1" /> Convidar Membro
         </.button>
       </.link>
       <.link navigate={~p"/admin/organizations/#{@organization.id}"}>
-        <.button variant="primary">Back to Organization</.button>
+        <.button variant="primary">Voltar à Organização</.button>
       </.link>
     </:actions>
   </.header>
 
-  <%!-- Members table --%>
+  <%!-- Tabela de membros --%>
   <div class="card bg-base-100 shadow-sm border border-base-200 rounded-2xl overflow-hidden">
     <div class="card-body p-0">
       <table class="table table-zebra w-full">
         <thead>
           <tr class="bg-base-200/60">
-            <th class="font-semibold">Member</th>
-            <th class="font-semibold">Role</th>
+            <th class="font-semibold">Membro</th>
+            <th class="font-semibold">Cargo</th>
             <th class="font-semibold">Status</th>
-            <th class="font-semibold text-right">Actions</th>
+            <th class="font-semibold text-right">Ações</th>
           </tr>
         </thead>
         <tbody id="memberships" phx-update="stream">
@@ -52,16 +52,12 @@
                 m.role == "event_manager" && "badge-secondary",
                 m.role == "checkin_operator" && "badge-accent"
               ]}>
-                <%= case m.role do %>
-                  <% "admin" -> %>
-                    Admin
-                  <% "event_manager" -> %>
-                    Event Manager
-                  <% "checkin_operator" -> %>
-                    Check-in Operator
-                  <% other -> %>
-                    {other}
-                <% end %>
+                {case m.role do
+                  "admin" -> "Administrador"
+                  "event_manager" -> "Gerente de Eventos"
+                  "checkin_operator" -> "Operador de Check-in"
+                  other -> other
+                end}
               </span>
             </td>
             <td>
@@ -70,7 +66,7 @@
                 m.is_active && "badge-success",
                 not m.is_active && "badge-ghost text-base-content/40"
               ]}>
-                {if m.is_active, do: "Active", else: "Inactive"}
+                {if m.is_active, do: "Ativo", else: "Inativo"}
               </span>
             </td>
             <td>
@@ -79,7 +75,7 @@
                   patch={~p"/admin/organizations/#{@organization.id}/team/#{m.id}/permissions"}
                   class="btn btn-xs btn-ghost"
                 >
-                  <.icon name="hero-shield-check" class="size-3.5" /> Permissions
+                  <.icon name="hero-shield-check" class="size-3.5" /> Permissões
                 </.link>
                 <button
                   id={"remove-btn-#{m.id}"}
@@ -87,7 +83,7 @@
                   phx-value-id={m.id}
                   class="btn btn-xs btn-ghost text-error hover:bg-error/10"
                 >
-                  <.icon name="hero-trash" class="size-3.5" /> Remove
+                  <.icon name="hero-trash" class="size-3.5" /> Remover
                 </button>
               </div>
             </td>
@@ -97,203 +93,196 @@
     </div>
   </div>
 
-  <%!-- Invite Member form panel --%>
-  <%= if @live_action == :invite do %>
-    <div class="card bg-base-100 shadow-sm border border-base-200 rounded-2xl mt-6">
-      <div class="card-body">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="card-title text-base">Invite New Member</h2>
-          <.link
-            patch={~p"/admin/organizations/#{@organization.id}/team"}
-            class="btn btn-sm btn-ghost btn-circle"
-          >
-            <.icon name="hero-x-mark" class="size-4" />
-          </.link>
-        </div>
-
-        <.form
-          for={@invite_form}
-          id="invite-form"
-          phx-change="validate_invite"
-          phx-submit="send_invite"
-          class="space-y-4"
+  <%!-- Painel de convite de membro --%>
+  <div :if={@live_action == :invite} class="card bg-base-100 shadow-sm border border-base-200 rounded-2xl mt-6">
+    <div class="card-body">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="card-title text-base">Convidar Novo Membro</h2>
+        <.link
+          patch={~p"/admin/organizations/#{@organization.id}/team"}
+          class="btn btn-sm btn-ghost btn-circle"
         >
-          <.input
-            field={@invite_form[:email]}
-            type="email"
-            label="Email address"
-            placeholder="colleague@example.com"
-            required
-          />
-          <.input
-            field={@invite_form[:role]}
-            type="select"
-            label="Role"
-            options={@roles}
-            prompt="Select a role…"
-            required
-          />
-          <div class="flex gap-3 mt-6">
-            <.button type="submit" phx-disable-with="Sending…">
-              <.icon name="hero-paper-airplane" class="size-4 mr-1" /> Send Invitation
-            </.button>
-            <.link patch={~p"/admin/organizations/#{@organization.id}/team"} class="btn btn-ghost">
-              Cancel
-            </.link>
-          </div>
-        </.form>
-      </div>
-    </div>
-  <% end %>
-
-  <%!-- Edit Permissions form panel --%>
-  <%= if @live_action == :permissions && @selected_membership do %>
-    <div class="card bg-base-100 shadow-sm border border-base-200 rounded-2xl mt-6">
-      <div class="card-body">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h2 class="card-title text-base">Permissions for {@selected_membership.user.name}</h2>
-            <p class="text-sm text-base-content/60 mt-0.5">
-              Configure what this member can read and write per resource.
-            </p>
-          </div>
-          <.link
-            patch={~p"/admin/organizations/#{@organization.id}/team"}
-            class="btn btn-sm btn-ghost btn-circle"
-          >
-            <.icon name="hero-x-mark" class="size-4" />
-          </.link>
-        </div>
-
-        <.form
-          for={@permissions_form}
-          id="permissions-form"
-          phx-submit="save_permissions"
-        >
-          <div class="overflow-x-auto">
-            <table class="table table-sm w-full">
-              <thead>
-                <tr class="bg-base-200/60">
-                  <th class="font-semibold">Resource</th>
-                  <th class="font-semibold text-center">Can Read</th>
-                  <th class="font-semibold text-center">Can Write</th>
-                </tr>
-              </thead>
-              <tbody>
-                <%= for resource <- @resources do %>
-                  <tr class="hover:bg-base-50">
-                    <td class="font-medium capitalize">{resource}</td>
-                    <td class="text-center">
-                      <.input
-                        field={@permissions_form["can_read_#{resource}"]}
-                        type="checkbox"
-                        label=""
-                      />
-                    </td>
-                    <td class="text-center">
-                      <.input
-                        field={@permissions_form["can_write_#{resource}"]}
-                        type="checkbox"
-                        label=""
-                      />
-                    </td>
-                  </tr>
-                <% end %>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="flex gap-3 mt-6">
-            <.button type="submit" phx-disable-with="Saving…">
-              <.icon name="hero-check" class="size-4 mr-1" /> Save Permissions
-            </.button>
-            <.link patch={~p"/admin/organizations/#{@organization.id}/team"} class="btn btn-ghost">
-              Cancel
-            </.link>
-          </div>
-        </.form>
-      </div>
-    </div>
-  <% end %>
-
-  <%!-- Typed-phrase removal confirmation modal --%>
-  <%= if @confirm_remove_membership do %>
-    <div
-      id="confirm-remove-modal"
-      class="modal modal-open"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="confirm-remove-title"
-    >
-      <div class="modal-box max-w-md">
-        <div class="flex items-start gap-3 mb-4">
-          <div class="bg-error/10 text-error rounded-full p-2 shrink-0 mt-0.5">
-            <.icon name="hero-exclamation-triangle" class="size-5" />
-          </div>
-          <div>
-            <h3 id="confirm-remove-title" class="font-semibold text-lg">Remove Member</h3>
-            <p class="text-sm text-base-content/70 mt-1">
-              You are about to remove
-              <span class="font-semibold text-base-content">
-                {@confirm_remove_membership.user.name}
-              </span>
-              from this organization. This action cannot be undone.
-            </p>
-          </div>
-        </div>
-
-        <div class="bg-base-200/60 rounded-xl p-3 mb-4">
-          <p class="text-sm text-base-content/70">
-            To confirm, type the member's email address:
-          </p>
-          <p class="font-mono font-semibold text-sm mt-1 select-all text-base-content">
-            {@confirm_remove_membership.user.email}
-          </p>
-        </div>
-
-        <.form
-          for={@confirm_form}
-          id="confirm-remove-form"
-          phx-submit="execute_remove"
-          class="space-y-3"
-        >
-          <.input
-            field={@confirm_form[:phrase]}
-            type="text"
-            label=""
-            placeholder="Type the email address to confirm"
-            autocomplete="off"
-            phx-debounce="100"
-          />
-          <div class="flex gap-3">
-            <button
-              id="confirm-remove-submit"
-              type="submit"
-              class="btn btn-error flex-1"
-              phx-disable-with="Removing…"
-            >
-              <.icon name="hero-trash" class="size-4 mr-1" /> Remove Member
-            </button>
-            <button
-              id="cancel-remove-btn"
-              type="button"
-              phx-click="cancel_remove"
-              class="btn btn-ghost flex-1"
-            >
-              Cancel
-            </button>
-          </div>
-        </.form>
+          <.icon name="hero-x-mark" class="size-4" />
+        </.link>
       </div>
 
-      <button
-        type="button"
-        phx-click="cancel_remove"
-        class="modal-backdrop cursor-default"
-        aria-label="Close"
+      <.form
+        for={@invite_form}
+        id="invite-form"
+        phx-change="validate_invite"
+        phx-submit="send_invite"
+        class="space-y-4"
       >
-        <span class="hidden">Close</span>
-      </button>
+        <.input
+          field={@invite_form[:email]}
+          type="email"
+          label="Endereço de e-mail"
+          placeholder="colega@exemplo.com"
+          required
+        />
+        <.input
+          field={@invite_form[:role]}
+          type="select"
+          label="Cargo"
+          options={@roles}
+          prompt="Selecione um cargo..."
+          required
+        />
+        <div class="flex gap-3 mt-6">
+          <.button type="submit" phx-disable-with="Enviando...">
+            <.icon name="hero-paper-airplane" class="size-4 mr-1" /> Enviar Convite
+          </.button>
+          <.link patch={~p"/admin/organizations/#{@organization.id}/team"} class="btn btn-ghost">
+            Cancelar
+          </.link>
+        </div>
+      </.form>
     </div>
-  <% end %>
-</Layouts.app>
+  </div>
+
+  <%!-- Painel de edição de permissões --%>
+  <div :if={@live_action == :permissions && @selected_membership} class="card bg-base-100 shadow-sm border border-base-200 rounded-2xl mt-6">
+    <div class="card-body">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="card-title text-base">Permissões de {@selected_membership.user.name}</h2>
+          <p class="text-sm text-base-content/60 mt-0.5">
+            Configure o que este membro pode ler e escrever por recurso.
+          </p>
+        </div>
+        <.link
+          patch={~p"/admin/organizations/#{@organization.id}/team"}
+          class="btn btn-sm btn-ghost btn-circle"
+        >
+          <.icon name="hero-x-mark" class="size-4" />
+        </.link>
+      </div>
+
+      <.form
+        for={@permissions_form}
+        id="permissions-form"
+        phx-submit="save_permissions"
+      >
+        <div class="overflow-x-auto">
+          <table class="table table-sm w-full">
+            <thead>
+              <tr class="bg-base-200/60">
+                <th class="font-semibold">Recurso</th>
+                <th class="font-semibold text-center">Pode Ler</th>
+                <th class="font-semibold text-center">Pode Escrever</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr :for={resource <- @resources} class="hover:bg-base-50">
+                <td class="font-medium capitalize">{resource}</td>
+                <td class="text-center">
+                  <.input
+                    field={@permissions_form["can_read_#{resource}"]}
+                    type="checkbox"
+                    label=""
+                  />
+                </td>
+                <td class="text-center">
+                  <.input
+                    field={@permissions_form["can_write_#{resource}"]}
+                    type="checkbox"
+                    label=""
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="flex gap-3 mt-6">
+          <.button type="submit" phx-disable-with="Salvando...">
+            <.icon name="hero-check" class="size-4 mr-1" /> Salvar Permissões
+          </.button>
+          <.link patch={~p"/admin/organizations/#{@organization.id}/team"} class="btn btn-ghost">
+            Cancelar
+          </.link>
+        </div>
+      </.form>
+    </div>
+  </div>
+
+  <%!-- Modal de confirmação de remoção --%>
+  <div
+    :if={@confirm_remove_membership}
+    id="confirm-remove-modal"
+    class="modal modal-open"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="confirm-remove-title"
+  >
+    <div class="modal-box max-w-md">
+      <div class="flex items-start gap-3 mb-4">
+        <div class="bg-error/10 text-error rounded-full p-2 shrink-0 mt-0.5">
+          <.icon name="hero-exclamation-triangle" class="size-5" />
+        </div>
+        <div>
+          <h3 id="confirm-remove-title" class="font-semibold text-lg">Remover Membro</h3>
+          <p class="text-sm text-base-content/70 mt-1">
+            Você está prestes a remover
+            <span class="font-semibold text-base-content">
+              {@confirm_remove_membership.user.name}
+            </span>
+            desta organização. Esta ação não pode ser desfeita.
+          </p>
+        </div>
+      </div>
+
+      <div class="bg-base-200/60 rounded-xl p-3 mb-4">
+        <p class="text-sm text-base-content/70">
+          Para confirmar, digite o endereço de e-mail do membro:
+        </p>
+        <p class="font-mono font-semibold text-sm mt-1 select-all text-base-content">
+          {@confirm_remove_membership.user.email}
+        </p>
+      </div>
+
+      <.form
+        for={@confirm_form}
+        id="confirm-remove-form"
+        phx-submit="execute_remove"
+        class="space-y-3"
+      >
+        <.input
+          field={@confirm_form[:phrase]}
+          type="text"
+          label=""
+          placeholder="Digite o endereço de e-mail para confirmar"
+          autocomplete="off"
+          phx-debounce="100"
+        />
+        <div class="flex gap-3">
+          <button
+            id="confirm-remove-submit"
+            type="submit"
+            class="btn btn-error flex-1"
+            phx-disable-with="Removendo..."
+          >
+            <.icon name="hero-trash" class="size-4 mr-1" /> Remover Membro
+          </button>
+          <button
+            id="cancel-remove-btn"
+            type="button"
+            phx-click="cancel_remove"
+            class="btn btn-ghost flex-1"
+          >
+            Cancelar
+          </button>
+        </div>
+      </.form>
+    </div>
+
+    <button
+      type="button"
+      phx-click="cancel_remove"
+      class="modal-backdrop cursor-default"
+      aria-label="Fechar"
+    >
+      <span class="hidden">Fechar</span>
+    </button>
+  </div>
+</.dashboard_layout>

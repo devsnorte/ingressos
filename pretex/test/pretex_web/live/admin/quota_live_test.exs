@@ -79,7 +79,7 @@ defmodule PretexWeb.Admin.QuotaLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/quotas")
 
-      assert html =~ "No quotas yet"
+      assert html =~ "Nenhuma cota ainda."
     end
 
     test "lists quotas for the event", %{conn: conn} do
@@ -124,7 +124,7 @@ defmodule PretexWeb.Admin.QuotaLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/quotas")
 
-      assert html =~ "Sold"
+      assert html =~ "Vendidos"
     end
 
     test "shows available quantity for each quota", %{conn: conn} do
@@ -135,7 +135,7 @@ defmodule PretexWeb.Admin.QuotaLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/quotas")
 
-      assert html =~ "Available"
+      assert html =~ "Disponíveis"
     end
 
     test "shows assigned item count for each quota", %{conn: conn} do
@@ -148,7 +148,7 @@ defmodule PretexWeb.Admin.QuotaLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/quotas")
 
-      assert html =~ "Items assigned"
+      assert html =~ "Itens vinculados"
     end
 
     test "shows New Quota button", %{conn: conn} do
@@ -158,7 +158,7 @@ defmodule PretexWeb.Admin.QuotaLiveTest do
       {:ok, view, _html} =
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/quotas")
 
-      assert has_element?(view, "a", "New Quota")
+      assert has_element?(view, "a", "Nova Cota")
     end
 
     test "shows back link to the event", %{conn: conn} do
@@ -226,7 +226,7 @@ defmodule PretexWeb.Admin.QuotaLiveTest do
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/quotas/new")
 
       assert has_element?(view, "#quota-modal")
-      assert render(view) =~ "New Quota"
+      assert render(view) =~ "Nova Cota"
     end
 
     test "shows the quota form inside the modal", %{conn: conn} do
@@ -361,7 +361,7 @@ defmodule PretexWeb.Admin.QuotaLiveTest do
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/quotas/#{quota.id}/edit")
 
       assert has_element?(view, "#quota-modal")
-      assert html =~ "Edit Quota"
+      assert html =~ "Editar Cota"
       assert html =~ "Editable Quota"
     end
 
@@ -480,7 +480,7 @@ defmodule PretexWeb.Admin.QuotaLiveTest do
       |> element("#delete-#{quota.id}")
       |> render_click()
 
-      assert render(view) =~ "No quotas yet"
+      assert render(view) =~ "Nenhuma cota ainda."
     end
 
     test "can delete a quota that has items assigned", %{conn: conn} do

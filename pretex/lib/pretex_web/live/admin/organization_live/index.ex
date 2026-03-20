@@ -7,7 +7,7 @@ defmodule PretexWeb.Admin.OrganizationLive.Index do
   @impl true
   def mount(_params, _session, socket) do
     # NO queries in mount — Iron Law
-    {:ok, assign(socket, :page_title, "Organizations")}
+    {:ok, assign(socket, :page_title, "Organizações")}
   end
 
   @impl true

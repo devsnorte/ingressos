@@ -90,11 +90,11 @@ defmodule PretexWeb.Admin.QuestionLive.AttendeeFields do
     end)
   end
 
-  defp field_label("name"), do: "Full Name"
-  defp field_label("email"), do: "Email Address"
-  defp field_label("company"), do: "Company / Organisation"
-  defp field_label("phone"), do: "Phone Number"
-  defp field_label("address"), do: "Postal Address"
-  defp field_label("birth_date"), do: "Date of Birth"
+  defp field_label("name"), do: "Nome Completo"
+  defp field_label("email"), do: "Endereço de E-mail"
+  defp field_label("company"), do: "Empresa / Organização"
+  defp field_label("phone"), do: "Telefone"
+  defp field_label("address"), do: "Endereço Postal"
+  defp field_label("birth_date"), do: "Data de Nascimento"
   defp field_label(name), do: name |> String.replace("_", " ") |> String.capitalize()
 end

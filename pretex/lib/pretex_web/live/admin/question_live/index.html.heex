@@ -1,58 +1,58 @@
-<Layouts.app flash={@flash}>
+<.dashboard_layout current_path={~p"/admin/organizations/#{@org}/events/#{@event}/questions"} org={@org} flash={@flash}>
   <div class="mx-auto max-w-3xl px-4 py-8">
-    <%!-- Top bar --%>
+    <%!-- Barra superior --%>
     <div class="mb-6 flex items-center justify-between gap-4 flex-wrap">
       <.link
         navigate={~p"/admin/organizations/#{@org}/events/#{@event}"}
         class="inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-primary transition-colors"
       >
-        <.icon name="hero-arrow-left" class="size-4" /> Back to Event
+        <.icon name="hero-arrow-left" class="size-4" /> Voltar ao Evento
       </.link>
 
       <.link
         patch={~p"/admin/organizations/#{@org}/events/#{@event}/questions/new"}
         class="btn btn-primary btn-sm gap-1"
       >
-        <.icon name="hero-plus" class="size-4" /> New Question
+        <.icon name="hero-plus" class="size-4" /> Nova Pergunta
       </.link>
     </div>
 
-    <%!-- Page title --%>
+    <%!-- Título da página --%>
     <div class="mb-6">
-      <h1 class="text-2xl font-bold text-base-content">Attendee Questions</h1>
+      <h1 class="text-2xl font-bold text-base-content">Perguntas do Participante</h1>
       <p class="text-sm text-base-content/60 mt-1">{@event.name}</p>
     </div>
 
-    <%!-- Attendee fields link --%>
+    <%!-- Link para campos do participante --%>
     <div class="mb-6 flex items-center gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm">
       <.icon name="hero-user" class="size-5 shrink-0 text-base-content/40" />
       <p class="text-base-content/70 flex-1">
-        Configure which built-in attendee fields (name, email, company, etc.) are collected at checkout.
+        Configure quais campos nativos do participante (nome, e-mail, empresa, etc.) são coletados no checkout.
       </p>
       <.link
         navigate={~p"/admin/organizations/#{@org}/events/#{@event}/questions/attendee-fields"}
         class="btn btn-outline btn-xs gap-1 shrink-0"
       >
-        <.icon name="hero-cog-6-tooth" class="size-3" /> Attendee Fields
+        <.icon name="hero-cog-6-tooth" class="size-3" /> Campos do Participante
       </.link>
     </div>
 
-    <%!-- Question list --%>
+    <%!-- Lista de perguntas --%>
     <div id="questions" phx-update="stream" class="space-y-3">
       <div
         id="questions-empty-state"
         class="hidden only:flex flex-col items-center justify-center py-20 text-center"
       >
         <.icon name="hero-question-mark-circle" class="size-12 text-base-content/20 mb-4" />
-        <p class="text-base font-semibold text-base-content/50">No questions yet.</p>
+        <p class="text-base font-semibold text-base-content/50">Nenhuma pergunta ainda.</p>
         <p class="text-sm text-base-content/40 mt-1">
-          Create your first question to collect information from attendees.
+          Crie sua primeira pergunta para coletar informações dos participantes.
         </p>
         <.link
           patch={~p"/admin/organizations/#{@org}/events/#{@event}/questions/new"}
           class="btn btn-primary btn-sm mt-6 gap-1"
         >
-          <.icon name="hero-plus" class="size-4" /> New Question
+          <.icon name="hero-plus" class="size-4" /> Nova Pergunta
         </.link>
       </div>
 
@@ -74,36 +74,28 @@
                 ]}>
                   {String.replace(question.question_type, "_", " ")}
                 </span>
-                <%= if question.is_required do %>
-                  <span class="badge badge-sm badge-error gap-1">
-                    <.icon name="hero-star" class="size-2.5" /> Required
-                  </span>
-                <% end %>
+                <span :if={question.is_required} class="badge badge-sm badge-error gap-1">
+                  <.icon name="hero-star" class="size-2.5" /> Obrigatório
+                </span>
               </div>
 
               <div class="flex flex-wrap items-center gap-4 text-xs text-base-content/50">
                 <span class="flex items-center gap-1">
-                  <.icon name="hero-hashtag" class="size-3" /> Position:
+                  <.icon name="hero-hashtag" class="size-3" /> Posição:
                   <strong class="text-base-content/70">{question.position}</strong>
                 </span>
-                <%= if length(question.options) > 0 do %>
-                  <span class="flex items-center gap-1">
-                    <.icon name="hero-list-bullet" class="size-3" /> Options:
-                    <strong class="text-base-content/70">{length(question.options)}</strong>
-                  </span>
-                <% end %>
+                <span :if={length(question.options) > 0} class="flex items-center gap-1">
+                  <.icon name="hero-list-bullet" class="size-3" /> Opções:
+                  <strong class="text-base-content/70">{length(question.options)}</strong>
+                </span>
               </div>
 
-              <%= if length(question.options) > 0 do %>
-                <div class="flex flex-wrap gap-1 mt-2">
-                  <%= for option <- question.options do %>
-                    <span class="badge badge-outline badge-xs">{option.label}</span>
-                  <% end %>
-                </div>
-              <% end %>
+              <div :if={length(question.options) > 0} class="flex flex-wrap gap-1 mt-2">
+                <span :for={option <- question.options} class="badge badge-outline badge-xs">{option.label}</span>
+              </div>
             </div>
 
-            <%!-- Actions --%>
+            <%!-- Ações --%>
             <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
               <.link
                 patch={
@@ -111,16 +103,16 @@
                 }
                 class="btn btn-ghost btn-xs"
               >
-                Edit
+                Editar
               </.link>
               <button
                 id={"delete-#{question.id}"}
                 phx-click="delete"
                 phx-value-id={question.id}
-                data-confirm="Delete this question? This cannot be undone."
+                data-confirm="Excluir esta pergunta? Esta ação não pode ser desfeita."
                 class="btn btn-ghost btn-xs text-error hover:bg-error hover:text-error-content"
               >
-                Delete
+                Excluir
               </button>
             </div>
           </div>
@@ -129,8 +121,8 @@
     </div>
   </div>
 
-  <%!-- Modal: New / Edit Question --%>
-  <%= if @live_action in [:new, :edit] do %>
+  <%!-- Modal: Nova / Editar Pergunta --%>
+  <div :if={@live_action in [:new, :edit]}>
     <div
       id="question-modal-backdrop"
       class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
@@ -148,22 +140,22 @@
         class="w-full max-w-lg bg-base-100 rounded-2xl shadow-2xl border border-base-200 overflow-hidden max-h-[90vh] flex flex-col"
         phx-click-away="close_modal"
       >
-        <%!-- Modal header --%>
+        <%!-- Cabeçalho do modal --%>
         <div class="flex items-center justify-between px-6 py-4 border-b border-base-200 shrink-0">
           <h2 class="text-lg font-bold text-base-content">
-            {if @live_action == :new, do: "New Question", else: "Edit Question"}
+            {if @live_action == :new, do: "Nova Pergunta", else: "Editar Pergunta"}
           </h2>
           <button
             type="button"
             phx-click="close_modal"
             class="btn btn-ghost btn-sm btn-circle"
-            aria-label="Close"
+            aria-label="Fechar"
           >
             <.icon name="hero-x-mark" class="size-5" />
           </button>
         </div>
 
-        <%!-- Modal body --%>
+        <%!-- Corpo do modal --%>
         <div class="px-6 py-5 overflow-y-auto flex-1">
           <.form
             for={@form}
@@ -172,18 +164,18 @@
             phx-submit="save"
             class="space-y-4"
           >
-            <.input field={@form[:label]} type="text" label="Label" required />
+            <.input field={@form[:label]} type="text" label="Rótulo" required />
 
             <div class="form-control w-full">
               <label class="label pb-1">
-                <span class="label-text font-medium">Question Type</span>
+                <span class="label-text font-medium">Tipo de Pergunta</span>
               </label>
               <select
                 id={@form[:question_type].id}
                 name={@form[:question_type].name}
                 class="select select-bordered w-full"
               >
-                <option value="">Select a type…</option>
+                <option value="">Selecione um tipo...</option>
                 <option
                   :for={type <- Pretex.Catalog.Question.question_types()}
                   value={type}
@@ -216,34 +208,34 @@
                   checked={Ecto.Changeset.get_field(@form.source, :is_required)}
                   class="checkbox checkbox-sm"
                 />
-                <span class="label-text">Required</span>
+                <span class="label-text">Obrigatório</span>
               </label>
             </div>
 
             <.input
               field={@form[:position]}
               type="number"
-              label="Position"
+              label="Posição"
               min="0"
             />
 
-            <%!-- Options section for choice types --%>
+            <%!-- Seção de opções para tipos de escolha --%>
             <%= if needs_options?(Ecto.Changeset.get_field(@form.source, :question_type)) do %>
               <div id="options-section" class="space-y-3">
                 <div class="flex items-center justify-between">
-                  <p class="text-sm font-semibold text-base-content">Answer Options</p>
+                  <p class="text-sm font-semibold text-base-content">Opções de Resposta</p>
                   <button
                     type="button"
                     phx-click="add_option"
                     class="btn btn-outline btn-xs gap-1"
                   >
-                    <.icon name="hero-plus" class="size-3" /> Add Option
+                    <.icon name="hero-plus" class="size-3" /> Adicionar Opção
                   </button>
                 </div>
 
                 <%= if @pending_options == [] do %>
                   <p class="text-xs text-base-content/40 italic">
-                    No options yet. Click "Add Option" to add choices.
+                    Nenhuma opção ainda. Clique em "Adicionar Opção" para criar escolhas.
                   </p>
                 <% else %>
                   <div class="space-y-2">
@@ -257,7 +249,7 @@
                             type="text"
                             name={"question[option_labels][#{index}]"}
                             value={Map.get(option, :label, "")}
-                            placeholder="Option label…"
+                            placeholder="Rótulo da opção..."
                             class="input input-bordered input-sm flex-1"
                           />
                           <button
@@ -265,7 +257,7 @@
                             phx-click="remove_option"
                             phx-value-index={index}
                             class="btn btn-ghost btn-xs btn-circle text-error"
-                            aria-label="Remove option"
+                            aria-label="Remover opção"
                           >
                             <.icon name="hero-x-mark" class="size-4" />
                           </button>
@@ -274,7 +266,7 @@
                             type="text"
                             name={"question[option_labels][#{option.id}]"}
                             value={Map.get(option, :label, "")}
-                            placeholder="Option label…"
+                            placeholder="Rótulo da opção..."
                             class="input input-bordered input-sm flex-1"
                           />
                           <button
@@ -282,7 +274,7 @@
                             phx-click="remove_existing_option"
                             phx-value-id={option.id}
                             class="btn btn-ghost btn-xs btn-circle text-error"
-                            aria-label="Remove option"
+                            aria-label="Remover opção"
                           >
                             <.icon name="hero-x-mark" class="size-4" />
                           </button>
@@ -296,15 +288,15 @@
 
             <div class="flex justify-end gap-3 pt-2">
               <button type="button" phx-click="close_modal" class="btn btn-ghost btn-sm">
-                Cancel
+                Cancelar
               </button>
-              <.button type="submit" variant="primary" phx-disable-with="Saving…">
-                {if @live_action == :new, do: "Create Question", else: "Save Changes"}
+              <.button type="submit" variant="primary" phx-disable-with="Salvando...">
+                {if @live_action == :new, do: "Criar Pergunta", else: "Salvar Alterações"}
               </.button>
             </div>
           </.form>
         </div>
       </div>
     </div>
-  <% end %>
-</Layouts.app>
+  </div>
+</.dashboard_layout>

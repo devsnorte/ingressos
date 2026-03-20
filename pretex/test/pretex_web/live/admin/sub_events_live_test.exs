@@ -63,7 +63,7 @@ defmodule PretexWeb.Admin.SubEventLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/sub-events")
 
-      assert html =~ "Sub-Events"
+      assert html =~ "Sub-Eventos"
       assert html =~ "Festival 2030"
     end
 
@@ -85,7 +85,7 @@ defmodule PretexWeb.Admin.SubEventLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/sub-events")
 
-      assert html =~ "No sub-events yet"
+      assert html =~ "Nenhum sub-evento ainda."
     end
 
     test "shows series-disabled notice when event is not a series", %{conn: conn} do
@@ -95,7 +95,7 @@ defmodule PretexWeb.Admin.SubEventLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/sub-events")
 
-      assert html =~ "Series mode is not enabled"
+      assert html =~ "Modo de série não está ativado"
     end
 
     test "shows Enable Series button when event is not a series", %{conn: conn} do
@@ -126,7 +126,7 @@ defmodule PretexWeb.Admin.SubEventLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/sub-events")
 
-      assert html =~ "draft"
+      assert html =~ "Rascunho"
     end
 
     test "shows publish button for draft sub-events", %{conn: conn} do
@@ -230,7 +230,7 @@ defmodule PretexWeb.Admin.SubEventLiveTest do
         live(conn, ~p"/admin/organizations/#{org}/events/#{event}/sub-events/new")
 
       assert has_element?(view, "#sub-event-modal")
-      assert render(view) =~ "New Sub-Event"
+      assert render(view) =~ "Novo Sub-Evento"
     end
 
     test "shows validation errors on blank name", %{conn: conn} do
@@ -320,7 +320,7 @@ defmodule PretexWeb.Admin.SubEventLiveTest do
         )
 
       assert has_element?(view, "#sub-event-modal")
-      assert html =~ "Edit Sub-Event"
+      assert html =~ "Editar Sub-Evento"
       assert html =~ "Editable Session"
     end
 
@@ -412,7 +412,7 @@ defmodule PretexWeb.Admin.SubEventLiveTest do
 
       html = render(view)
       assert html =~ "Sub-event published"
-      assert html =~ "published"
+      assert html =~ "Publicado"
     end
   end
 
@@ -437,7 +437,7 @@ defmodule PretexWeb.Admin.SubEventLiveTest do
 
       html = render(view)
       assert html =~ "Sub-event hidden"
-      assert html =~ "hidden"
+      assert html =~ "Oculto"
     end
 
     test "hides a published sub-event", %{conn: conn} do
