@@ -1,0 +1,164 @@
+<.dashboard_layout current_path={~p"/admin/organizations/#{@org}/payments"} org={@org} flash={@flash}>
+  <.breadcrumb items={[
+    {"Organizações", ~p"/admin/organizations"},
+    {@org.name, ~p"/admin/organizations/#{@org}"},
+    {"Provedores de Pagamento", nil}
+  ]} />
+
+  <.page_header title="Provedores de Pagamento" subtitle="Configure os gateways de pagamento da sua organização">
+    <:actions>
+      <.link patch={~p"/admin/organizations/#{@org}/payments/new/manual"}>
+        <.button class="btn btn-primary btn-sm gap-1">
+          <.icon name="hero-plus" class="w-4 h-4" />
+          Adicionar Provedor
+        </.button>
+      </.link>
+    </:actions>
+  </.page_header>
+
+  <%!-- Provider list --%>
+  <div :if={@providers != []} class="space-y-4 mb-8">
+    <div :for={provider <- @providers} class="bg-base-100 rounded-xl border border-base-300 p-5">
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex items-start gap-4">
+          <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+            <.icon name="hero-credit-card" class="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-bold">{provider.name}</h3>
+              <span class="badge badge-sm badge-outline">{provider.type}</span>
+              <span :if={provider.is_default} class="badge badge-sm badge-primary">Padrão</span>
+            </div>
+            <div class="flex items-center gap-2 mt-1">
+              <span :if={provider.validation_status == "valid"} class="badge badge-sm badge-success gap-1">
+                <.icon name="hero-check-circle" class="w-3 h-3" /> Ativo
+              </span>
+              <span :if={provider.validation_status == "pending"} class="badge badge-sm badge-warning gap-1">
+                <.icon name="hero-clock" class="w-3 h-3" /> Pendente
+              </span>
+              <span :if={provider.validation_status == "invalid"} class="badge badge-sm badge-error gap-1">
+                <.icon name="hero-x-circle" class="w-3 h-3" /> Inválido
+              </span>
+            </div>
+            <%!-- Masked credentials --%>
+            <div class="mt-2 text-xs text-base-content/40 font-mono">
+              <span :for={{key, value} <- Pretex.Payments.mask_credentials(provider)} class="mr-3">
+                {key}: {value}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1">
+          <button
+            :if={provider.validation_status != "valid"}
+            phx-click="validate_provider"
+            phx-value-id={provider.id}
+            class="btn btn-ghost btn-xs gap-1"
+          >
+            <.icon name="hero-arrow-path" class="w-3 h-3" /> Validar
+          </button>
+          <button
+            :if={!provider.is_default && provider.is_active}
+            phx-click="set_default"
+            phx-value-id={provider.id}
+            class="btn btn-ghost btn-xs gap-1"
+          >
+            <.icon name="hero-star" class="w-3 h-3" /> Padrão
+          </button>
+          <.link patch={~p"/admin/organizations/#{@org}/payments/#{provider}/edit"} class="btn btn-ghost btn-xs gap-1">
+            <.icon name="hero-pencil-square" class="w-3 h-3" /> Editar
+          </.link>
+          <button
+            phx-click="delete"
+            phx-value-id={provider.id}
+            data-confirm="Remover este provedor de pagamento?"
+            class="btn btn-ghost btn-xs text-error gap-1"
+          >
+            <.icon name="hero-trash" class="w-3 h-3" /> Remover
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%!-- Empty state --%>
+  <div :if={@providers == [] && @live_action == :index} class="text-center py-16">
+    <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+      <.icon name="hero-credit-card" class="w-8 h-8 text-primary" />
+    </div>
+    <h3 class="text-lg font-bold mb-2">Nenhum provedor configurado</h3>
+    <p class="text-base-content/60 mb-6 max-w-md mx-auto">
+      Configure um gateway de pagamento para começar a vender ingressos.
+    </p>
+  </div>
+
+  <%!-- Provider type selection (shown when adding new) --%>
+  <div :if={@live_action == :new && !@selected_type} class="mb-8">
+    <h3 class="font-bold text-lg mb-4">Escolha o provedor</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <.link
+        :for={prov <- @available_providers}
+        patch={~p"/admin/organizations/#{@org}/payments/new/#{prov.type}"}
+        class="bg-base-100 rounded-xl border border-base-300 p-5 hover:shadow-lg hover:-translate-y-1 transition block"
+      >
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <.icon name="hero-credit-card" class="w-5 h-5 text-primary" />
+          </div>
+          <div class="font-bold">{prov.display_name}</div>
+        </div>
+        <p class="text-sm text-base-content/60 mb-3">{prov.description}</p>
+        <div class="flex flex-wrap gap-1">
+          <span :for={method <- prov.payment_methods} class="badge badge-sm badge-outline">
+            {method}
+          </span>
+        </div>
+      </.link>
+    </div>
+  </div>
+
+  <%!-- Provider config form modal --%>
+  <div :if={(@live_action == :new && @selected_type) || @live_action == :edit} class="modal modal-open">
+    <div class="modal-box max-w-lg">
+      <.link patch={~p"/admin/organizations/#{@org}/payments"} class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+        ✕
+      </.link>
+
+      <h3 class="font-bold text-lg mb-1">
+        {if @live_action == :new, do: "Configurar", else: "Editar"} {@provider_info.display_name}
+      </h3>
+      <p class="text-sm text-base-content/60 mb-4">{@provider_info.description}</p>
+
+      <.form for={@form} id="provider-form" phx-change="validate" phx-submit="save" class="space-y-4">
+        <.input field={@form[:name]} type="text" label="Nome do provedor" />
+
+        <div :for={field <- @provider_info.required_fields} class="form-control">
+          <label class="label">
+            <span class="label-text">{field.label}</span>
+          </label>
+          <input
+            type={if field.type == :password, do: "password", else: "text"}
+            name={"provider[credentials][#{field.key}]"}
+            value={@form.params["credentials"][field.key] || ""}
+            class="input input-bordered w-full"
+            placeholder={field.label}
+          />
+        </div>
+
+        <div class="modal-action">
+          <.link patch={~p"/admin/organizations/#{@org}/payments"} class="btn btn-ghost">
+            Cancelar
+          </.link>
+          <.button class="btn btn-primary" phx-disable-with="Salvando...">
+            Salvar Provedor
+          </.button>
+        </div>
+      </.form>
+    </div>
+    <.link patch={~p"/admin/organizations/#{@org}/payments"} class="modal-backdrop">
+      <span class="hidden">Fechar</span>
+    </.link>
+  </div>
+</.dashboard_layout>
