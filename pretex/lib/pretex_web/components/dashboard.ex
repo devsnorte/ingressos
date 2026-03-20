@@ -347,14 +347,14 @@ defmodule PretexWeb.Components.Dashboard do
             >
               {@current_scope.customer.email}
             </span>
-            <a
+            <.link
               :if={@current_scope && @current_scope.customer}
               href="/customers/log-out"
               method="delete"
               class="btn btn-ghost btn-sm"
             >
               Sair
-            </a>
+            </.link>
             <a
               :if={!@current_scope || !@current_scope.customer}
               href="/customers/log-in"
