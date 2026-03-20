@@ -358,6 +358,32 @@
       </div>
     </div>
 
+    <%!-- Card de descontos automáticos --%>
+    <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
+      <div class="card-body p-6">
+        <div class="flex items-center justify-between gap-4 mb-4">
+          <h2 class="text-base font-semibold text-base-content flex items-center gap-2">
+            <.icon name="hero-tag" class="size-4 text-base-content/40" /> Descontos Automáticos
+          </h2>
+          <.link
+            navigate={~p"/admin/organizations/#{@org}/events/#{@event}/discounts"}
+            class="btn btn-ghost btn-xs gap-1"
+          >
+            <.icon name="hero-arrow-right" class="size-3" /> Gerenciar Descontos
+          </.link>
+        </div>
+        <div class="flex items-start gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm">
+          <.icon
+            name="hero-information-circle"
+            class="size-5 shrink-0 text-base-content/40 mt-0.5"
+          />
+          <p class="text-base-content/70">
+            Crie regras de desconto automático baseadas em quantidade mínima ou combinação de itens. O melhor desconto elegível é aplicado automaticamente no checkout.
+          </p>
+        </div>
+      </div>
+    </div>
+
     <%!-- Card de pedidos --%>
     <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
       <div class="card-body p-6">

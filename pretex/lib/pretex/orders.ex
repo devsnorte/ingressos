@@ -226,6 +226,16 @@ defmodule Pretex.Orders do
         |> Ecto.Changeset.change(status: "checked_out")
         |> Repo.update!()
 
+        # Preload order_items so discount evaluation can inspect them
+        order_preloaded = Repo.preload(order, order_items: [:item, :item_variation])
+
+        # Apply best automatic discount BEFORE fees (fees computed on discounted price)
+        order =
+          case Pretex.Discounts.apply_best_discount(order_preloaded, cart.event_id) do
+            {:ok, updated} -> updated
+            {:error, _} -> order_preloaded
+          end
+
         order_with_fees =
           case Pretex.Fees.apply_automatic_fees(order, cart.event_id) do
             {:ok, updated_order} -> updated_order
@@ -266,7 +276,11 @@ defmodule Pretex.Orders do
             order_with_fees
           end
 
-        Repo.preload(order_after_voucher, order_items: [:item, :item_variation], fees: [])
+        Repo.preload(order_after_voucher,
+          order_items: [:item, :item_variation],
+          fees: [],
+          discounts: []
+        )
       end)
     end
   end

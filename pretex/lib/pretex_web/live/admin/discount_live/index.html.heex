@@ -1,0 +1,300 @@
+<.dashboard_layout
+  current_path={~p"/admin/organizations/#{@org}/events/#{@event}/discounts"}
+  org={@org}
+  flash={@flash}
+>
+  <div class="mx-auto max-w-5xl px-4 py-8">
+    <%!-- Barra superior --%>
+    <div class="mb-6 flex items-center justify-between gap-4 flex-wrap">
+      <.link
+        navigate={~p"/admin/organizations/#{@org}/events/#{@event}"}
+        class="inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-primary transition-colors"
+      >
+        <.icon name="hero-arrow-left" class="size-4" /> Voltar ao Evento
+      </.link>
+
+      <.link
+        patch={~p"/admin/organizations/#{@org}/events/#{@event}/discounts/new"}
+        class="btn btn-primary btn-sm gap-1"
+      >
+        <.icon name="hero-plus" class="size-4" /> Nova Regra de Desconto
+      </.link>
+    </div>
+
+    <%!-- Título da página --%>
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-base-content">Descontos Automáticos</h1>
+      <p class="text-sm text-base-content/60 mt-1">{@event.name}</p>
+      <p class="text-sm text-base-content/50 mt-2">
+        Regras de desconto são aplicadas automaticamente no checkout. Quando múltiplas regras
+        são elegíveis, apenas a que oferece o maior desconto é aplicada.
+      </p>
+    </div>
+
+    <%!-- Tabela de regras --%>
+    <div class="card bg-base-100 border border-base-200 shadow-sm overflow-hidden">
+      <div id="discount-rules" phx-update="stream">
+        <%!-- Estado vazio --%>
+        <div
+          id="discount-rules-empty-state"
+          class="hidden only:flex flex-col items-center justify-center py-20 text-center px-4"
+        >
+          <.icon name="hero-tag" class="size-12 text-base-content/20 mb-4" />
+          <p class="text-base font-semibold text-base-content/50">
+            Nenhuma regra de desconto cadastrada.
+          </p>
+          <p class="text-sm text-base-content/40 mt-1">
+            Crie regras de desconto automático baseadas em quantidade ou combinação de itens.
+          </p>
+          <.link
+            patch={~p"/admin/organizations/#{@org}/events/#{@event}/discounts/new"}
+            class="btn btn-primary btn-sm mt-6 gap-1"
+          >
+            <.icon name="hero-plus" class="size-4" /> Nova Regra de Desconto
+          </.link>
+        </div>
+
+        <div
+          :for={{dom_id, rule} <- @streams.discount_rules}
+          id={dom_id}
+          class="flex flex-col sm:flex-row sm:items-center gap-3 px-5 py-4 border-b border-base-200 last:border-0 hover:bg-base-50 transition-colors"
+        >
+          <%!-- Nome e descrição --%>
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-base-content">{rule.name}</p>
+            <p :if={rule.description} class="text-xs text-base-content/50 mt-0.5">
+              {rule.description}
+            </p>
+          </div>
+
+          <%!-- Condição --%>
+          <div class="shrink-0 text-sm text-base-content/70 min-w-[160px]">
+            <span class="badge badge-ghost badge-sm">
+              {case rule.condition_type do
+                "min_quantity" -> "Qtd mínima: #{rule.min_quantity}"
+                "item_combo" -> "Combinação de itens"
+                other -> other
+              end}
+            </span>
+          </div>
+
+          <%!-- Efeito --%>
+          <div class="shrink-0 text-right min-w-[160px]">
+            <p class="font-mono font-semibold text-base-content text-sm">
+              {case rule.value_type do
+                "fixed" ->
+                  reais = div(rule.value, 100)
+                  cents = rem(rule.value, 100)
+
+                  "R$ #{reais},#{String.pad_leading(Integer.to_string(cents), 2, "0")} de desconto"
+
+                "percentage" ->
+                  int_part = div(rule.value, 100)
+                  dec_part = rem(rule.value, 100)
+
+                  "#{int_part},#{String.pad_leading(Integer.to_string(dec_part), 2, "0")}% de desconto"
+
+                _ ->
+                  "—"
+              end}
+            </p>
+          </div>
+
+          <%!-- Status ativo --%>
+          <div class="shrink-0">
+            <span class={[
+              "badge badge-sm",
+              rule.active && "badge-success",
+              !rule.active && "badge-error"
+            ]}>
+              {if rule.active, do: "Ativo", else: "Inativo"}
+            </span>
+          </div>
+
+          <%!-- Ações --%>
+          <div class="flex items-center gap-2 shrink-0">
+            <button
+              id={"toggle-#{rule.id}"}
+              phx-click="toggle_active"
+              phx-value-id={rule.id}
+              class="btn btn-ghost btn-xs"
+              title={if rule.active, do: "Desativar", else: "Ativar"}
+            >
+              {if rule.active, do: "Desativar", else: "Ativar"}
+            </button>
+
+            <.link
+              patch={~p"/admin/organizations/#{@org}/events/#{@event}/discounts/#{rule.id}/edit"}
+              class="btn btn-ghost btn-xs"
+            >
+              Editar
+            </.link>
+
+            <button
+              id={"delete-#{rule.id}"}
+              phx-click="delete"
+              phx-value-id={rule.id}
+              data-confirm="Excluir esta regra de desconto? Esta ação não pode ser desfeita."
+              class="btn btn-ghost btn-xs text-error hover:bg-error hover:text-error-content"
+            >
+              Excluir
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%!-- Modal: Nova / Editar Regra de Desconto --%>
+  <div :if={@live_action in [:new, :edit]}>
+    <div
+      id="discount-modal-backdrop"
+      class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+      phx-click="close_modal"
+    >
+    </div>
+
+    <div
+      id="discount-modal"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        class="w-full max-w-lg bg-base-100 rounded-2xl shadow-2xl border border-base-200 overflow-hidden max-h-[90vh] flex flex-col"
+        phx-click-away="close_modal"
+      >
+        <%!-- Cabeçalho do modal --%>
+        <div class="flex items-center justify-between px-6 py-4 border-b border-base-200 shrink-0">
+          <h2 class="text-lg font-bold text-base-content">
+            {if @live_action == :new,
+              do: "Nova Regra de Desconto",
+              else: "Editar Regra de Desconto"}
+          </h2>
+          <button
+            type="button"
+            phx-click="close_modal"
+            class="btn btn-ghost btn-sm btn-circle"
+            aria-label="Fechar"
+          >
+            <.icon name="hero-x-mark" class="size-5" />
+          </button>
+        </div>
+
+        <%!-- Corpo do modal --%>
+        <div class="px-6 py-5 overflow-y-auto">
+          <.form
+            for={@form}
+            id="discount-rule-form"
+            phx-change="validate"
+            phx-submit="save"
+            class="space-y-4"
+          >
+            <%!-- Nome --%>
+            <div>
+              <.input
+                field={@form[:name]}
+                type="text"
+                label="Nome"
+                placeholder="Ex: Desconto em Grupo"
+                required
+              />
+            </div>
+
+            <%!-- Tipo de Condição --%>
+            <.input
+              field={@form[:condition_type]}
+              type="select"
+              label="Tipo de Condição"
+              options={[
+                {"Quantidade mínima", "min_quantity"},
+                {"Combinação de itens", "item_combo"}
+              ]}
+            />
+
+            <%!-- Quantidade mínima (mostrada quando condition_type == min_quantity) --%>
+            <div :if={@form[:condition_type].value == "min_quantity"}>
+              <.input
+                field={@form[:min_quantity]}
+                type="number"
+                label="Quantidade Mínima"
+                min="1"
+                required
+              />
+              <p class="text-xs text-base-content/50 mt-1">
+                O desconto é aplicado quando a quantidade total de itens no carrinho atingir este valor.
+              </p>
+            </div>
+
+            <div :if={@form[:condition_type].value == "item_combo"}>
+              <div class="rounded-lg bg-info/10 border border-info/20 p-3 text-sm text-base-content/70">
+                <.icon name="hero-information-circle" class="size-4 inline mr-1 text-info" />
+                Gerencie os itens necessários para esta combinação via API ou diretamente no banco de dados.
+              </div>
+            </div>
+
+            <%!-- Tipo de Valor --%>
+            <.input
+              field={@form[:value_type]}
+              type="select"
+              label="Tipo de Desconto"
+              options={[
+                {"Percentual (pontos base)", "percentage"},
+                {"Fixo (centavos)", "fixed"}
+              ]}
+            />
+
+            <%!-- Valor --%>
+            <div>
+              <.input
+                field={@form[:value]}
+                type="number"
+                label="Valor"
+                min="0"
+                required
+              />
+              <p class="text-xs text-base-content/50 mt-1">
+                {case @form[:value_type].value do
+                  "fixed" -> "Em centavos: 1000 = R$ 10,00 · 500 = R$ 5,00"
+                  "percentage" -> "Em pontos base: 500 = 5,00% · 1000 = 10,00% · 10000 = 100,00%"
+                  _ -> ""
+                end}
+              </p>
+            </div>
+
+            <%!-- Descrição --%>
+            <div>
+              <.input
+                field={@form[:description]}
+                type="textarea"
+                label="Descrição (opcional)"
+                placeholder="Descrição interna da regra de desconto"
+                rows="2"
+              />
+            </div>
+
+            <%!-- Ativo --%>
+            <.input
+              field={@form[:active]}
+              type="checkbox"
+              label="Ativo"
+            />
+            <p class="text-xs text-base-content/50 -mt-3 ml-1">
+              Regras inativas não são avaliadas no checkout.
+            </p>
+
+            <%!-- Botões --%>
+            <div class="flex justify-end gap-3 pt-2">
+              <button type="button" phx-click="close_modal" class="btn btn-ghost btn-sm">
+                Cancelar
+              </button>
+              <.button type="submit" variant="primary" phx-disable-with="Salvando...">
+                {if @live_action == :new, do: "Criar Regra", else: "Salvar Alterações"}
+              </.button>
+            </div>
+          </.form>
+        </div>
+      </div>
+    </div>
+  </div>
+</.dashboard_layout>
