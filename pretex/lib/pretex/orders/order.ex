@@ -23,6 +23,7 @@ defmodule Pretex.Orders.Order do
     has_one(:voucher_redemption, Pretex.Vouchers.VoucherRedemption)
     has_many(:discounts, Pretex.Discounts.OrderDiscount)
     has_many(:gift_card_redemptions, Pretex.GiftCards.GiftCardRedemption)
+    has_many(:membership_discounts, Pretex.Memberships.OrderMembershipDiscount)
 
     timestamps(type: :utc_datetime)
   end

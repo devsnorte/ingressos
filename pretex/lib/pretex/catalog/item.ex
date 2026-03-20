@@ -2,7 +2,7 @@ defmodule Pretex.Catalog.Item do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @item_types ~w(ticket merchandise addon)
+  @item_types ~w(ticket merchandise addon membership)
   @statuses ~w(active inactive)
 
   schema "items" do
@@ -21,6 +21,7 @@ defmodule Pretex.Catalog.Item do
     belongs_to(:category, Pretex.Catalog.ItemCategory)
     has_many(:variations, Pretex.Catalog.ItemVariation)
     has_many(:quota_items, Pretex.Catalog.QuotaItem)
+    belongs_to(:membership_type, Pretex.Memberships.MembershipType)
 
     timestamps(type: :utc_datetime)
   end
@@ -38,7 +39,8 @@ defmodule Pretex.Catalog.Item do
       :min_per_order,
       :max_per_order,
       :status,
-      :category_id
+      :category_id,
+      :membership_type_id
     ])
     |> validate_required([:name, :price_cents, :item_type, :status])
     |> validate_length(:name, min: 2, max: 255)
