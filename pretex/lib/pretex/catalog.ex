@@ -54,6 +54,12 @@ defmodule Pretex.Catalog do
   # Items
   # ---------------------------------------------------------------------------
 
+  def count_items(%Event{id: event_id}) do
+    Item
+    |> where([i], i.event_id == ^event_id)
+    |> Repo.aggregate(:count)
+  end
+
   def list_items(%Event{id: event_id}) do
     Item
     |> where([i], i.event_id == ^event_id)

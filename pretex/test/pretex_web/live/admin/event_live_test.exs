@@ -41,6 +41,11 @@ defmodule PretexWeb.Admin.EventLiveTest do
     tt
   end
 
+  defp catalog_item_fixture(event) do
+    {:ok, item} = Pretex.Catalog.create_item(event, %{name: "Ingresso Geral", price_cents: 5000})
+    item
+  end
+
   # ---------------------------------------------------------------------------
   # Index
   # ---------------------------------------------------------------------------
@@ -245,10 +250,10 @@ defmodule PretexWeb.Admin.EventLiveTest do
       assert html =~ "Adicione pelo menos um tipo de ingresso"
     end
 
-    test "shows ticket count when ticket types exist", %{conn: conn} do
+    test "shows ticket count when catalog items exist", %{conn: conn} do
       org = org_fixture()
       event = event_fixture(org)
-      ticket_type_fixture(event)
+      catalog_item_fixture(event)
 
       {:ok, view, _html} = live(conn, ~p"/admin/organizations/#{org}/events/#{event}")
       assert has_element?(view, "#ticket-count")

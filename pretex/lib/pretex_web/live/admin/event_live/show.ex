@@ -1,6 +1,7 @@
 defmodule PretexWeb.Admin.EventLive.Show do
   use PretexWeb, :live_view
 
+  alias Pretex.Catalog
   alias Pretex.Events
   alias Pretex.Organizations
 
@@ -8,7 +9,7 @@ defmodule PretexWeb.Admin.EventLive.Show do
   def mount(%{"org_id" => org_id, "id" => id}, _session, socket) do
     org = Organizations.get_organization!(org_id)
     event = Events.get_event!(id)
-    ticket_count = Events.count_ticket_types(event)
+    ticket_count = Catalog.count_items(event)
 
     socket =
       socket
@@ -29,18 +30,18 @@ defmodule PretexWeb.Admin.EventLive.Show do
         {:noreply,
          socket
          |> assign(:event, updated_event)
-         |> put_flash(:info, "Event published successfully.")}
+         |> put_flash(:info, "Evento publicado com sucesso.")}
 
       {:error, :no_ticket_types} ->
         {:noreply,
          put_flash(
            socket,
            :error,
-           "This event needs at least one ticket type before publishing."
+           "Adicione pelo menos um item no catálogo antes de publicar."
          )}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Could not publish event.")}
+        {:noreply, put_flash(socket, :error, "Não foi possível publicar o evento.")}
     end
   end
 
@@ -53,10 +54,10 @@ defmodule PretexWeb.Admin.EventLive.Show do
         {:noreply,
          socket
          |> assign(:event, updated_event)
-         |> put_flash(:info, "Event marked as completed.")}
+         |> put_flash(:info, "Evento marcado como concluído.")}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Could not complete event.")}
+        {:noreply, put_flash(socket, :error, "Não foi possível concluir o evento.")}
     end
   end
 
@@ -69,11 +70,11 @@ defmodule PretexWeb.Admin.EventLive.Show do
       {:ok, new_event} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Event cloned successfully.")
+         |> put_flash(:info, "Evento clonado com sucesso.")
          |> push_navigate(to: ~p"/admin/organizations/#{org}/events/#{new_event}")}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Could not clone event.")}
+        {:noreply, put_flash(socket, :error, "Não foi possível clonar o evento.")}
     end
   end
 end
