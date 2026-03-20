@@ -132,7 +132,10 @@ defmodule PretexWeb.EventsLive.Checkout do
 
               <%!-- Subtotal line (shown when there are fees or discount) --%>
               <div
-                :if={@fee_preview != [] or @discount_preview > 0}
+                :if={
+                  @fee_preview != [] or @discount_preview > 0 or @voucher_discount > 0 or
+                    @gift_card_deduction > 0
+                }
                 class="flex justify-between items-center pt-2 text-sm text-base-content/70"
               >
                 <span>Subtotal</span>
@@ -214,12 +217,51 @@ defmodule PretexWeb.EventsLive.Checkout do
                 </div>
               </div>
 
+              <%!-- Gift card code input (shown when no gift card applied) --%>
+              <div :if={is_nil(@gift_card)} class="pt-2">
+                <form phx-submit="apply_gift_card" class="flex gap-2">
+                  <input
+                    type="text"
+                    name="code"
+                    placeholder="Código do vale-presente"
+                    class="input input-bordered input-sm flex-1 font-mono"
+                    autocomplete="off"
+                  />
+                  <button type="submit" class="btn btn-sm btn-outline">Aplicar</button>
+                </form>
+                <p :if={@gift_card_error} class="text-xs text-error mt-1">{@gift_card_error}</p>
+              </div>
+
+              <%!-- Applied gift card badge --%>
+              <div
+                :if={@gift_card}
+                class="flex justify-between items-center text-sm"
+              >
+                <span class="flex items-center gap-2">
+                  <span class="badge badge-success badge-sm gap-1">
+                    <.icon name="hero-gift" class="size-3" />
+                    {@gift_card.code}
+                  </span>
+                  <button
+                    phx-click="remove_gift_card"
+                    class="text-xs text-base-content/40 hover:text-error"
+                  >
+                    Remover
+                  </button>
+                </span>
+                <span class="text-success font-medium">- {format_price(@gift_card_deduction)}</span>
+              </div>
+
               <%!-- Total line --%>
               <div class="flex justify-between items-center pt-3 mt-2 border-t-2 border-base-200">
                 <span class="font-bold text-base-content">Total</span>
                 <span class="text-xl font-bold text-primary">
                   {format_price(
-                    max(0, @cart_total + @fee_total - @discount_preview - @voucher_discount)
+                    max(
+                      0,
+                      @cart_total + @fee_total - @discount_preview - @voucher_discount -
+                        @gift_card_deduction
+                    )
                   )}
                 </span>
               </div>
@@ -493,6 +535,10 @@ defmodule PretexWeb.EventsLive.Checkout do
       |> assign(:voucher_discount, 0)
       |> assign(:discount_preview, 0)
       |> assign(:applied_discount_rule_name, nil)
+      |> assign(:gift_card_code, "")
+      |> assign(:gift_card, nil)
+      |> assign(:gift_card_error, nil)
+      |> assign(:gift_card_deduction, 0)
 
     {:ok, socket}
   end
@@ -726,7 +772,8 @@ defmodule PretexWeb.EventsLive.Checkout do
         email: email,
         payment_method: payment_method,
         payment_provider_id: provider_id && String.to_integer(provider_id),
-        voucher_code: socket.assigns.voucher_code
+        voucher_code: socket.assigns.voucher_code,
+        gift_card_code: socket.assigns.gift_card_code
       }
 
       case Orders.create_order_from_cart(cart, attrs) do
@@ -815,6 +862,76 @@ defmodule PretexWeb.EventsLive.Checkout do
      |> assign(:voucher, nil)
      |> assign(:voucher_error, nil)
      |> assign(:voucher_discount, 0)}
+  end
+
+  def handle_event("apply_gift_card", %{"code" => code}, socket) do
+    code = String.trim(code)
+
+    if code == "" do
+      {:noreply, assign(socket, :gift_card_error, "Por favor insira um código de vale-presente.")}
+    else
+      org_id = socket.assigns.event.organization_id
+
+      case Pretex.GiftCards.validate_for_checkout(code, org_id) do
+        {:ok, gc} ->
+          remaining_total =
+            socket.assigns.cart_total + socket.assigns.fee_total -
+              socket.assigns.discount_preview - socket.assigns.voucher_discount
+
+          deduction = min(gc.balance_cents, max(0, remaining_total))
+
+          {:noreply,
+           socket
+           |> assign(:gift_card_code, String.upcase(code))
+           |> assign(:gift_card, gc)
+           |> assign(:gift_card_error, nil)
+           |> assign(:gift_card_deduction, deduction)}
+
+        {:error, :not_found} ->
+          {:noreply,
+           socket
+           |> assign(:gift_card_error, "Vale-presente não encontrado.")
+           |> assign(:gift_card, nil)
+           |> assign(:gift_card_deduction, 0)}
+
+        {:error, :wrong_organization} ->
+          {:noreply,
+           socket
+           |> assign(:gift_card_error, "Este vale-presente não é válido para este evento.")
+           |> assign(:gift_card, nil)
+           |> assign(:gift_card_deduction, 0)}
+
+        {:error, :expired} ->
+          {:noreply,
+           socket
+           |> assign(:gift_card_error, "Vale-presente expirado.")
+           |> assign(:gift_card, nil)
+           |> assign(:gift_card_deduction, 0)}
+
+        {:error, :empty} ->
+          {:noreply,
+           socket
+           |> assign(:gift_card_error, "Vale-presente sem saldo.")
+           |> assign(:gift_card, nil)
+           |> assign(:gift_card_deduction, 0)}
+
+        {:error, :inactive} ->
+          {:noreply,
+           socket
+           |> assign(:gift_card_error, "Vale-presente inativo.")
+           |> assign(:gift_card, nil)
+           |> assign(:gift_card_deduction, 0)}
+      end
+    end
+  end
+
+  def handle_event("remove_gift_card", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:gift_card_code, "")
+     |> assign(:gift_card, nil)
+     |> assign(:gift_card_error, nil)
+     |> assign(:gift_card_deduction, 0)}
   end
 
   def handle_event("retry_payment", _params, socket) do
