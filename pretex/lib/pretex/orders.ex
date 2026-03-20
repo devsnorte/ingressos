@@ -226,7 +226,13 @@ defmodule Pretex.Orders do
         |> Ecto.Changeset.change(status: "checked_out")
         |> Repo.update!()
 
-        Repo.preload(order, order_items: [:item, :item_variation])
+        order_with_fees =
+          case Pretex.Fees.apply_automatic_fees(order, cart.event_id) do
+            {:ok, updated_order} -> updated_order
+            {:error, reason} -> Repo.rollback(reason)
+          end
+
+        Repo.preload(order_with_fees, order_items: [:item, :item_variation], fees: [])
       end)
     end
   end
@@ -408,7 +414,13 @@ defmodule Pretex.Orders do
         end
       end)
 
-      Repo.preload(order, order_items: [:item, :item_variation])
+      order_with_fees =
+        case Pretex.Fees.apply_automatic_fees(order, event.id) do
+          {:ok, updated_order} -> updated_order
+          {:error, reason} -> Repo.rollback(reason)
+        end
+
+      Repo.preload(order_with_fees, order_items: [:item, :item_variation], fees: [])
     end)
   end
 
