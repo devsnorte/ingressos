@@ -2,7 +2,7 @@ defmodule Pretex.Repo.Migrations.CreateMemberships do
   use Ecto.Migration
 
   def change do
-    create table(:memberships) do
+    create table(:customer_memberships) do
       add(:starts_at, :utc_datetime, null: false)
       add(:expires_at, :utc_datetime, null: false)
       add(:status, :string, null: false, default: "active")
@@ -14,9 +14,9 @@ defmodule Pretex.Repo.Migrations.CreateMemberships do
       timestamps(type: :utc_datetime)
     end
 
-    create(index(:memberships, [:customer_id]))
-    create(index(:memberships, [:organization_id]))
-    create(index(:memberships, [:membership_type_id]))
-    create(index(:memberships, [:customer_id, :organization_id, :status]))
+    create(index(:customer_memberships, [:customer_id]))
+    create(index(:customer_memberships, [:organization_id]))
+    create(index(:customer_memberships, [:membership_type_id]))
+    create(index(:customer_memberships, [:customer_id, :organization_id, :status]))
   end
 end

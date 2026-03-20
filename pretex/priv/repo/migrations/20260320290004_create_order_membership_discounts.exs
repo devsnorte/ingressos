@@ -8,7 +8,7 @@ defmodule Pretex.Repo.Migrations.CreateOrderMembershipDiscounts do
       add(:value_type, :string, null: false)
       add(:value, :integer, null: false)
       add(:order_id, references(:orders, on_delete: :delete_all), null: false)
-      add(:membership_id, references(:memberships, on_delete: :restrict), null: false)
+      add(:membership_id, references(:customer_memberships, on_delete: :restrict), null: false)
 
       timestamps(type: :utc_datetime)
     end
