@@ -174,6 +174,15 @@ defmodule PretexWeb.Router do
       live("/organizations/:org_id/events/:event_id/vouchers/new", VoucherLive.Index, :new)
       live("/organizations/:org_id/events/:event_id/vouchers/bulk", VoucherLive.Index, :bulk)
       live("/organizations/:org_id/events/:event_id/vouchers/:id/edit", VoucherLive.Index, :edit)
+
+      live("/organizations/:org_id/events/:event_id/discounts", DiscountLive.Index, :index)
+      live("/organizations/:org_id/events/:event_id/discounts/new", DiscountLive.Index, :new)
+
+      live(
+        "/organizations/:org_id/events/:event_id/discounts/:id/edit",
+        DiscountLive.Index,
+        :edit
+      )
     end
   end
 
