@@ -276,10 +276,47 @@ defmodule Pretex.Orders do
             order_with_fees
           end
 
-        Repo.preload(order_after_voucher,
+        # Apply gift card if provided (after voucher, on remaining total)
+        gift_card_code =
+          Map.get(attrs, :gift_card_code) || Map.get(attrs, "gift_card_code")
+
+        order_after_gift_card =
+          if gift_card_code && String.trim(gift_card_code) != "" do
+            event = Repo.get!(Event, cart.event_id)
+
+            case Pretex.GiftCards.validate_for_checkout(gift_card_code, event.organization_id) do
+              {:ok, gift_card} ->
+                case Pretex.GiftCards.redeem(
+                       gift_card,
+                       order_after_voucher,
+                       order_after_voucher.total_cents
+                     ) do
+                  {:ok, %{deduction_cents: deduction}} ->
+                    new_total = max(0, order_after_voucher.total_cents - deduction)
+
+                    {:ok, updated} =
+                      order_after_voucher
+                      |> Ecto.Changeset.change(total_cents: new_total)
+                      |> Repo.update()
+
+                    updated
+
+                  {:error, _} ->
+                    order_after_voucher
+                end
+
+              {:error, _} ->
+                order_after_voucher
+            end
+          else
+            order_after_voucher
+          end
+
+        Repo.preload(order_after_gift_card,
           order_items: [:item, :item_variation],
           fees: [],
-          discounts: []
+          discounts: [],
+          gift_card_redemptions: []
         )
       end)
     end
@@ -533,10 +570,23 @@ defmodule Pretex.Orders do
         )
       end)
 
-      case order |> Ecto.Changeset.change(status: "cancelled") |> Repo.update() do
-        {:ok, updated} -> updated
-        {:error, cs} -> Repo.rollback(cs)
+      cancelled_order =
+        case order |> Ecto.Changeset.change(status: "cancelled") |> Repo.update() do
+          {:ok, updated} -> updated
+          {:error, cs} -> Repo.rollback(cs)
+        end
+
+      # Restore gift card balance if this order was paid with a gift card
+      case Pretex.GiftCards.get_debit_redemption_for_order(order.id) do
+        nil ->
+          :ok
+
+        %{amount_cents: amt} = redemption ->
+          gc = Repo.get!(Pretex.GiftCards.GiftCard, redemption.gift_card_id)
+          Pretex.GiftCards.restore_balance(gc, amt)
       end
+
+      cancelled_order
     end)
   end
 
