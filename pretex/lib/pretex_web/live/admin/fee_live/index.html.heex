@@ -1,0 +1,291 @@
+<.dashboard_layout
+  current_path={~p"/admin/organizations/#{@org}/events/#{@event}/fees"}
+  org={@org}
+  flash={@flash}
+>
+  <div class="mx-auto max-w-4xl px-4 py-8">
+    <%!-- Barra superior --%>
+    <div class="mb-6 flex items-center justify-between gap-4 flex-wrap">
+      <.link
+        navigate={~p"/admin/organizations/#{@org}/events/#{@event}"}
+        class="inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-primary transition-colors"
+      >
+        <.icon name="hero-arrow-left" class="size-4" /> Voltar ao Evento
+      </.link>
+
+      <.link
+        patch={~p"/admin/organizations/#{@org}/events/#{@event}/fees/new"}
+        class="btn btn-primary btn-sm gap-1"
+      >
+        <.icon name="hero-plus" class="size-4" /> Nova Taxa
+      </.link>
+    </div>
+
+    <%!-- Título da página --%>
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-base-content">Taxas e Cobranças</h1>
+      <p class="text-sm text-base-content/60 mt-1">{@event.name}</p>
+    </div>
+
+    <%!-- Tabela de taxas --%>
+    <div class="card bg-base-100 border border-base-200 shadow-sm overflow-hidden">
+      <div id="fee-rules" phx-update="stream">
+        <%!-- Estado vazio --%>
+        <div
+          id="fee-rules-empty-state"
+          class="hidden only:flex flex-col items-center justify-center py-20 text-center px-4"
+        >
+          <.icon name="hero-banknotes" class="size-12 text-base-content/20 mb-4" />
+          <p class="text-base font-semibold text-base-content/50">Nenhuma taxa configurada.</p>
+          <p class="text-sm text-base-content/40 mt-1">
+            Adicione taxas para que sejam aplicadas automaticamente aos pedidos deste evento.
+          </p>
+          <.link
+            patch={~p"/admin/organizations/#{@org}/events/#{@event}/fees/new"}
+            class="btn btn-primary btn-sm mt-6 gap-1"
+          >
+            <.icon name="hero-plus" class="size-4" /> Nova Taxa
+          </.link>
+        </div>
+
+        <div
+          :for={{dom_id, fee_rule} <- @streams.fee_rules}
+          id={dom_id}
+          class="flex flex-col sm:flex-row sm:items-center gap-3 px-5 py-4 border-b border-base-200 last:border-0 hover:bg-base-50 transition-colors"
+        >
+          <%!-- Nome e tipo --%>
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-base-content truncate">{fee_rule.name}</p>
+            <div class="flex items-center gap-2 mt-1 flex-wrap">
+              <span class="badge badge-ghost badge-sm">
+                {case fee_rule.fee_type do
+                  "service" -> "Taxa de Serviço"
+                  "handling" -> "Taxa de Manuseio"
+                  "shipping" -> "Taxa de Envio"
+                  "cancellation" -> "Taxa de Cancelamento"
+                  "custom" -> "Personalizada"
+                  other -> other
+                end}
+              </span>
+              <span :if={fee_rule.description} class="text-xs text-base-content/40">
+                {fee_rule.description}
+              </span>
+            </div>
+          </div>
+
+          <%!-- Valor --%>
+          <div class="shrink-0 text-right">
+            <p class="font-mono font-semibold text-base-content text-sm">
+              {case fee_rule.value_type do
+                "fixed" ->
+                  reais = div(fee_rule.value, 100)
+                  cents = rem(fee_rule.value, 100)
+                  "R$ #{reais},#{String.pad_leading(Integer.to_string(cents), 2, "0")}"
+
+                "percentage" ->
+                  int_part = div(fee_rule.value, 100)
+                  dec_part = rem(fee_rule.value, 100)
+                  "#{int_part},#{String.pad_leading(Integer.to_string(dec_part), 2, "0")}%"
+
+                _ ->
+                  "#{fee_rule.value}"
+              end}
+            </p>
+            <p class="text-xs text-base-content/40 mt-0.5">
+              {if fee_rule.value_type == "fixed", do: "fixo", else: "percentual"}
+            </p>
+          </div>
+
+          <%!-- Modo de aplicação --%>
+          <div class="shrink-0">
+            <span class={[
+              "badge badge-sm",
+              fee_rule.apply_mode == "automatic" && "badge-info",
+              fee_rule.apply_mode == "manual" && "badge-ghost"
+            ]}>
+              {if fee_rule.apply_mode == "automatic", do: "Automática", else: "Manual"}
+            </span>
+          </div>
+
+          <%!-- Status ativo --%>
+          <div class="shrink-0">
+            <span class={[
+              "badge badge-sm",
+              fee_rule.active && "badge-success",
+              !fee_rule.active && "badge-error"
+            ]}>
+              {if fee_rule.active, do: "Ativo", else: "Inativo"}
+            </span>
+          </div>
+
+          <%!-- Ações --%>
+          <div class="flex items-center gap-2 shrink-0">
+            <button
+              id={"toggle-#{fee_rule.id}"}
+              phx-click="toggle_active"
+              phx-value-id={fee_rule.id}
+              class="btn btn-ghost btn-xs"
+              title={if fee_rule.active, do: "Desativar", else: "Ativar"}
+            >
+              {if fee_rule.active, do: "Desativar", else: "Ativar"}
+            </button>
+
+            <.link
+              patch={~p"/admin/organizations/#{@org}/events/#{@event}/fees/#{fee_rule.id}/edit"}
+              class="btn btn-ghost btn-xs"
+            >
+              Editar
+            </.link>
+
+            <button
+              id={"delete-#{fee_rule.id}"}
+              phx-click="delete"
+              phx-value-id={fee_rule.id}
+              data-confirm="Excluir esta taxa? Esta ação não pode ser desfeita."
+              class="btn btn-ghost btn-xs text-error hover:bg-error hover:text-error-content"
+            >
+              Excluir
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%!-- Modal: Nova / Editar Taxa --%>
+  <div :if={@live_action in [:new, :edit]}>
+    <div
+      id="fee-modal-backdrop"
+      class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+      phx-click="close_modal"
+    >
+    </div>
+
+    <div
+      id="fee-modal"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        class="w-full max-w-lg bg-base-100 rounded-2xl shadow-2xl border border-base-200 overflow-hidden max-h-[90vh] flex flex-col"
+        phx-click-away="close_modal"
+      >
+        <%!-- Cabeçalho do modal --%>
+        <div class="flex items-center justify-between px-6 py-4 border-b border-base-200 shrink-0">
+          <h2 class="text-lg font-bold text-base-content">
+            {if @live_action == :new, do: "Nova Taxa", else: "Editar Taxa"}
+          </h2>
+          <button
+            type="button"
+            phx-click="close_modal"
+            class="btn btn-ghost btn-sm btn-circle"
+            aria-label="Fechar"
+          >
+            <.icon name="hero-x-mark" class="size-5" />
+          </button>
+        </div>
+
+        <%!-- Corpo do modal --%>
+        <div class="px-6 py-5 overflow-y-auto">
+          <.form
+            for={@form}
+            id="fee-rule-form"
+            phx-change="validate"
+            phx-submit="save"
+            class="space-y-4"
+          >
+            <%!-- Nome --%>
+            <.input
+              field={@form[:name]}
+              type="text"
+              label="Nome"
+              placeholder="Ex: Taxa de Serviço"
+              required
+            />
+
+            <%!-- Tipo de taxa --%>
+            <.input
+              field={@form[:fee_type]}
+              type="select"
+              label="Tipo de Taxa"
+              options={[
+                {"Taxa de Serviço", "service"},
+                {"Taxa de Manuseio", "handling"},
+                {"Taxa de Envio", "shipping"},
+                {"Taxa de Cancelamento", "cancellation"},
+                {"Personalizada", "custom"}
+              ]}
+            />
+
+            <%!-- Tipo de valor --%>
+            <.input
+              field={@form[:value_type]}
+              type="select"
+              label="Tipo de Valor"
+              options={[
+                {"Fixo (centavos)", "fixed"},
+                {"Percentual (pontos base)", "percentage"}
+              ]}
+            />
+
+            <%!-- Valor --%>
+            <div>
+              <.input
+                field={@form[:value]}
+                type="number"
+                label="Valor"
+                min="0"
+                required
+              />
+              <p class="text-xs text-base-content/50 -mt-1">
+                {if @form[:value_type].value == "percentage",
+                  do: "Em pontos base: 500 = 5,00% · 1000 = 10,00% · 10000 = 100,00%",
+                  else: "Em centavos: 100 = R$ 1,00 · 250 = R$ 2,50 · 1000 = R$ 10,00"}
+              </p>
+            </div>
+
+            <%!-- Modo de aplicação --%>
+            <.input
+              field={@form[:apply_mode]}
+              type="select"
+              label="Modo de Aplicação"
+              options={[
+                {"Automática — aplicada a todos os pedidos", "automatic"},
+                {"Manual — aplicada apenas quando solicitado", "manual"}
+              ]}
+            />
+
+            <%!-- Descrição --%>
+            <.input
+              field={@form[:description]}
+              type="textarea"
+              label="Descrição (opcional)"
+              placeholder="Descreva o motivo desta taxa"
+            />
+
+            <%!-- Ativo --%>
+            <.input
+              field={@form[:active]}
+              type="checkbox"
+              label="Ativa"
+            />
+            <p class="text-xs text-base-content/50 -mt-3 ml-1">
+              Taxas inativas não são aplicadas a novos pedidos.
+            </p>
+
+            <%!-- Botões --%>
+            <div class="flex justify-end gap-3 pt-2">
+              <button type="button" phx-click="close_modal" class="btn btn-ghost btn-sm">
+                Cancelar
+              </button>
+              <.button type="submit" variant="primary" phx-disable-with="Salvando...">
+                {if @live_action == :new, do: "Criar Taxa", else: "Salvar Alterações"}
+              </.button>
+            </div>
+          </.form>
+        </div>
+      </div>
+    </div>
+  </div>
+</.dashboard_layout>

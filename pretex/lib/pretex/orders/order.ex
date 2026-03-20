@@ -19,6 +19,7 @@ defmodule Pretex.Orders.Order do
     belongs_to(:event, Pretex.Events.Event)
     belongs_to(:customer, Pretex.Customers.Customer)
     has_many(:order_items, Pretex.Orders.OrderItem)
+    has_many(:fees, Pretex.Fees.OrderFee)
 
     timestamps(type: :utc_datetime)
   end
