@@ -56,6 +56,11 @@ defmodule PretexWeb.Components.Dashboard do
         path: "/admin/organizations/#{org_id}/events"
       },
       %{icon: "hero-users", label: "Equipe", path: "/admin/organizations/#{org_id}/team"},
+      %{
+        icon: "hero-credit-card",
+        label: "Pagamentos",
+        path: "/admin/organizations/#{org_id}/payments"
+      },
       %{icon: "hero-chart-bar", label: "Relatórios", path: "#", disabled: true},
       %{icon: "hero-cog-6-tooth", label: "Configurações", path: "#", disabled: true}
     ]

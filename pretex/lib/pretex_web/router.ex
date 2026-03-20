@@ -91,6 +91,11 @@ defmodule PretexWeb.Router do
       live("/organizations/:org_id/team/invite", TeamLive.Index, :invite)
       live("/organizations/:org_id/team/:id/permissions", TeamLive.Index, :permissions)
 
+      live("/organizations/:org_id/payments", PaymentLive.Index, :index)
+      live("/organizations/:org_id/payments/new", PaymentLive.Index, :select)
+      live("/organizations/:org_id/payments/new/:type", PaymentLive.Index, :new)
+      live("/organizations/:org_id/payments/:id/edit", PaymentLive.Index, :edit)
+
       live("/organizations/:org_id/events", EventLive.Index, :index)
       live("/organizations/:org_id/events/new", EventLive.New, :new)
       live("/organizations/:org_id/events/:id/edit", EventLive.Edit, :edit)
