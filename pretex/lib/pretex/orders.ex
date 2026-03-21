@@ -345,11 +345,19 @@ defmodule Pretex.Orders do
           order_after_gift_card
           |> Repo.preload(order_items: [item: []])
           |> Map.get(:order_items, [])
-          |> Enum.filter(fn oi -> oi.item.item_type == "membership" && oi.item.membership_type_id != nil end)
+          |> Enum.filter(fn oi ->
+            oi.item.item_type == "membership" && oi.item.membership_type_id != nil
+          end)
           |> Enum.each(fn oi ->
             mt = Pretex.Memberships.get_membership_type!(oi.item.membership_type_id)
             customer = Repo.get!(Pretex.Customers.Customer, customer_id)
-            Pretex.Memberships.activate_membership_from_order(mt, customer, org, order_after_gift_card)
+
+            Pretex.Memberships.activate_membership_from_order(
+              mt,
+              customer,
+              org,
+              order_after_gift_card
+            )
           end)
         end
 

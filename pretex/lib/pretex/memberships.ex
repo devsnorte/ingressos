@@ -110,7 +110,8 @@ defmodule Pretex.Memberships do
     now = DateTime.utc_now(:second)
 
     Membership
-    |> where([m],
+    |> where(
+      [m],
       m.customer_id == ^customer.id and
         m.organization_id == ^org_id and
         m.status == "active" and
@@ -134,7 +135,8 @@ defmodule Pretex.Memberships do
 
     memberships =
       Membership
-      |> where([m],
+      |> where(
+        [m],
         m.customer_id == ^customer_id and
           m.organization_id == ^org_id and
           m.status == "active" and
@@ -210,7 +212,10 @@ defmodule Pretex.Memberships do
     min(value, subtotal_cents)
   end
 
-  defp compute_benefit_discount(%{benefit_type: "percentage_discount", value: basis_points}, subtotal_cents) do
+  defp compute_benefit_discount(
+         %{benefit_type: "percentage_discount", value: basis_points},
+         subtotal_cents
+       ) do
     round(subtotal_cents * basis_points / 10_000)
   end
 

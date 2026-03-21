@@ -39,7 +39,10 @@ defmodule Pretex.MembershipOrderIntegrationTest do
       event = published_event_fixture(org)
 
       {:ok, mt} = Memberships.create_membership_type(org, %{name: "Gold", validity_days: 365})
-      {:ok, _b} = Memberships.create_benefit(mt, %{benefit_type: "percentage_discount", value: 1500})
+
+      {:ok, _b} =
+        Memberships.create_benefit(mt, %{benefit_type: "percentage_discount", value: 1500})
+
       {:ok, _m} = Memberships.grant_membership(mt, customer, org)
 
       cart = cart_with_item(event, 20_000)
@@ -83,7 +86,10 @@ defmodule Pretex.MembershipOrderIntegrationTest do
       event = published_event_fixture(org)
 
       {:ok, mt} = Memberships.create_membership_type(org, %{name: "Gold", validity_days: 365})
-      {:ok, _b} = Memberships.create_benefit(mt, %{benefit_type: "percentage_discount", value: 1500})
+
+      {:ok, _b} =
+        Memberships.create_benefit(mt, %{benefit_type: "percentage_discount", value: 1500})
+
       {:ok, m} = Memberships.grant_membership(mt, customer, org)
       {:ok, _} = Memberships.expire_membership(m)
 
@@ -105,7 +111,10 @@ defmodule Pretex.MembershipOrderIntegrationTest do
       event = published_event_fixture(org2)
 
       {:ok, mt} = Memberships.create_membership_type(org1, %{name: "Gold", validity_days: 365})
-      {:ok, _b} = Memberships.create_benefit(mt, %{benefit_type: "percentage_discount", value: 1500})
+
+      {:ok, _b} =
+        Memberships.create_benefit(mt, %{benefit_type: "percentage_discount", value: 1500})
+
       {:ok, _m} = Memberships.grant_membership(mt, customer, org1)
 
       cart = cart_with_item(event, 20_000)
@@ -124,12 +133,20 @@ defmodule Pretex.MembershipOrderIntegrationTest do
       customer = customer_fixture()
       event = published_event_fixture(org)
 
-      {:ok, mt_gold} = Memberships.create_membership_type(org, %{name: "Gold", validity_days: 365})
-      {:ok, _b} = Memberships.create_benefit(mt_gold, %{benefit_type: "percentage_discount", value: 1500})
+      {:ok, mt_gold} =
+        Memberships.create_membership_type(org, %{name: "Gold", validity_days: 365})
+
+      {:ok, _b} =
+        Memberships.create_benefit(mt_gold, %{benefit_type: "percentage_discount", value: 1500})
+
       {:ok, _m} = Memberships.grant_membership(mt_gold, customer, org)
 
-      {:ok, mt_silver} = Memberships.create_membership_type(org, %{name: "Silver", validity_days: 365})
-      {:ok, _b} = Memberships.create_benefit(mt_silver, %{benefit_type: "percentage_discount", value: 1000})
+      {:ok, mt_silver} =
+        Memberships.create_membership_type(org, %{name: "Silver", validity_days: 365})
+
+      {:ok, _b} =
+        Memberships.create_benefit(mt_silver, %{benefit_type: "percentage_discount", value: 1000})
+
       {:ok, _m} = Memberships.grant_membership(mt_silver, customer, org)
 
       cart = cart_with_item(event, 20_000)
@@ -168,7 +185,10 @@ defmodule Pretex.MembershipOrderIntegrationTest do
 
       # Membership: 10% off
       {:ok, mt} = Memberships.create_membership_type(org, %{name: "Gold", validity_days: 365})
-      {:ok, _b} = Memberships.create_benefit(mt, %{benefit_type: "percentage_discount", value: 1000})
+
+      {:ok, _b} =
+        Memberships.create_benefit(mt, %{benefit_type: "percentage_discount", value: 1000})
+
       {:ok, _m} = Memberships.grant_membership(mt, customer, org)
 
       # Auto-discount: fixed R$5
@@ -218,7 +238,9 @@ defmodule Pretex.MembershipOrderIntegrationTest do
       event = published_event_fixture(org)
 
       {:ok, mt} = Memberships.create_membership_type(org, %{name: "Gold", validity_days: 365})
-      {:ok, _b} = Memberships.create_benefit(mt, %{benefit_type: "percentage_discount", value: 1500})
+
+      {:ok, _b} =
+        Memberships.create_benefit(mt, %{benefit_type: "percentage_discount", value: 1500})
 
       # Create a membership item in the catalog
       item =
