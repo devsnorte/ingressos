@@ -402,7 +402,7 @@ defmodule PretexWeb.EventsLive.PaymentProcessingLiveTest do
   # ---------------------------------------------------------------------------
 
   describe "AC3 — redirect-based payment" do
-    test "payment with redirect flow redirects the browser to external URL", %{conn: conn} do
+    test "payment with redirect flow redirects the browser to external URL", %{conn: _conn} do
       org = org_fixture()
       event = published_event_fixture(org)
       item = item_fixture(event, %{price_cents: 5000})

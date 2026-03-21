@@ -6,9 +6,7 @@ defmodule Pretex.DiscountsTest do
   import Pretex.CatalogFixtures
 
   alias Pretex.Discounts
-  alias Pretex.Discounts.DiscountRule
   alias Pretex.Discounts.OrderDiscount
-  alias Pretex.Orders
   alias Pretex.Repo
 
   # ---------------------------------------------------------------------------
@@ -29,7 +27,7 @@ defmodule Pretex.DiscountsTest do
     rule
   end
 
-  defp order_fixture(event, total_cents \\ 10_000) do
+  defp order_fixture(event, total_cents) do
     {:ok, order} =
       %Pretex.Orders.Order{}
       |> Ecto.Changeset.change(%{
@@ -45,17 +43,6 @@ defmodule Pretex.DiscountsTest do
       |> Repo.insert()
 
     order
-  end
-
-  defp cart_items_fixture(price_cents \\ 5000, quantity \\ 1) do
-    [
-      %{
-        item_id: System.unique_integer([:positive]),
-        item_variation_id: nil,
-        quantity: quantity,
-        unit_price_cents: price_cents
-      }
-    ]
   end
 
   # ---------------------------------------------------------------------------

@@ -13,7 +13,7 @@ defmodule Pretex.GiftCardOrderIntegrationTest do
   # Helpers
   # ---------------------------------------------------------------------------
 
-  defp cart_with_item(event, price_cents \\ 5000) do
+  defp cart_with_item(event, price_cents) do
     item = item_fixture(event, %{price_cents: price_cents})
     {:ok, cart} = Orders.create_cart(event)
     {:ok, _cart_item} = Orders.add_to_cart(cart, item, quantity: 1)
@@ -31,7 +31,7 @@ defmodule Pretex.GiftCardOrderIntegrationTest do
     )
   end
 
-  defp gift_card_fixture(org, attrs \\ %{}) do
+  defp gift_card_fixture(org, attrs) do
     base = %{
       code: "GC-TEST#{System.unique_integer([:positive])}",
       balance_cents: 5000,
@@ -315,7 +315,7 @@ defmodule Pretex.GiftCardOrderIntegrationTest do
     test "gift card applied case-insensitively" do
       org = org_fixture()
       event = published_event_fixture(org)
-      gc = gift_card_fixture(org, %{code: "GC-CASECI01", balance_cents: 1000})
+      _gc = gift_card_fixture(org, %{code: "GC-CASECI01", balance_cents: 1000})
 
       cart = cart_with_item(event, 5000)
       subtotal = Orders.cart_total(cart)

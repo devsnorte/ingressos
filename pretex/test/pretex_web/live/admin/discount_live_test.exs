@@ -32,7 +32,7 @@ defmodule PretexWeb.Admin.DiscountLiveTest do
     event
   end
 
-  defp discount_rule_fixture(event, attrs \\ %{}) do
+  defp discount_rule_fixture(event, attrs) do
     base = %{
       name: "Regra Teste #{System.unique_integer([:positive])}",
       condition_type: "min_quantity",

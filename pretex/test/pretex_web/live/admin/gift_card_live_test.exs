@@ -19,7 +19,7 @@ defmodule PretexWeb.Admin.GiftCardLiveTest do
     org
   end
 
-  defp gift_card_fixture(org, attrs \\ %{}) do
+  defp gift_card_fixture(org, attrs) do
     base = %{
       code: "GC-TEST#{System.unique_integer([:positive])}",
       balance_cents: 5000,

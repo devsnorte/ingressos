@@ -88,7 +88,7 @@ defmodule PretexWeb.Admin.PaymentLiveTest do
     test "exibe seleção de tipos de provedores", %{conn: conn} do
       org = org_fixture()
 
-      {:ok, view, _html} = live(conn, ~p"/admin/organizations/#{org}/payments")
+      {:ok, _view, _html} = live(conn, ~p"/admin/organizations/#{org}/payments")
 
       # Navigate to provider selection page
       {:ok, _view, html} = live(conn, ~p"/admin/organizations/#{org}/payments/new")

@@ -57,7 +57,7 @@ defmodule PretexWeb.CheckoutGiftCardTest do
     Orders.get_cart_by_token(cart.session_token)
   end
 
-  defp gift_card_fixture(org, attrs \\ %{}) do
+  defp gift_card_fixture(org, attrs) do
     base = %{
       code: "GC-TEST#{System.unique_integer([:positive])}",
       balance_cents: 5000,
@@ -183,7 +183,7 @@ defmodule PretexWeb.CheckoutGiftCardTest do
       event = event_fixture(org)
       item = item_fixture(event, 5000)
       cart = cart_fixture(event, item)
-      gc = gift_card_fixture(org, %{code: "GC-CITEST1", balance_cents: 1000})
+      _gc = gift_card_fixture(org, %{code: "GC-CITEST1", balance_cents: 1000})
 
       {:ok, view, _html} = navigate_to_summary(conn, event, cart)
 
