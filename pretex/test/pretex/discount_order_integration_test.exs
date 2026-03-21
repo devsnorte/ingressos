@@ -14,7 +14,7 @@ defmodule Pretex.DiscountOrderIntegrationTest do
   # Helpers
   # ---------------------------------------------------------------------------
 
-  defp cart_with_item(event, price_cents \\ 5000, quantity \\ 1) do
+  defp cart_with_item(event, price_cents, quantity \\ 1) do
     item = item_fixture(event, %{price_cents: price_cents})
     {:ok, cart} = Orders.create_cart(event)
     {:ok, _cart_item} = Orders.add_to_cart(cart, item, quantity: quantity)
@@ -32,7 +32,7 @@ defmodule Pretex.DiscountOrderIntegrationTest do
     )
   end
 
-  defp discount_rule_fixture(event, attrs \\ %{}) do
+  defp discount_rule_fixture(event, attrs) do
     base = %{
       name: "Regra Integração #{System.unique_integer([:positive])}",
       condition_type: "min_quantity",
@@ -46,7 +46,7 @@ defmodule Pretex.DiscountOrderIntegrationTest do
     rule
   end
 
-  defp voucher_fixture(event, attrs \\ %{}) do
+  defp voucher_fixture(event, attrs) do
     base = %{
       code: "VOUCHER#{System.unique_integer([:positive])}",
       effect: "fixed_discount",

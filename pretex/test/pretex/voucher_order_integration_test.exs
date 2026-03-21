@@ -13,7 +13,7 @@ defmodule Pretex.VoucherOrderIntegrationTest do
   # Helpers
   # ---------------------------------------------------------------------------
 
-  defp cart_with_item(event, price_cents \\ 5000) do
+  defp cart_with_item(event, price_cents) do
     item = item_fixture(event, %{price_cents: price_cents})
     {:ok, cart} = Orders.create_cart(event)
     {:ok, _cart_item} = Orders.add_to_cart(cart, item, quantity: 1)
@@ -31,7 +31,7 @@ defmodule Pretex.VoucherOrderIntegrationTest do
     )
   end
 
-  defp voucher_fixture(event, attrs \\ %{}) do
+  defp voucher_fixture(event, attrs) do
     base = %{
       code: "TESTCODE#{System.unique_integer([:positive])}",
       effect: "fixed_discount",

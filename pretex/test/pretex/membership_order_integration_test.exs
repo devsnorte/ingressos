@@ -14,7 +14,7 @@ defmodule Pretex.MembershipOrderIntegrationTest do
   # Helpers
   # ---------------------------------------------------------------------------
 
-  defp cart_with_item(event, price_cents \\ 5000, quantity \\ 1) do
+  defp cart_with_item(event, price_cents, quantity \\ 1) do
     item = item_fixture(event, %{price_cents: price_cents})
     {:ok, cart} = Orders.create_cart(event)
     {:ok, _} = Orders.add_to_cart(cart, item, quantity: quantity)

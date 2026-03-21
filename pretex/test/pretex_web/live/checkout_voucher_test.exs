@@ -58,7 +58,7 @@ defmodule PretexWeb.CheckoutVoucherTest do
     Orders.get_cart_by_token(cart.session_token)
   end
 
-  defp voucher_fixture(event, attrs \\ %{}) do
+  defp voucher_fixture(event, attrs) do
     base = %{
       code: "VOUCHER#{System.unique_integer([:positive])}",
       effect: "fixed_discount",
