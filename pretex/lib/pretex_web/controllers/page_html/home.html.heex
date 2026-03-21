@@ -34,8 +34,18 @@
         </a>
       </div>
       <div class="flex items-center gap-2">
-        <a href="/customers/log-in" class="btn btn-ghost btn-sm">Entrar</a>
-        <a href="/customers/register" class="btn btn-primary btn-sm">Criar Conta</a>
+        <%= if @current_scope && @current_scope.customer do %>
+          <span class="text-sm text-base-content/60 hidden sm:inline">
+            {@current_scope.customer.email}
+          </span>
+          <a href="/account/orders" class="btn btn-ghost btn-sm">Meus Pedidos</a>
+          <.link href="/customers/log-out" method="delete" class="btn btn-ghost btn-sm">
+            Sair
+          </.link>
+        <% else %>
+          <a href="/customers/log-in" class="btn btn-ghost btn-sm">Entrar</a>
+          <a href="/customers/register" class="btn btn-primary btn-sm">Criar Conta</a>
+        <% end %>
       </div>
     </div>
   </nav>

@@ -30,7 +30,14 @@ defmodule Pretex.Memberships.Membership do
       :organization_id,
       :source_order_id
     ])
-    |> validate_required([:starts_at, :expires_at, :status, :membership_type_id, :customer_id, :organization_id])
+    |> validate_required([
+      :starts_at,
+      :expires_at,
+      :status,
+      :membership_type_id,
+      :customer_id,
+      :organization_id
+    ])
     |> validate_inclusion(:status, @statuses)
   end
 end

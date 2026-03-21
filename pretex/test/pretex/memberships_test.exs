@@ -113,7 +113,10 @@ defmodule Pretex.MembershipsTest do
       {:ok, mt} = Memberships.create_membership_type(org, %{name: "Gold", validity_days: 365})
 
       assert {:error, changeset} =
-               Memberships.create_benefit(mt, %{benefit_type: "percentage_discount", value: 10_001})
+               Memberships.create_benefit(mt, %{
+                 benefit_type: "percentage_discount",
+                 value: 10_001
+               })
 
       assert errors_on(changeset).value != []
     end
@@ -170,7 +173,10 @@ defmodule Pretex.MembershipsTest do
       org = org_fixture()
       customer = customer_fixture()
       {:ok, mt} = Memberships.create_membership_type(org, %{name: "Gold", validity_days: 365})
-      {:ok, _b} = Memberships.create_benefit(mt, %{benefit_type: "percentage_discount", value: 1500})
+
+      {:ok, _b} =
+        Memberships.create_benefit(mt, %{benefit_type: "percentage_discount", value: 1500})
+
       {:ok, _m} = Memberships.grant_membership(mt, customer, org)
 
       memberships = Memberships.active_memberships_for_checkout(customer, org)
