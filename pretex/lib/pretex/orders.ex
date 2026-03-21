@@ -68,6 +68,23 @@ defmodule Pretex.Orders do
   end
 
   @doc """
+  Slides the cart's expiry window 15 minutes from now.
+
+  Called on every checkout page visit so the TTL is activity-based rather than
+  fixed at cart-creation time. A user who spends more than 15 minutes browsing
+  the summary page no longer hits a spurious "cart expired" error when they
+  click to place their order.
+  """
+  def extend_cart_expiry(%CartSession{} = cart) do
+    new_expiry =
+      DateTime.utc_now() |> DateTime.add(15 * 60, :second) |> DateTime.truncate(:second)
+
+    cart
+    |> Ecto.Changeset.change(expires_at: new_expiry)
+    |> Repo.update()
+  end
+
+  @doc """
   Adds an item to the cart or updates quantity if already present.
   Options: [quantity: 1, variation_id: nil]
   """

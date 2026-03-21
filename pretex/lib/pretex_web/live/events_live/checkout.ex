@@ -552,67 +552,75 @@ defmodule PretexWeb.EventsLive.Checkout do
     cart_token = Map.get(params, "cart_token")
     event = socket.assigns.event
 
+    # On the :payment step the cart is already checked_out — skip cart loading
+    # entirely and let load_payment_step below handle everything.
     socket =
-      if cart_token do
-        case Orders.get_cart_by_token(cart_token) do
-          nil ->
-            socket
-            |> put_flash(:error, "Carrinho não encontrado. Por favor adicione itens primeiro.")
-            |> push_navigate(to: ~p"/events/#{event.slug}")
-
-          cart ->
-            if cart.event_id == event.id && cart.status == "active" do
-              payment_options = load_payment_options(event)
-              subtotal = Orders.cart_total(cart)
-              fee_preview = Pretex.Fees.compute_fees_for_cart(event, subtotal)
-              fee_total = Pretex.Fees.total_fees_cents(fee_preview)
-
-              cart_items =
-                Enum.map(cart.cart_items, fn ci ->
-                  %{
-                    item_id: ci.item_id,
-                    item_variation_id: ci.item_variation_id,
-                    quantity: ci.quantity,
-                    unit_price_cents:
-                      if(ci.item_variation && ci.item_variation.price_cents,
-                        do: ci.item_variation.price_cents,
-                        else: ci.item.price_cents
-                      )
-                  }
-                end)
-
-              discount_preview = Pretex.Discounts.compute_discount_for_cart(event.id, cart_items)
-
-              {discount_rule_name, _} =
-                case Pretex.Discounts.best_discount(event.id, cart_items) do
-                  {:ok, %{rule: r}} -> {r.name, nil}
-                  _ -> {nil, nil}
-                end
-
-              name = cart.attendee_name || ""
-              email = cart.attendee_email || ""
-
-              socket
-              |> assign(:cart, cart)
-              |> assign(:cart_total, subtotal)
-              |> assign(:payment_options, payment_options)
-              |> assign(:fee_preview, fee_preview)
-              |> assign(:fee_total, fee_total)
-              |> assign(:discount_preview, discount_preview)
-              |> assign(:applied_discount_rule_name, discount_rule_name)
-              |> assign(:attendee_name, name)
-              |> assign(:attendee_email, email)
-              |> assign(:form, to_form(%{"name" => name, "email" => email}, as: :checkout))
-            else
-              socket
-              |> put_flash(:error, "Seu carrinho expirou. Por favor comece novamente.")
-              |> push_navigate(to: ~p"/events/#{event.slug}")
-            end
-        end
-      else
+      if socket.assigns.live_action == :payment do
         socket
-        |> put_flash(:error, "Nenhum carrinho encontrado. Por favor adicione itens primeiro.")
-        |> push_navigate(to: ~p"/events/#{event.slug}")
+      else
+        if cart_token do
+          case Orders.get_cart_by_token(cart_token) do
+            nil ->
+              socket
+              |> put_flash(:error, "Carrinho não encontrado. Por favor adicione itens primeiro.")
+              |> push_navigate(to: ~p"/events/#{event.slug}")
+
+            cart ->
+              if cart.event_id == event.id && cart.status == "active" do
+                {:ok, cart} = Orders.extend_cart_expiry(cart)
+                payment_options = load_payment_options(event)
+                subtotal = Orders.cart_total(cart)
+                fee_preview = Pretex.Fees.compute_fees_for_cart(event, subtotal)
+                fee_total = Pretex.Fees.total_fees_cents(fee_preview)
+
+                cart_items =
+                  Enum.map(cart.cart_items, fn ci ->
+                    %{
+                      item_id: ci.item_id,
+                      item_variation_id: ci.item_variation_id,
+                      quantity: ci.quantity,
+                      unit_price_cents:
+                        if(ci.item_variation && ci.item_variation.price_cents,
+                          do: ci.item_variation.price_cents,
+                          else: ci.item.price_cents
+                        )
+                    }
+                  end)
+
+                discount_preview =
+                  Pretex.Discounts.compute_discount_for_cart(event.id, cart_items)
+
+                {discount_rule_name, _} =
+                  case Pretex.Discounts.best_discount(event.id, cart_items) do
+                    {:ok, %{rule: r}} -> {r.name, nil}
+                    _ -> {nil, nil}
+                  end
+
+                name = cart.attendee_name || ""
+                email = cart.attendee_email || ""
+
+                socket
+                |> assign(:cart, cart)
+                |> assign(:cart_total, subtotal)
+                |> assign(:payment_options, payment_options)
+                |> assign(:fee_preview, fee_preview)
+                |> assign(:fee_total, fee_total)
+                |> assign(:discount_preview, discount_preview)
+                |> assign(:applied_discount_rule_name, discount_rule_name)
+                |> assign(:attendee_name, name)
+                |> assign(:attendee_email, email)
+                |> assign(:form, to_form(%{"name" => name, "email" => email}, as: :checkout))
+              else
+                socket
+                |> put_flash(:error, "Seu carrinho expirou. Por favor comece novamente.")
+                |> push_navigate(to: ~p"/events/#{event.slug}")
+              end
+          end
+        else
+          socket
+          |> put_flash(:error, "Nenhum carrinho encontrado. Por favor adicione itens primeiro.")
+          |> push_navigate(to: ~p"/events/#{event.slug}")
+        end
       end
 
     # On the :payment step, load the order and payment and subscribe to updates
