@@ -59,6 +59,15 @@ defmodule Pretex.Orders do
   end
 
   @doc """
+  Persists the attendee name and email on the cart so they survive page refreshes.
+  """
+  def update_cart_attendee_info(%CartSession{} = cart, name, email) do
+    cart
+    |> CartSession.attendee_changeset(%{attendee_name: name, attendee_email: email})
+    |> Repo.update()
+  end
+
+  @doc """
   Adds an item to the cart or updates quantity if already present.
   Options: [quantity: 1, variation_id: nil]
   """
