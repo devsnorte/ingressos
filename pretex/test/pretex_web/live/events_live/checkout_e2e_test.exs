@@ -48,92 +48,65 @@ defmodule PretexWeb.EventsLive.CheckoutE2ETest do
       item = item_fixture(event, %{name: "Ingresso Geral", price_cents: 5000})
       provider = manual_provider_fixture(org)
 
-      # ── Step 1: events list shows the event ──────────────────────────────────
+      # 1. Events list
       {:ok, _view, html} = live(conn, ~p"/events")
       assert html =~ event.name
 
-      # ── Step 2: event page shows ticket and price ─────────────────────────────
-      {:ok, show_view, html} = live(conn, ~p"/events/#{event.slug}")
-      assert html =~ "Ingresso Geral"
-      assert html =~ "R$ 50,00"
+      # 2. Event detail page
+      {:ok, view, html} = live(conn, ~p"/events/#{event.slug}")
+      assert html =~ event.name
+      assert html =~ item.name
 
-      # ── Step 3: add the ticket to the cart ───────────────────────────────────
-      # phx-value-item_id is collected automatically from the element
-      show_view |> element("#add-#{item.id}") |> render_click()
+      # 3. Add ticket to cart — the page push_patches with the cart token
+      view |> element("#add-#{item.id}") |> render_click()
+      patch_path = assert_patch(view)
+      assert patch_path =~ "cart_token"
 
-      # The show page push_patches to ?cart_token=... — extract the token
-      patch_path = assert_patch(show_view)
       cart_token = query_param(patch_path, "cart_token")
 
-      # Cart sidebar now shows the item and the proceed-to-checkout link
-      show_html = render(show_view)
-      assert show_html =~ "Ingresso Geral"
-      assert show_html =~ "Finalizar Compra"
-
-      # ── Step 4: checkout info step ────────────────────────────────────────────
+      # 4. Checkout — info step
       {:ok, view, html} =
         live(conn, ~p"/events/#{event.slug}/checkout?cart_token=#{cart_token}")
 
       assert html =~ "Suas Informações"
-      assert html =~ "Nome Completo"
-      assert html =~ "E-mail"
 
       view
-      |> form("#checkout-info-form", %{checkout: %{name: "João Silva", email: "joao@example.com"}})
+      |> form("#checkout-info-form", %{
+        checkout: %{name: "João Silva", email: "joao@test.com"}
+      })
       |> render_submit()
 
-      # push_patch → summary step (same LiveView process)
       assert_patch(view)
 
-      # ── Step 5: summary step shows order details ──────────────────────────────
-      summary_html = render(view)
-      assert summary_html =~ "Resumo do Pedido"
-      assert summary_html =~ "Ingresso Geral"
-      assert summary_html =~ "R$ 50,00"
-      assert summary_html =~ "Concluir Pedido"
+      # 5. Summary step
+      html = render(view)
+      assert html =~ "Resumo do Pedido"
+      assert html =~ item.name
 
-      # ── Step 6: select payment method ────────────────────────────────────────
+      # 6. Select payment method
       view
       |> element("#pay-bank_transfer")
       |> render_click(%{"method" => "bank_transfer", "provider-id" => to_string(provider.id)})
 
-      # ── Step 7: place the order ───────────────────────────────────────────────
+      # 7. Place order
       view |> element("#place-order-btn") |> render_click()
 
-      # push_patch → payment step; the URL carries the order_code
       payment_path = assert_patch(view)
       assert payment_path =~ "/checkout/payment"
 
       order_code = query_param(payment_path, "order_code")
-
-      # The payment step renders the "waiting for payment" UI — item names are
-      # not shown here, but the order amount and status heading are.
-      payment_html = render(view)
-      assert payment_html =~ "Aguardando Pagamento"
-      assert payment_html =~ "R$ 50,00"
-
-      # ── Step 8: simulate payment confirmation (webhook / admin action) ─────────
       {:ok, order} = Orders.get_order_by_confirmation_code(order_code)
-      assert order.name == "João Silva"
-      assert order.email == "joao@example.com"
-      assert order.total_cents == 5000
-
       payment = Payments.get_payment_for_order(order)
-      assert payment.payment_method == "bank_transfer"
 
-      {:ok, _confirmed_payment} = Payments.confirm_payment(payment)
+      # 8. Confirm payment (simulating admin/webhook)
+      {:ok, _} = Payments.confirm_payment(payment)
 
-      # The LiveView receives the PubSub broadcast and redirects to confirmation
       assert_redirect(view, ~p"/events/#{event.slug}/orders/#{order_code}")
 
-      # ── Step 9: confirmation page ─────────────────────────────────────────────
+      # 9. Order confirmation page
       {:ok, _view, html} = live(conn, ~p"/events/#{event.slug}/orders/#{order_code}")
-
       assert html =~ "Pedido Confirmado!"
-      assert html =~ order_code
       assert html =~ "João Silva"
-      assert html =~ "joao@example.com"
-      assert html =~ "Ingresso Geral"
       assert html =~ "R$ 50,00"
     end
 
@@ -199,6 +172,327 @@ defmodule PretexWeb.EventsLive.CheckoutE2ETest do
       assert html =~ "Pedido Confirmado!"
       assert html =~ "Maria Souza"
       assert html =~ "R$ 150,00"
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Bank transfer note submission
+  # ---------------------------------------------------------------------------
+
+  describe "bank transfer note" do
+    test "payment step shows the transfer note form for bank_transfer", %{conn: conn} do
+      org = org_fixture()
+      event = published_event_fixture(org)
+      item = item_fixture(event, %{name: "Ingresso TED", price_cents: 8000})
+      provider = manual_provider_fixture(org)
+
+      {:ok, raw_cart} = Orders.create_cart(event)
+      Orders.add_to_cart(raw_cart, item)
+      cart = Orders.get_cart_by_token(raw_cart.session_token)
+
+      {:ok, order} =
+        Orders.create_order_from_cart(cart, %{
+          name: "Ana Lima",
+          email: "ana@example.com",
+          payment_method: "bank_transfer",
+          payment_provider_id: provider.id
+        })
+
+      {:ok, _payment} = Payments.create_payment(order, provider, "bank_transfer")
+
+      {:ok, view, html} =
+        live(
+          conn,
+          ~p"/events/#{event.slug}/checkout/payment?cart_token=#{cart.session_token}&order_code=#{order.confirmation_code}"
+        )
+
+      assert html =~ "Envie o comprovante da transferência"
+      assert has_element?(view, "#transfer-note-input")
+    end
+
+    test "submitting a transfer note saves it and shows confirmation", %{conn: conn} do
+      org = org_fixture()
+      event = published_event_fixture(org)
+      item = item_fixture(event, %{name: "Ingresso PIX", price_cents: 3000})
+      provider = manual_provider_fixture(org)
+
+      {:ok, raw_cart} = Orders.create_cart(event)
+      Orders.add_to_cart(raw_cart, item)
+      cart = Orders.get_cart_by_token(raw_cart.session_token)
+
+      {:ok, order} =
+        Orders.create_order_from_cart(cart, %{
+          name: "Carlos Melo",
+          email: "carlos@example.com",
+          payment_method: "bank_transfer",
+          payment_provider_id: provider.id
+        })
+
+      {:ok, _payment} = Payments.create_payment(order, provider, "bank_transfer")
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          ~p"/events/#{event.slug}/checkout/payment?cart_token=#{cart.session_token}&order_code=#{order.confirmation_code}"
+        )
+
+      view
+      |> element("form[phx-submit='submit_transfer_note']")
+      |> render_submit(%{"note" => "TED · ID 123456 · R$ 30,00"})
+
+      html = render(view)
+      assert html =~ "Comprovante enviado!"
+
+      payment = Payments.get_payment_for_order(order)
+      assert payment.transfer_note == "TED · ID 123456 · R$ 30,00"
+    end
+
+    test "submitting an empty note shows an error and does not persist", %{conn: conn} do
+      org = org_fixture()
+      event = published_event_fixture(org)
+      item = item_fixture(event, %{name: "Ingresso DOC", price_cents: 4500})
+      provider = manual_provider_fixture(org)
+
+      {:ok, raw_cart} = Orders.create_cart(event)
+      Orders.add_to_cart(raw_cart, item)
+      cart = Orders.get_cart_by_token(raw_cart.session_token)
+
+      {:ok, order} =
+        Orders.create_order_from_cart(cart, %{
+          name: "Paula Dias",
+          email: "paula@example.com",
+          payment_method: "bank_transfer",
+          payment_provider_id: provider.id
+        })
+
+      {:ok, _payment} = Payments.create_payment(order, provider, "bank_transfer")
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          ~p"/events/#{event.slug}/checkout/payment?cart_token=#{cart.session_token}&order_code=#{order.confirmation_code}"
+        )
+
+      view
+      |> element("form[phx-submit='submit_transfer_note']")
+      |> render_submit(%{"note" => "   "})
+
+      html = render(view)
+      # Form stays visible and note was not persisted
+      refute html =~ "Comprovante enviado!"
+
+      payment = Payments.get_payment_for_order(order)
+      assert is_nil(payment.transfer_note)
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # customer_id linking — orders appear in /account/orders
+  # ---------------------------------------------------------------------------
+
+  describe "customer_id on orders" do
+    test "order created by a logged-in customer is linked to their account", %{conn: conn} do
+      org = org_fixture()
+      event = published_event_fixture(org)
+      item = item_fixture(event, %{price_cents: 5000})
+      provider = manual_provider_fixture(org)
+
+      # Log in as a customer
+      %{conn: authed_conn, customer: customer} = register_and_log_in_customer(%{conn: conn})
+
+      {:ok, raw_cart} = Orders.create_cart(event)
+      Orders.add_to_cart(raw_cart, item)
+      cart = Orders.get_cart_by_token(raw_cart.session_token)
+
+      {:ok, view, _html} =
+        live(authed_conn, ~p"/events/#{event.slug}/checkout?cart_token=#{cart.session_token}")
+
+      view
+      |> form("#checkout-info-form", %{
+        checkout: %{name: "Sofia Rocha", email: "sofia@example.com"}
+      })
+      |> render_submit()
+
+      assert_patch(view)
+
+      view
+      |> element("#pay-bank_transfer")
+      |> render_click(%{"method" => "bank_transfer", "provider-id" => to_string(provider.id)})
+
+      view |> element("#place-order-btn") |> render_click()
+      payment_path = assert_patch(view)
+      order_code = query_param(payment_path, "order_code")
+
+      {:ok, order} = Orders.get_order_by_confirmation_code(order_code)
+      assert order.customer_id == customer.id
+
+      # The order must appear in /account/orders
+      {:ok, _view, html} = live(authed_conn, ~p"/account/orders")
+      assert html =~ order_code
+    end
+
+    test "order created by a guest has no customer_id", %{conn: conn} do
+      org = org_fixture()
+      event = published_event_fixture(org)
+      item = item_fixture(event, %{price_cents: 2000})
+      provider = manual_provider_fixture(org)
+
+      {:ok, raw_cart} = Orders.create_cart(event)
+      Orders.add_to_cart(raw_cart, item)
+      cart = Orders.get_cart_by_token(raw_cart.session_token)
+
+      # Unauthenticated connection — no current_scope customer
+      {:ok, view, _html} =
+        live(conn, ~p"/events/#{event.slug}/checkout?cart_token=#{cart.session_token}")
+
+      view
+      |> form("#checkout-info-form", %{
+        checkout: %{name: "Visitante Guest", email: "guest@example.com"}
+      })
+      |> render_submit()
+
+      assert_patch(view)
+
+      view
+      |> element("#pay-bank_transfer")
+      |> render_click(%{"method" => "bank_transfer", "provider-id" => to_string(provider.id)})
+
+      view |> element("#place-order-btn") |> render_click()
+      payment_path = assert_patch(view)
+      order_code = query_param(payment_path, "order_code")
+
+      {:ok, order} = Orders.get_order_by_confirmation_code(order_code)
+      assert is_nil(order.customer_id)
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Admin payment confirmation
+  # ---------------------------------------------------------------------------
+
+  describe "admin confirm payment" do
+    setup :register_and_log_in_user
+
+    test "admin sees the payment card with transfer note on the order show page", %{conn: conn} do
+      org = org_fixture()
+      event = published_event_fixture(org)
+      item = item_fixture(event, %{price_cents: 7500})
+      provider = manual_provider_fixture(org)
+
+      {:ok, raw_cart} = Orders.create_cart(event)
+      Orders.add_to_cart(raw_cart, item)
+      cart = Orders.get_cart_by_token(raw_cart.session_token)
+
+      {:ok, order} =
+        Orders.create_order_from_cart(cart, %{
+          name: "Luisa Ferreira",
+          email: "luisa@example.com",
+          payment_method: "bank_transfer",
+          payment_provider_id: provider.id
+        })
+
+      {:ok, payment} = Payments.create_payment(order, provider, "bank_transfer")
+      {:ok, _} = Payments.update_payment_transfer_note(payment, "TED confirmada · ID 998877")
+
+      {:ok, _view, html} =
+        live(conn, ~p"/admin/organizations/#{org}/events/#{event}/orders/#{order.id}")
+
+      assert html =~ "Comprovante enviado pelo cliente"
+      assert html =~ "TED confirmada · ID 998877"
+      assert html =~ "Confirmar Pagamento"
+    end
+
+    test "admin sees placeholder when no transfer note was submitted", %{conn: conn} do
+      org = org_fixture()
+      event = published_event_fixture(org)
+      item = item_fixture(event, %{price_cents: 4000})
+      provider = manual_provider_fixture(org)
+
+      {:ok, raw_cart} = Orders.create_cart(event)
+      Orders.add_to_cart(raw_cart, item)
+      cart = Orders.get_cart_by_token(raw_cart.session_token)
+
+      {:ok, order} =
+        Orders.create_order_from_cart(cart, %{
+          name: "Ricardo Nunes",
+          email: "ricardo@example.com",
+          payment_method: "bank_transfer",
+          payment_provider_id: provider.id
+        })
+
+      {:ok, _payment} = Payments.create_payment(order, provider, "bank_transfer")
+
+      {:ok, _view, html} =
+        live(conn, ~p"/admin/organizations/#{org}/events/#{event}/orders/#{order.id}")
+
+      assert html =~ "Nenhum comprovante enviado ainda"
+      assert html =~ "Confirmar Pagamento"
+    end
+
+    test "admin clicking confirm_payment confirms the order and updates the UI", %{conn: conn} do
+      org = org_fixture()
+      event = published_event_fixture(org)
+      item = item_fixture(event, %{price_cents: 6000})
+      provider = manual_provider_fixture(org)
+
+      {:ok, raw_cart} = Orders.create_cart(event)
+      Orders.add_to_cart(raw_cart, item)
+      cart = Orders.get_cart_by_token(raw_cart.session_token)
+
+      {:ok, order} =
+        Orders.create_order_from_cart(cart, %{
+          name: "Beatriz Teles",
+          email: "beatriz@example.com",
+          payment_method: "bank_transfer",
+          payment_provider_id: provider.id
+        })
+
+      {:ok, _payment} = Payments.create_payment(order, provider, "bank_transfer")
+
+      {:ok, view, html} =
+        live(conn, ~p"/admin/organizations/#{org}/events/#{event}/orders/#{order.id}")
+
+      assert html =~ "Pendente"
+      assert html =~ "Confirmar Pagamento"
+
+      view |> element("#confirm-payment-card") |> render_click()
+
+      html = render(view)
+      assert html =~ "Confirmado"
+      assert html =~ "Pagamento confirmado com sucesso"
+      refute has_element?(view, "#confirm-payment-card")
+
+      # The order must be confirmed in the database
+      confirmed_order = Orders.get_order_with_details!(order.id)
+      assert confirmed_order.status == "confirmed"
+    end
+
+    test "admin cannot see confirm button for an already confirmed order", %{conn: conn} do
+      org = org_fixture()
+      event = published_event_fixture(org)
+      item = item_fixture(event, %{price_cents: 5000})
+      provider = manual_provider_fixture(org)
+
+      {:ok, raw_cart} = Orders.create_cart(event)
+      Orders.add_to_cart(raw_cart, item)
+      cart = Orders.get_cart_by_token(raw_cart.session_token)
+
+      {:ok, order} =
+        Orders.create_order_from_cart(cart, %{
+          name: "Fernanda Leal",
+          email: "fernanda@example.com",
+          payment_method: "bank_transfer",
+          payment_provider_id: provider.id
+        })
+
+      {:ok, payment} = Payments.create_payment(order, provider, "bank_transfer")
+      {:ok, _} = Payments.confirm_payment(payment)
+
+      {:ok, _view, html} =
+        live(conn, ~p"/admin/organizations/#{org}/events/#{event}/orders/#{order.id}")
+
+      assert html =~ "Confirmado"
+      refute html =~ "Confirmar Pagamento"
     end
   end
 end

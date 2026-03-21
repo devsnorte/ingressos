@@ -41,6 +41,16 @@
         </button>
 
         <button
+          :if={@order.status == "pending" && @payment != nil && @payment.status == "pending"}
+          id="confirm-payment-top"
+          phx-click="confirm_payment"
+          data-confirm="Confirmar o pagamento deste pedido? O ingresso será emitido ao participante."
+          class="btn btn-success btn-sm gap-1"
+        >
+          <.icon name="hero-check-circle" class="size-4" /> Confirmar Pagamento
+        </button>
+
+        <button
           :if={@order.status in ["pending", "confirmed"]}
           id="cancel-order-top"
           phx-click="cancel_order"
@@ -243,6 +253,105 @@
       </div>
     </div>
 
+    <%!-- Card de pagamento --%>
+    <div :if={@payment} class="card bg-base-100 border border-base-200 shadow-sm mb-4">
+      <div class="card-body p-6">
+        <div class="flex items-center justify-between gap-4 mb-4 flex-wrap">
+          <h2 class="text-base font-semibold text-base-content flex items-center gap-2">
+            <.icon name="hero-credit-card" class="size-4 text-base-content/40" /> Pagamento
+          </h2>
+          <span class={[
+            "badge badge-sm font-semibold",
+            @payment.status == "pending" && "badge-warning",
+            @payment.status == "confirmed" && "badge-success",
+            @payment.status == "failed" && "badge-error",
+            @payment.status == "refunded" && "badge-info",
+            @payment.status == "cancelled" && "badge-ghost"
+          ]}>
+            {case @payment.status do
+              "pending" -> "Pendente"
+              "confirmed" -> "Confirmado"
+              "failed" -> "Falhou"
+              "refunded" -> "Reembolsado"
+              "cancelled" -> "Cancelado"
+              other -> other
+            end}
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-4">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-base-content/40 mb-1">
+              Método
+            </p>
+            <p class="text-base-content">
+              {case @payment.payment_method do
+                "credit_card" -> "Cartão de Crédito"
+                "debit_card" -> "Cartão de Débito"
+                "boleto" -> "Boleto"
+                "bank_transfer" -> "Transferência Bancária"
+                "pix" -> "Pix"
+                "cash" -> "Dinheiro"
+                other -> other
+              end}
+            </p>
+          </div>
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-base-content/40 mb-1">
+              Referência
+            </p>
+            <p class="font-mono text-xs text-base-content/70 break-all">
+              {@payment.external_ref || "—"}
+            </p>
+          </div>
+        </div>
+
+        <%!-- Customer-submitted transfer proof --%>
+        <div
+          :if={@payment.transfer_note}
+          class="rounded-xl bg-warning/10 border border-warning/30 p-4 mb-4"
+        >
+          <div class="flex items-start gap-3">
+            <.icon name="hero-document-text" class="size-5 text-warning shrink-0 mt-0.5" />
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-base-content mb-1">
+                Comprovante enviado pelo cliente
+              </p>
+              <p class="text-sm text-base-content/80 whitespace-pre-wrap break-words">
+                {@payment.transfer_note}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div
+          :if={
+            !@payment.transfer_note && @payment.payment_method == "bank_transfer" &&
+              @payment.status == "pending"
+          }
+          class="rounded-xl bg-base-200/50 border border-base-200 p-4 mb-4"
+        >
+          <div class="flex items-start gap-3">
+            <.icon name="hero-clock" class="size-5 text-base-content/40 shrink-0 mt-0.5" />
+            <p class="text-sm text-base-content/60">
+              Nenhum comprovante enviado ainda. O cliente pode enviar um comprovante pela página de acompanhamento do pedido.
+            </p>
+          </div>
+        </div>
+
+        <div :if={@order.status == "pending" && @payment.status == "pending"}>
+          <button
+            id="confirm-payment-card"
+            phx-click="confirm_payment"
+            data-confirm="Confirmar o pagamento deste pedido? O ingresso será emitido ao participante."
+            class="btn btn-success btn-sm gap-2"
+          >
+            <.icon name="hero-check-circle" class="size-4" /> Confirmar Pagamento
+          </button>
+        </div>
+      </div>
+    </div>
+
     <%!-- Card de auditoria / linha do tempo --%>
     <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
       <div class="card-body p-6">
@@ -290,6 +399,15 @@
           class="btn btn-outline btn-sm gap-1"
         >
           <.icon name="hero-envelope" class="size-4" /> Reenviar Ingressos
+        </button>
+
+        <button
+          :if={@order.status == "pending" && @payment != nil && @payment.status == "pending"}
+          phx-click="confirm_payment"
+          data-confirm="Confirmar o pagamento deste pedido? O ingresso será emitido ao participante."
+          class="btn btn-success btn-sm gap-1"
+        >
+          <.icon name="hero-check-circle" class="size-4" /> Confirmar Pagamento
         </button>
 
         <button

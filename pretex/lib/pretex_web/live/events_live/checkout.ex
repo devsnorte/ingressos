@@ -448,9 +448,55 @@ defmodule PretexWeb.EventsLive.Checkout do
                 </div>
               </div>
 
+              <%!-- Transfer proof / note --%>
+              <div
+                :if={@payment && @payment.payment_method == "bank_transfer"}
+                class="space-y-3"
+              >
+                <div
+                  :if={@transfer_note_submitted}
+                  class="rounded-xl bg-success/10 border border-success/30 p-4 flex items-start gap-3"
+                >
+                  <.icon name="hero-check-circle" class="size-5 text-success shrink-0 mt-0.5" />
+                  <div class="min-w-0">
+                    <p class="text-sm font-semibold text-success">Comprovante enviado!</p>
+                    <p class="text-sm text-base-content/70 mt-1 whitespace-pre-wrap break-words">
+                      {@transfer_note}
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  :if={!@transfer_note_submitted}
+                  class="rounded-xl border border-base-200 bg-base-200/30 p-4 space-y-3"
+                >
+                  <div>
+                    <p class="text-sm font-semibold text-base-content">
+                      Envie o comprovante da transferência
+                    </p>
+                    <p class="text-xs text-base-content/60 mt-1">
+                      Cole o número da transação, ID do comprovante ou qualquer informação que ajude o organizador a identificar seu pagamento.
+                    </p>
+                  </div>
+                  <form phx-submit="submit_transfer_note" class="space-y-2">
+                    <textarea
+                      id="transfer-note-input"
+                      name="note"
+                      rows="3"
+                      placeholder="Ex: Transferência às 14h32 · Comprovante nº 987654 · Banco do Brasil"
+                      class="textarea textarea-bordered w-full text-sm resize-none"
+                      required
+                    >{@transfer_note}</textarea>
+                    <button type="submit" class="btn btn-primary btn-sm w-full gap-2">
+                      <.icon name="hero-paper-airplane" class="size-4" /> Enviar Comprovante
+                    </button>
+                  </form>
+                </div>
+              </div>
+
               <div class="flex items-center gap-2 text-sm text-base-content/60">
                 <span class="loading loading-spinner loading-xs"></span>
-                Monitorando confirmação automática...
+                Aguardando confirmação do organizador...
               </div>
             </div>
           </div>
@@ -539,6 +585,8 @@ defmodule PretexWeb.EventsLive.Checkout do
       |> assign(:gift_card, nil)
       |> assign(:gift_card_error, nil)
       |> assign(:gift_card_deduction, 0)
+      |> assign(:transfer_note, "")
+      |> assign(:transfer_note_submitted, false)
 
     {:ok, socket}
   end
@@ -777,6 +825,12 @@ defmodule PretexWeb.EventsLive.Checkout do
     name = socket.assigns.attendee_name
     email = socket.assigns.attendee_email
 
+    customer_id =
+      case socket.assigns.current_scope do
+        %{customer: %{id: id}} -> id
+        _ -> nil
+      end
+
     if is_nil(payment_method) do
       {:noreply, put_flash(socket, :error, "Por favor selecione uma forma de pagamento.")}
     else
@@ -785,6 +839,7 @@ defmodule PretexWeb.EventsLive.Checkout do
       attrs = %{
         name: name,
         email: email,
+        customer_id: customer_id,
         payment_method: payment_method,
         payment_provider_id: provider_id && String.to_integer(provider_id),
         voucher_code: socket.assigns.voucher_code,
@@ -947,6 +1002,32 @@ defmodule PretexWeb.EventsLive.Checkout do
      |> assign(:gift_card, nil)
      |> assign(:gift_card_error, nil)
      |> assign(:gift_card_deduction, 0)}
+  end
+
+  def handle_event("submit_transfer_note", %{"note" => note}, socket) do
+    note = String.trim(note)
+
+    if note == "" do
+      {:noreply, put_flash(socket, :error, "Por favor descreva o comprovante antes de enviar.")}
+    else
+      case socket.assigns.payment do
+        nil ->
+          {:noreply, put_flash(socket, :error, "Pagamento não encontrado.")}
+
+        payment ->
+          case Payments.update_payment_transfer_note(payment, note) do
+            {:ok, updated_payment} ->
+              {:noreply,
+               socket
+               |> assign(:payment, updated_payment)
+               |> assign(:transfer_note, note)
+               |> assign(:transfer_note_submitted, true)}
+
+            {:error, _} ->
+              {:noreply, put_flash(socket, :error, "Não foi possível enviar o comprovante.")}
+          end
+      end
+    end
   end
 
   def handle_event("retry_payment", _params, socket) do
