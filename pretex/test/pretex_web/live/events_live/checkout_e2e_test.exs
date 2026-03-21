@@ -495,4 +495,67 @@ defmodule PretexWeb.EventsLive.CheckoutE2ETest do
       refute html =~ "Confirmar Pagamento"
     end
   end
+
+  # ---------------------------------------------------------------------------
+  # Confirmation page status display
+  # ---------------------------------------------------------------------------
+
+  describe "confirmation page status display" do
+    test "pending order shows 'Aguardando Pagamento' hero", %{conn: conn} do
+      org = org_fixture()
+      event = published_event_fixture(org)
+      item = item_fixture(event, %{price_cents: 2000})
+      provider = manual_provider_fixture(org)
+
+      {:ok, raw_cart} = Orders.create_cart(event)
+      Orders.add_to_cart(raw_cart, item)
+      cart = Orders.get_cart_by_token(raw_cart.session_token)
+
+      {:ok, order} =
+        Orders.create_order_from_cart(cart, %{
+          name: "Guest Pendente",
+          email: "pending@example.com",
+          payment_method: "bank_transfer",
+          payment_provider_id: provider.id
+        })
+
+      {:ok, _payment} = Payments.create_payment(order, provider, "bank_transfer")
+
+      {:ok, _view, html} =
+        live(conn, ~p"/events/#{event.slug}/orders/#{order.confirmation_code}")
+
+      assert html =~ "Aguardando Pagamento"
+      refute html =~ "Pedido Confirmado!"
+      assert html =~ order.confirmation_code
+    end
+
+    test "confirmed order shows 'Pedido Confirmado!' hero", %{conn: conn} do
+      org = org_fixture()
+      event = published_event_fixture(org)
+      item = item_fixture(event, %{price_cents: 3000})
+      provider = manual_provider_fixture(org)
+
+      {:ok, raw_cart} = Orders.create_cart(event)
+      Orders.add_to_cart(raw_cart, item)
+      cart = Orders.get_cart_by_token(raw_cart.session_token)
+
+      {:ok, order} =
+        Orders.create_order_from_cart(cart, %{
+          name: "Guest Confirmado",
+          email: "confirmed@example.com",
+          payment_method: "bank_transfer",
+          payment_provider_id: provider.id
+        })
+
+      {:ok, payment} = Payments.create_payment(order, provider, "bank_transfer")
+      {:ok, _} = Payments.confirm_payment(payment)
+
+      {:ok, _view, html} =
+        live(conn, ~p"/events/#{event.slug}/orders/#{order.confirmation_code}")
+
+      assert html =~ "Pedido Confirmado!"
+      refute html =~ "Aguardando Pagamento"
+      assert html =~ order.confirmation_code
+    end
+  end
 end

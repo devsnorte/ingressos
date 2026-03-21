@@ -516,7 +516,7 @@ defmodule PretexWeb.EventsLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/events/#{event.slug}/orders/#{order.confirmation_code}")
 
-      assert html =~ "Pedido Confirmado"
+      assert html =~ "Aguardando Pagamento"
       assert html =~ order.confirmation_code
       assert html =~ "Bob Builder"
       assert html =~ "bob@example.com"

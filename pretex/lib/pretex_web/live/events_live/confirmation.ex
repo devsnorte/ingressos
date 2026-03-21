@@ -8,27 +8,51 @@ defmodule PretexWeb.EventsLive.Confirmation do
     ~H"""
     <.customer_layout current_scope={@current_scope} current_path="" flash={@flash}>
       <div class="mx-auto max-w-2xl">
-        <%!-- Success hero --%>
+        <%!-- Hero — adapts to order status --%>
         <div class="text-center mb-8">
-          <div class="flex justify-center mb-4">
-            <div class="rounded-full bg-success/10 p-5">
-              <.icon name="hero-check-circle" class="size-16 text-success" />
+          <%= if @order.status == "confirmed" do %>
+            <div class="flex justify-center mb-4">
+              <div class="rounded-full bg-success/10 p-5">
+                <.icon name="hero-check-circle" class="size-16 text-success" />
+              </div>
             </div>
-          </div>
-          <h1 class="text-3xl font-bold text-base-content tracking-tight">Pedido Confirmado!</h1>
-          <p class="mt-2 text-base text-base-content/60">
-            Obrigado pela sua compra. Seus ingressos estão prontos.
-          </p>
+            <h1 class="text-3xl font-bold text-base-content tracking-tight">Pedido Confirmado!</h1>
+            <p class="mt-2 text-base text-base-content/60">
+              Obrigado pela sua compra. Seus ingressos estão prontos.
+            </p>
+          <% else %>
+            <div class="flex justify-center mb-4">
+              <div class="rounded-full bg-warning/10 p-5">
+                <.icon name="hero-clock" class="size-16 text-warning" />
+              </div>
+            </div>
+            <h1 class="text-3xl font-bold text-base-content tracking-tight">Aguardando Pagamento</h1>
+            <p class="mt-2 text-base text-base-content/60">
+              Seu pedido foi criado. Assim que o pagamento for confirmado, seus ingressos serão emitidos.
+            </p>
+          <% end %>
         </div>
 
         <%!-- Order details card --%>
         <div class="rounded-2xl border border-base-200 bg-base-100 shadow-sm overflow-hidden mb-6">
           <%!-- Confirmation code banner --%>
-          <div class="bg-success/10 border-b border-success/20 px-6 py-4 text-center">
-            <p class="text-xs font-semibold uppercase tracking-widest text-success/70 mb-1">
-              Código de Confirmação
+          <div class={[
+            "border-b px-6 py-4 text-center",
+            if(@order.status == "confirmed",
+              do: "bg-success/10 border-success/20",
+              else: "bg-warning/10 border-warning/20"
+            )
+          ]}>
+            <p class={[
+              "text-xs font-semibold uppercase tracking-widest mb-1",
+              if(@order.status == "confirmed", do: "text-success/70", else: "text-warning/70")
+            ]}>
+              Código do Pedido
             </p>
-            <p class="text-3xl font-mono font-bold text-success tracking-widest">
+            <p class={[
+              "text-3xl font-mono font-bold tracking-widest",
+              if(@order.status == "confirmed", do: "text-success", else: "text-warning")
+            ]}>
               {@order.confirmation_code}
             </p>
           </div>
@@ -110,7 +134,9 @@ defmodule PretexWeb.EventsLive.Confirmation do
 
             <%!-- Total --%>
             <div class="flex justify-between items-center">
-              <span class="font-bold text-base-content">Total Pago</span>
+              <span class="font-bold text-base-content">
+                {if @order.status == "confirmed", do: "Total Pago", else: "Total"}
+              </span>
               <span class="text-xl font-bold text-primary">{format_price(@order.total_cents)}</span>
             </div>
 
