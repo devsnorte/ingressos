@@ -61,6 +61,11 @@ defmodule PretexWeb.Components.Dashboard do
         label: "Pagamentos",
         path: "/admin/organizations/#{org_id}/payments"
       },
+      %{
+        icon: "hero-identification",
+        label: "Associações",
+        path: "/admin/organizations/#{org_id}/memberships"
+      },
       %{icon: "hero-chart-bar", label: "Relatórios", path: "#", disabled: true},
       %{icon: "hero-cog-6-tooth", label: "Configurações", path: "#", disabled: true}
     ]
@@ -346,10 +351,20 @@ defmodule PretexWeb.Components.Dashboard do
               href="/account/orders"
               class={[
                 "hover:text-primary transition-colors",
-                String.starts_with?(@current_path, "/account") && "text-primary font-medium"
+                @current_path == "/account/orders" && "text-primary font-medium"
               ]}
             >
-              Minha Conta
+              Meus Pedidos
+            </a>
+            <a
+              :if={@current_scope && @current_scope.customer}
+              href="/account/memberships"
+              class={[
+                "hover:text-primary transition-colors",
+                @current_path == "/account/memberships" && "text-primary font-medium"
+              ]}
+            >
+              Associações
             </a>
           </div>
 
