@@ -188,6 +188,11 @@ defmodule PretexWeb.Router do
       live("/organizations/:org_id/gift-cards/new", GiftCardLive.Index, :new)
       live("/organizations/:org_id/gift-cards/:id/edit", GiftCardLive.Index, :edit)
       live("/organizations/:org_id/gift-cards/:id/top-up", GiftCardLive.Index, :top_up)
+
+      live("/organizations/:org_id/memberships", MembershipLive.Index, :index)
+      live("/organizations/:org_id/memberships/new", MembershipLive.Index, :new)
+      live("/organizations/:org_id/memberships/:id/edit", MembershipLive.Index, :edit)
+      live("/organizations/:org_id/memberships/:id/grant", MembershipLive.Index, :grant)
     end
   end
 
@@ -216,6 +221,7 @@ defmodule PretexWeb.Router do
       live("/customers/settings", CustomerLive.Settings, :edit)
       live("/customers/settings/confirm-email/:token", CustomerLive.Settings, :confirm_email)
       live("/account/orders", CustomerLive.Orders, :index)
+      live("/account/memberships", CustomerLive.Memberships, :index)
       live("/account/privacy", CustomerLive.Privacy, :index)
     end
 

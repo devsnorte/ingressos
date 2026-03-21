@@ -3,6 +3,7 @@ defmodule PretexWeb.EventsLive.Show do
 
   alias Pretex.Events
   alias Pretex.Catalog
+  alias Pretex.Memberships
   alias Pretex.Orders
 
   @impl true
@@ -78,7 +79,15 @@ defmodule PretexWeb.EventsLive.Show do
                 <div class="flex-1 min-w-0">
                   <div class="flex items-start justify-between gap-3">
                     <div>
-                      <h3 class="font-semibold text-base-content">{item.name}</h3>
+                      <div class="flex items-center gap-2">
+                        <h3 class="font-semibold text-base-content">{item.name}</h3>
+                        <span
+                          :if={MapSet.member?(@restricted_item_ids, item.id)}
+                          class="badge badge-warning badge-xs font-semibold"
+                        >
+                          Membros
+                        </span>
+                      </div>
                       <p
                         :if={item.description}
                         class="mt-1 text-sm text-base-content/60 leading-relaxed"
@@ -214,11 +223,15 @@ defmodule PretexWeb.EventsLive.Show do
 
     items_by_category = group_items_by_category(items, categories)
 
+    item_ids = Enum.map(items, & &1.id)
+    restricted_ids = Memberships.restricted_item_ids(item_ids)
+
     socket =
       socket
       |> assign(:page_title, event.name)
       |> assign(:event, event)
       |> assign(:items_by_category, items_by_category)
+      |> assign(:restricted_item_ids, restricted_ids)
       |> assign(:cart, nil)
       |> assign(:cart_total, 0)
 
@@ -279,23 +292,33 @@ defmodule PretexWeb.EventsLive.Show do
       if is_nil(cart) do
         {:noreply, put_flash(socket, :error, "Could not create cart.")}
       else
-        case Orders.add_to_cart(cart, item) do
-          {:ok, _cart_item} ->
-            updated_cart = Orders.get_cart_by_token(cart.session_token)
+        with :ok <- check_membership_access(socket, item) do
+          case Orders.add_to_cart(cart, item) do
+            {:ok, _cart_item} ->
+              updated_cart = Orders.get_cart_by_token(cart.session_token)
 
-            socket =
-              socket
-              |> assign(:cart, updated_cart)
-              |> assign(:cart_total, Orders.cart_total(updated_cart))
-              |> push_patch(
-                to: ~p"/events/#{event.slug}?cart_token=#{cart.session_token}",
-                replace: true
-              )
+              socket =
+                socket
+                |> assign(:cart, updated_cart)
+                |> assign(:cart_total, Orders.cart_total(updated_cart))
+                |> push_patch(
+                  to: ~p"/events/#{event.slug}?cart_token=#{cart.session_token}",
+                  replace: true
+                )
 
-            {:noreply, socket}
+              {:noreply, socket}
 
-          {:error, _changeset} ->
-            {:noreply, put_flash(socket, :error, "Could not add item to cart.")}
+            {:error, _changeset} ->
+              {:noreply, put_flash(socket, :error, "Could not add item to cart.")}
+          end
+        else
+          {:error, :membership_required} ->
+            {:noreply,
+             put_flash(
+               socket,
+               :error,
+               "Este item é exclusivo para membros. Adquira uma associação para ter acesso."
+             )}
         end
       end
     end
@@ -333,6 +356,31 @@ defmodule PretexWeb.EventsLive.Show do
   # ---------------------------------------------------------------------------
   # Helpers
   # ---------------------------------------------------------------------------
+
+  defp check_membership_access(socket, item) do
+    restricted_ids = socket.assigns.restricted_item_ids
+
+    if MapSet.member?(restricted_ids, item.id) do
+      customer = socket.assigns.current_scope && socket.assigns.current_scope.customer
+
+      cond do
+        is_nil(customer) ->
+          {:error, :membership_required}
+
+        Memberships.customer_has_item_access?(
+          customer.id,
+          socket.assigns.event.organization_id,
+          item.id
+        ) ->
+          :ok
+
+        true ->
+          {:error, :membership_required}
+      end
+    else
+      :ok
+    end
+  end
 
   defp group_items_by_category(items, categories) do
     category_map = Map.new(categories, &{&1.id, &1})

@@ -45,6 +45,14 @@ defmodule Pretex.Memberships do
     Repo.delete(mt)
   end
 
+  def change_membership_type(%MembershipType{} = mt, attrs \\ %{}) do
+    MembershipType.changeset(mt, attrs)
+  end
+
+  def change_benefit(%MembershipBenefit{} = b, attrs \\ %{}) do
+    MembershipBenefit.changeset(b, attrs)
+  end
+
   # ---------------------------------------------------------------------------
   # MembershipBenefit CRUD
   # ---------------------------------------------------------------------------
@@ -104,6 +112,48 @@ defmodule Pretex.Memberships do
     |> where([m], m.customer_id == ^customer.id and m.status == "active")
     |> preload(membership_type: :benefits)
     |> Repo.all()
+  end
+
+  @doc """
+  Returns true if any membership benefit with item_access targets the given item_id.
+  Used to determine whether an item requires membership to purchase.
+  """
+  def item_requires_membership?(item_id) do
+    MembershipBenefit
+    |> where([b], b.benefit_type == "item_access" and b.value == ^item_id)
+    |> Repo.exists?()
+  end
+
+  @doc """
+  Returns a MapSet of item IDs (from the given list) that require membership to access.
+  Avoids N+1 queries when rendering a list of items.
+  """
+  def restricted_item_ids(item_ids) when is_list(item_ids) do
+    MembershipBenefit
+    |> where([b], b.benefit_type == "item_access" and b.value in ^item_ids)
+    |> select([b], b.value)
+    |> Repo.all()
+    |> MapSet.new()
+  end
+
+  @doc """
+  Returns true if the customer has an active (non-expired) membership within the org
+  that grants item_access to the given item_id.
+  """
+  def customer_has_item_access?(customer_id, org_id, item_id) do
+    now = DateTime.utc_now(:second)
+
+    Membership
+    |> where([m],
+      m.customer_id == ^customer_id and
+        m.organization_id == ^org_id and
+        m.status == "active" and
+        m.expires_at > ^now
+    )
+    |> join(:inner, [m], mt in assoc(m, :membership_type))
+    |> join(:inner, [m, mt], b in assoc(mt, :benefits))
+    |> where([m, mt, b], b.benefit_type == "item_access" and b.value == ^item_id)
+    |> Repo.exists?()
   end
 
   def active_memberships_for_checkout(customer, %{id: org_id}) do
