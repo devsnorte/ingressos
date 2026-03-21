@@ -420,7 +420,7 @@ defmodule PretexWeb.EventsLiveTest do
       assert has_element?(view, "#pay-pix")
     end
 
-    test "place_order navigates away after checkout", %{conn: conn} do
+    test "place_order navigates to payment step after checkout", %{conn: conn} do
       org = org_fixture()
       event = published_event_fixture(org)
       item = item_fixture(event, %{price_cents: 1000})
@@ -436,25 +436,62 @@ defmodule PretexWeb.EventsLiveTest do
       |> form("#checkout-info-form", %{checkout: %{name: "Alice Smith", email: "alice@test.com"}})
       |> render_submit()
 
+      # Drain the push_patch to the summary step before proceeding
+      assert_patch(view)
+
       # Step 2: select a payment method available from the manual provider
       view
       |> element("#pay-bank_transfer")
       |> render_click(%{"method" => "bank_transfer", "provider-id" => to_string(provider.id)})
 
-      # Step 3: place order — the LiveView creates the order and navigates
+      # Step 3: place order — the LiveView creates the order and patch-navigates
+      # to the payment step (async flow for manual/bank_transfer provider)
       view
       |> element("#place-order-btn")
       |> render_click()
 
-      # The LiveView navigates after placing an order. Depending on whether a
-      # payment provider is reachable (stubs may behave differently in test),
-      # it can go to:
-      #   - /events/:slug/checkout/payment  (push_patch for async payment step)
-      #   - /events/:slug/orders/:code      (direct confirmation for free/instant)
-      #   - /events/:slug                   (fallback on payment error)
-      # Any navigation away from the current page is the correct behaviour here.
-      {path, _flash} = assert_redirect(view)
-      assert is_binary(path)
+      path = assert_patch(view)
+      assert path =~ "/checkout/payment"
+    end
+
+    test "an expired cart is recoverable — page load extends the TTL", %{conn: conn} do
+      org = org_fixture()
+      event = published_event_fixture(org)
+      item = item_fixture(event, %{price_cents: 1000})
+      provider = payment_provider_fixture(org, "manual")
+      cart = cart_with_item_fixture(event, item)
+
+      # Backdate the cart so it looks already expired before the page opens
+      expired_at =
+        DateTime.utc_now() |> DateTime.add(-60, :second) |> DateTime.truncate(:second)
+
+      Pretex.Repo.update!(Ecto.Changeset.change(cart, expires_at: expired_at))
+
+      # Opening the checkout page calls extend_cart_expiry, sliding the window
+      # 15 minutes into the future regardless of where it was before.
+      {:ok, view, _html} =
+        live(conn, ~p"/events/#{event.slug}/checkout?cart_token=#{cart.session_token}")
+
+      refute render(view) =~ "expirou"
+
+      view
+      |> form("#checkout-info-form", %{checkout: %{name: "Alice Smith", email: "alice@test.com"}})
+      |> render_submit()
+
+      # Drain the push_patch to the summary step before proceeding
+      assert_patch(view)
+
+      view
+      |> element("#pay-bank_transfer")
+      |> render_click(%{"method" => "bank_transfer", "provider-id" => to_string(provider.id)})
+
+      view
+      |> element("#place-order-btn")
+      |> render_click()
+
+      # The order must succeed and patch to the payment step — NOT show a "cart expired" error.
+      path = assert_patch(view)
+      assert path =~ "/checkout/payment"
     end
   end
 
