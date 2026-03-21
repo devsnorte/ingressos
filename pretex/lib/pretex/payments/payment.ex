@@ -29,6 +29,8 @@ defmodule Pretex.Payments.Payment do
     field(:settled_at, :utc_datetime)
     # Human-readable failure reason, if any
     field(:failure_reason, :string)
+    # Customer-submitted proof/note for manual bank transfer payments
+    field(:transfer_note, :string)
 
     has_many(:refunds, Pretex.Payments.Refund)
 
@@ -65,6 +67,12 @@ defmodule Pretex.Payments.Payment do
       :qr_code_image_base64,
       :expires_at
     ])
+  end
+
+  def note_changeset(payment, attrs) do
+    payment
+    |> cast(attrs, [:transfer_note])
+    |> validate_length(:transfer_note, max: 1000)
   end
 
   def confirm_changeset(payment, attrs \\ %{}) do

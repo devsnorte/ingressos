@@ -232,6 +232,15 @@ defmodule Pretex.Payments do
     |> Repo.one()
   end
 
+  @doc """
+  Updates the transfer_note on a payment (customer-submitted proof for bank transfer).
+  """
+  def update_payment_transfer_note(%Payment{} = payment, note) do
+    payment
+    |> Payment.note_changeset(%{transfer_note: note})
+    |> Repo.update()
+  end
+
   def list_pending_async_payments do
     Payment
     |> where([p], p.status == "pending" and p.flow == "async")

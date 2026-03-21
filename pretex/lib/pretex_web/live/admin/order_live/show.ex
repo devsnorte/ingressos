@@ -4,18 +4,21 @@ defmodule PretexWeb.Admin.OrderLive.Show do
   alias Pretex.Events
   alias Pretex.Orders
   alias Pretex.Organizations
+  alias Pretex.Payments
 
   @impl true
   def mount(%{"org_id" => org_id, "event_id" => event_id, "id" => id}, _session, socket) do
     org = Organizations.get_organization!(org_id)
     event = Events.get_event!(event_id)
     order = Orders.get_order_with_details!(id)
+    payment = Payments.get_payment_for_order(order)
 
     socket =
       socket
       |> assign(:org, org)
       |> assign(:event, event)
       |> assign(:order, order)
+      |> assign(:payment, payment)
       |> assign(:page_title, "Pedido ##{order.confirmation_code}")
 
     {:ok, socket}
@@ -83,6 +86,29 @@ defmodule PretexWeb.Admin.OrderLive.Show do
 
       {:error, _reason} ->
         {:noreply, put_flash(socket, :error, "Não foi possível cancelar o pedido.")}
+    end
+  end
+
+  @impl true
+  def handle_event("confirm_payment", _params, socket) do
+    case socket.assigns.payment do
+      nil ->
+        {:noreply, put_flash(socket, :error, "Nenhum pagamento encontrado para este pedido.")}
+
+      payment ->
+        case Payments.confirm_payment(payment) do
+          {:ok, confirmed_payment} ->
+            updated_order = Orders.get_order_with_details!(socket.assigns.order.id)
+
+            {:noreply,
+             socket
+             |> assign(:order, updated_order)
+             |> assign(:payment, confirmed_payment)
+             |> put_flash(:info, "Pagamento confirmado com sucesso.")}
+
+          {:error, _reason} ->
+            {:noreply, put_flash(socket, :error, "Não foi possível confirmar o pagamento.")}
+        end
     end
   end
 end
