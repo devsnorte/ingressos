@@ -8,6 +8,8 @@ defmodule Pretex.Orders.CartSession do
     field(:session_token, :string)
     field(:expires_at, :utc_datetime)
     field(:status, :string, default: "active")
+    field(:attendee_name, :string)
+    field(:attendee_email, :string)
 
     belongs_to(:event, Pretex.Events.Event)
     has_many(:cart_items, Pretex.Orders.CartItem)
@@ -23,5 +25,10 @@ defmodule Pretex.Orders.CartSession do
     |> validate_required([:session_token, :expires_at])
     |> validate_inclusion(:status, @statuses)
     |> unique_constraint(:session_token)
+  end
+
+  def attendee_changeset(cart, attrs) do
+    cart
+    |> cast(attrs, [:attendee_name, :attendee_email])
   end
 end

@@ -328,6 +328,34 @@ defmodule PretexWeb.EventsLiveTest do
       assert html =~ "Resumo do Pedido"
       assert html =~ "Pagamento"
     end
+
+    test "attendee name and email are restored after a page refresh", %{conn: conn} do
+      org = org_fixture()
+      event = published_event_fixture(org)
+      item = item_fixture(event)
+      cart = cart_with_item_fixture(event, item)
+
+      # Fill in the info form and submit — this persists name/email to the cart
+      {:ok, view, _html} =
+        live(conn, ~p"/events/#{event.slug}/checkout?cart_token=#{cart.session_token}")
+
+      view
+      |> form("#checkout-info-form", %{
+        checkout: %{name: "Maria Silva", email: "maria@example.com"}
+      })
+      |> render_submit()
+
+      # Simulate a full page refresh by mounting a brand-new LiveView process
+      # for the same URL (summary step). The attendee info must come from the DB.
+      {:ok, _view2, html} =
+        live(
+          conn,
+          ~p"/events/#{event.slug}/checkout/summary?cart_token=#{cart.session_token}"
+        )
+
+      assert html =~ "Maria Silva"
+      assert html =~ "maria@example.com"
+    end
   end
 
   describe "Checkout - summary step" do

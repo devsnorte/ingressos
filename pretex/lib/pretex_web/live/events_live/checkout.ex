@@ -589,6 +589,9 @@ defmodule PretexWeb.EventsLive.Checkout do
                   _ -> {nil, nil}
                 end
 
+              name = cart.attendee_name || ""
+              email = cart.attendee_email || ""
+
               socket
               |> assign(:cart, cart)
               |> assign(:cart_total, subtotal)
@@ -597,6 +600,9 @@ defmodule PretexWeb.EventsLive.Checkout do
               |> assign(:fee_total, fee_total)
               |> assign(:discount_preview, discount_preview)
               |> assign(:applied_discount_rule_name, discount_rule_name)
+              |> assign(:attendee_name, name)
+              |> assign(:attendee_email, email)
+              |> assign(:form, to_form(%{"name" => name, "email" => email}, as: :checkout))
             else
               socket
               |> put_flash(:error, "Seu carrinho expirou. Por favor comece novamente.")
@@ -694,6 +700,7 @@ defmodule PretexWeb.EventsLive.Checkout do
 
       true ->
         cart = socket.assigns.cart
+        Orders.update_cart_attendee_info(cart, name, email)
 
         socket =
           socket
