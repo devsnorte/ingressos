@@ -5,6 +5,7 @@ defmodule Pretex.CheckIns do
 
   alias Pretex.Repo
   alias Pretex.CheckIns.CheckIn
+  alias Pretex.CheckIns.{CheckInList, CheckInListItem, Gate, GateCheckInList}
   alias Pretex.Orders.{Order, OrderItem}
 
   def checkin_topic(event_id), do: "checkins:event:#{event_id}"
@@ -143,6 +144,164 @@ defmodule Pretex.CheckIns do
       c.order_item_id == ^order_item_id and c.event_id == ^event_id and is_nil(c.annulled_at)
     )
     |> Repo.one()
+  end
+
+  # ---------------------------------------------------------------------------
+  # Check-in Lists CRUD
+  # ---------------------------------------------------------------------------
+
+  def create_check_in_list(event_id, attrs) do
+    item_ids = Map.get(attrs, :item_ids) || Map.get(attrs, "item_ids") || []
+
+    if item_ids == [] do
+      {:error, :no_items}
+    else
+      Repo.transaction(fn ->
+        changeset =
+          %CheckInList{}
+          |> CheckInList.changeset(attrs)
+          |> Ecto.Changeset.put_change(:event_id, event_id)
+
+        list =
+          case Repo.insert(changeset) do
+            {:ok, l} -> l
+            {:error, cs} -> Repo.rollback(cs)
+          end
+
+        Enum.each(item_ids, fn item_id ->
+          %CheckInListItem{}
+          |> Ecto.Changeset.change(%{check_in_list_id: list.id, item_id: item_id})
+          |> Repo.insert!()
+        end)
+
+        list
+      end)
+    end
+  end
+
+  def update_check_in_list(list_id, attrs) do
+    list = Repo.get!(CheckInList, list_id)
+    item_ids = Map.get(attrs, :item_ids) || Map.get(attrs, "item_ids")
+
+    Repo.transaction(fn ->
+      updated =
+        case list |> CheckInList.changeset(attrs) |> Repo.update() do
+          {:ok, l} -> l
+          {:error, cs} -> Repo.rollback(cs)
+        end
+
+      if item_ids do
+        CheckInListItem
+        |> where([cli], cli.check_in_list_id == ^list.id)
+        |> Repo.delete_all()
+
+        Enum.each(item_ids, fn item_id ->
+          %CheckInListItem{}
+          |> Ecto.Changeset.change(%{check_in_list_id: list.id, item_id: item_id})
+          |> Repo.insert!()
+        end)
+      end
+
+      updated
+    end)
+  end
+
+  def delete_check_in_list(list_id) do
+    list = Repo.get!(CheckInList, list_id)
+    Repo.delete(list)
+  end
+
+  def list_check_in_lists(event_id) do
+    CheckInList
+    |> where([l], l.event_id == ^event_id)
+    |> preload(:check_in_list_items)
+    |> order_by([l], asc: l.name)
+    |> Repo.all()
+  end
+
+  def get_check_in_list!(id) do
+    CheckInList
+    |> preload(:check_in_list_items)
+    |> Repo.get!(id)
+  end
+
+  # ---------------------------------------------------------------------------
+  # Gates CRUD
+  # ---------------------------------------------------------------------------
+
+  def create_gate(event_id, attrs) do
+    list_ids = Map.get(attrs, :check_in_list_ids) || Map.get(attrs, "check_in_list_ids") || []
+
+    if list_ids == [] do
+      {:error, :no_check_in_lists}
+    else
+      Repo.transaction(fn ->
+        changeset =
+          %Gate{}
+          |> Gate.changeset(attrs)
+          |> Ecto.Changeset.put_change(:event_id, event_id)
+
+        gate =
+          case Repo.insert(changeset) do
+            {:ok, g} -> g
+            {:error, cs} -> Repo.rollback(cs)
+          end
+
+        Enum.each(list_ids, fn list_id ->
+          %GateCheckInList{}
+          |> Ecto.Changeset.change(%{gate_id: gate.id, check_in_list_id: list_id})
+          |> Repo.insert!()
+        end)
+
+        gate
+      end)
+    end
+  end
+
+  def update_gate(gate_id, attrs) do
+    gate = Repo.get!(Gate, gate_id)
+    list_ids = Map.get(attrs, :check_in_list_ids) || Map.get(attrs, "check_in_list_ids")
+
+    Repo.transaction(fn ->
+      updated =
+        case gate |> Gate.changeset(attrs) |> Repo.update() do
+          {:ok, g} -> g
+          {:error, cs} -> Repo.rollback(cs)
+        end
+
+      if list_ids do
+        GateCheckInList
+        |> where([gcl], gcl.gate_id == ^gate.id)
+        |> Repo.delete_all()
+
+        Enum.each(list_ids, fn list_id ->
+          %GateCheckInList{}
+          |> Ecto.Changeset.change(%{gate_id: gate.id, check_in_list_id: list_id})
+          |> Repo.insert!()
+        end)
+      end
+
+      updated
+    end)
+  end
+
+  def delete_gate(gate_id) do
+    gate = Repo.get!(Gate, gate_id)
+    Repo.delete(gate)
+  end
+
+  def list_gates(event_id) do
+    Gate
+    |> where([g], g.event_id == ^event_id)
+    |> preload(:check_in_lists)
+    |> order_by([g], asc: g.name)
+    |> Repo.all()
+  end
+
+  def get_gate!(id) do
+    Gate
+    |> preload(check_in_lists: :check_in_list_items)
+    |> Repo.get!(id)
   end
 
   defp broadcast_check_in_update(event_id) do
