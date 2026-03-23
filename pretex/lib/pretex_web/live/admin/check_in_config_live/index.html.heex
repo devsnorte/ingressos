@@ -1,0 +1,293 @@
+<.dashboard_layout
+  current_path={~p"/admin/organizations/#{@org}/events/#{@event}/check-in/config"}
+  org={@org}
+  flash={@flash}
+>
+  <div class="mx-auto max-w-4xl px-4 py-8">
+    <%!-- Back link --%>
+    <div class="mb-6 flex items-center justify-between">
+      <.link
+        navigate={~p"/admin/organizations/#{@org}/events/#{@event}/check-in"}
+        class="inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-primary transition-colors"
+      >
+        <.icon name="hero-arrow-left" class="size-4" /> Voltar ao Check-in
+      </.link>
+    </div>
+
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-base-content">Configuração de Check-in</h1>
+      <p class="text-sm text-base-content/60 mt-1">{@event.name}</p>
+    </div>
+
+    <div class="space-y-8">
+      <%!-- Check-in Lists Section --%>
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-base-content flex items-center gap-2">
+            <.icon name="hero-clipboard-document-list" class="size-5 text-base-content/40" />
+            Listas de Check-in
+          </h2>
+          <.link
+            patch={~p"/admin/organizations/#{@org}/events/#{@event}/check-in/config/lists/new"}
+            class="btn btn-primary btn-sm gap-1"
+          >
+            <.icon name="hero-plus" class="size-4" /> Nova Lista
+          </.link>
+        </div>
+
+        <div class="card bg-base-100 border border-base-200 shadow-sm">
+          <div :if={@check_in_lists == []} class="p-8 text-center">
+            <.icon
+              name="hero-clipboard-document-list"
+              class="size-12 text-base-content/20 mx-auto mb-3"
+            />
+            <p class="text-sm text-base-content/50">Nenhuma lista de check-in configurada.</p>
+            <p class="text-xs text-base-content/40 mt-1">
+              Crie listas para controlar quais ingressos são válidos em cada ponto de entrada.
+            </p>
+          </div>
+
+          <div
+            :for={list <- @check_in_lists}
+            class="flex items-center justify-between gap-4 px-5 py-4 border-b border-base-200 last:border-b-0"
+          >
+            <div class="min-w-0 flex-1">
+              <p class="font-medium text-sm text-base-content">{list.name}</p>
+              <p class="text-xs text-base-content/50 mt-0.5">
+                {length(list.check_in_list_items)} item(s)
+                <%= if list.starts_at_time do %>
+                  · {Calendar.strftime(list.starts_at_time, "%H:%M")} — {Calendar.strftime(list.ends_at_time, "%H:%M")}
+                <% end %>
+              </p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <.link
+                patch={~p"/admin/organizations/#{@org}/events/#{@event}/check-in/config/lists/#{list.id}/edit"}
+                class="btn btn-ghost btn-xs"
+              >
+                Editar
+              </.link>
+              <button
+                phx-click="delete_list"
+                phx-value-id={list.id}
+                data-confirm="Excluir esta lista? Esta ação não pode ser desfeita."
+                class="btn btn-ghost btn-xs text-error"
+              >
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%!-- Gates Section --%>
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-base-content flex items-center gap-2">
+            <.icon name="hero-building-storefront" class="size-5 text-base-content/40" />
+            Portões
+          </h2>
+          <.link
+            patch={~p"/admin/organizations/#{@org}/events/#{@event}/check-in/config/gates/new"}
+            class="btn btn-primary btn-sm gap-1"
+          >
+            <.icon name="hero-plus" class="size-4" /> Novo Portão
+          </.link>
+        </div>
+
+        <div class="card bg-base-100 border border-base-200 shadow-sm">
+          <div :if={@gates == []} class="p-8 text-center">
+            <.icon
+              name="hero-building-storefront"
+              class="size-12 text-base-content/20 mx-auto mb-3"
+            />
+            <p class="text-sm text-base-content/50">Nenhum portão configurado.</p>
+            <p class="text-xs text-base-content/40 mt-1">
+              Portões representam pontos de entrada físicos vinculados a listas de check-in.
+            </p>
+          </div>
+
+          <div
+            :for={gate <- @gates}
+            class="flex items-center justify-between gap-4 px-5 py-4 border-b border-base-200 last:border-b-0"
+          >
+            <div class="min-w-0 flex-1">
+              <p class="font-medium text-sm text-base-content">{gate.name}</p>
+              <p class="text-xs text-base-content/50 mt-0.5">
+                {Enum.map_join(gate.check_in_lists, ", ", & &1.name)}
+              </p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <.link
+                patch={~p"/admin/organizations/#{@org}/events/#{@event}/check-in/config/gates/#{gate.id}/edit"}
+                class="btn btn-ghost btn-xs"
+              >
+                Editar
+              </.link>
+              <button
+                phx-click="delete_gate"
+                phx-value-id={gate.id}
+                data-confirm="Excluir este portão? Esta ação não pode ser desfeita."
+                class="btn btn-ghost btn-xs text-error"
+              >
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%!-- Modal: New/Edit List --%>
+  <div :if={@live_action in [:new_list, :edit_list]}>
+    <div class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" phx-click="close_modal"></div>
+
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        class="w-full max-w-lg bg-base-100 rounded-2xl shadow-2xl border border-base-200 overflow-hidden max-h-[90vh] flex flex-col"
+        phx-click-away="close_modal"
+      >
+        <div class="flex items-center justify-between px-6 py-4 border-b border-base-200 shrink-0">
+          <h2 class="text-lg font-bold text-base-content">
+            {if @live_action == :new_list, do: "Nova Lista de Check-in", else: "Editar Lista"}
+          </h2>
+          <button type="button" phx-click="close_modal" class="btn btn-ghost btn-sm btn-circle">
+            <.icon name="hero-x-mark" class="size-5" />
+          </button>
+        </div>
+
+        <div class="px-6 py-5 overflow-y-auto">
+          <.form for={@form} id="list-form" phx-submit="save_list" class="space-y-4">
+            <.input
+              field={@form[:name]}
+              type="text"
+              label="Nome"
+              placeholder="Ex: Entrada VIP"
+              required
+            />
+
+            <div class="grid grid-cols-2 gap-4">
+              <.input
+                field={@form[:starts_at_time]}
+                type="time"
+                label="Horário de início (opcional)"
+              />
+              <.input
+                field={@form[:ends_at_time]}
+                type="time"
+                label="Horário de fim (opcional)"
+              />
+            </div>
+
+            <div>
+              <label class="label"><span class="label-text font-medium">Itens incluídos</span></label>
+              <div class="space-y-2 mt-1 max-h-48 overflow-y-auto">
+                <label
+                  :for={item <- @catalog_items}
+                  class="flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer hover:bg-base-200/50"
+                >
+                  <input
+                    type="checkbox"
+                    class="checkbox checkbox-sm checkbox-primary"
+                    checked={item.id in @selected_item_ids}
+                    phx-click="toggle_item"
+                    phx-value-id={item.id}
+                  />
+                  <span class="text-sm">{item.name}</span>
+                  <span class="text-xs text-base-content/40 ml-auto">{item.item_type}</span>
+                </label>
+              </div>
+              <p :if={@catalog_items == []} class="text-xs text-base-content/40 mt-2">
+                Nenhum item no catálogo deste evento.
+              </p>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+              <button type="button" phx-click="close_modal" class="btn btn-ghost btn-sm">
+                Cancelar
+              </button>
+              <.button type="submit" variant="primary" phx-disable-with="Salvando...">
+                {if @live_action == :new_list, do: "Criar Lista", else: "Salvar"}
+              </.button>
+            </div>
+          </.form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%!-- Modal: New/Edit Gate --%>
+  <div :if={@live_action in [:new_gate, :edit_gate]}>
+    <div class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" phx-click="close_modal"></div>
+
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        class="w-full max-w-lg bg-base-100 rounded-2xl shadow-2xl border border-base-200 overflow-hidden max-h-[90vh] flex flex-col"
+        phx-click-away="close_modal"
+      >
+        <div class="flex items-center justify-between px-6 py-4 border-b border-base-200 shrink-0">
+          <h2 class="text-lg font-bold text-base-content">
+            {if @live_action == :new_gate, do: "Novo Portão", else: "Editar Portão"}
+          </h2>
+          <button type="button" phx-click="close_modal" class="btn btn-ghost btn-sm btn-circle">
+            <.icon name="hero-x-mark" class="size-5" />
+          </button>
+        </div>
+
+        <div class="px-6 py-5 overflow-y-auto">
+          <.form for={@form} id="gate-form" phx-submit="save_gate" class="space-y-4">
+            <.input
+              field={@form[:name]}
+              type="text"
+              label="Nome"
+              placeholder="Ex: Porta Norte"
+              required
+            />
+
+            <div>
+              <label class="label">
+                <span class="label-text font-medium">Listas de Check-in</span>
+              </label>
+              <div class="space-y-2 mt-1">
+                <label
+                  :for={list <- @check_in_lists}
+                  class="flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer hover:bg-base-200/50"
+                >
+                  <input
+                    type="checkbox"
+                    class="checkbox checkbox-sm checkbox-primary"
+                    checked={list.id in @selected_list_ids}
+                    phx-click="toggle_list"
+                    phx-value-id={list.id}
+                  />
+                  <span class="text-sm">{list.name}</span>
+                </label>
+              </div>
+              <p :if={@check_in_lists == []} class="text-xs text-base-content/40 mt-2">
+                Crie uma lista de check-in primeiro.
+              </p>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+              <button type="button" phx-click="close_modal" class="btn btn-ghost btn-sm">
+                Cancelar
+              </button>
+              <.button type="submit" variant="primary" phx-disable-with="Salvando...">
+                {if @live_action == :new_gate, do: "Criar Portão", else: "Salvar"}
+              </.button>
+            </div>
+          </.form>
+        </div>
+      </div>
+    </div>
+  </div>
+</.dashboard_layout>

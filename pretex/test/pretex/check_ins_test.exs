@@ -185,4 +185,143 @@ defmodule Pretex.CheckInsTest do
       assert CheckIns.get_check_in_count(event.id) == 0
     end
   end
+
+  describe "check_in_by_ticket_code/4 with check_in_list" do
+    test "checks in on a specific list" do
+      org = org_fixture()
+      event = published_event_fixture(org)
+      order = confirmed_order_fixture(event)
+      operator = user_fixture()
+      [order_item | _] = order.order_items
+
+      {:ok, list} =
+        CheckIns.create_check_in_list(event.id, %{
+          name: "Main Hall",
+          item_ids: [order_item.item_id]
+        })
+
+      assert {:ok, check_in} =
+               CheckIns.check_in_by_ticket_code(
+                 event.id,
+                 order_item.ticket_code,
+                 operator.id,
+                 list.id
+               )
+
+      assert check_in.check_in_list_id == list.id
+    end
+
+    test "same ticket can be checked in on different lists independently" do
+      org = org_fixture()
+      event = published_event_fixture(org)
+      order = confirmed_order_fixture(event)
+      operator = user_fixture()
+      [order_item | _] = order.order_items
+
+      {:ok, list1} =
+        CheckIns.create_check_in_list(event.id, %{name: "Hall A", item_ids: [order_item.item_id]})
+
+      {:ok, list2} =
+        CheckIns.create_check_in_list(event.id, %{name: "Hall B", item_ids: [order_item.item_id]})
+
+      assert {:ok, _} =
+               CheckIns.check_in_by_ticket_code(
+                 event.id,
+                 order_item.ticket_code,
+                 operator.id,
+                 list1.id
+               )
+
+      assert {:ok, _} =
+               CheckIns.check_in_by_ticket_code(
+                 event.id,
+                 order_item.ticket_code,
+                 operator.id,
+                 list2.id
+               )
+    end
+
+    test "returns :not_on_list when ticket item is not in check-in list" do
+      org = org_fixture()
+      event = published_event_fixture(org)
+      order = confirmed_order_fixture(event)
+      operator = user_fixture()
+      [order_item | _] = order.order_items
+      other_item = item_fixture(event, %{name: "VIP Only"})
+
+      {:ok, list} =
+        CheckIns.create_check_in_list(event.id, %{name: "VIP", item_ids: [other_item.id]})
+
+      assert {:error, :not_on_list} =
+               CheckIns.check_in_by_ticket_code(
+                 event.id,
+                 order_item.ticket_code,
+                 operator.id,
+                 list.id
+               )
+    end
+
+    test "returns :list_not_active when outside time window" do
+      org = org_fixture()
+      event = published_event_fixture(org)
+      order = confirmed_order_fixture(event)
+      operator = user_fixture()
+      [order_item | _] = order.order_items
+
+      {:ok, list} =
+        CheckIns.create_check_in_list(event.id, %{
+          name: "Morning",
+          item_ids: [order_item.item_id],
+          starts_at_time: ~T[01:00:00],
+          ends_at_time: ~T[01:01:00]
+        })
+
+      assert {:error, :list_not_active} =
+               CheckIns.check_in_by_ticket_code(
+                 event.id,
+                 order_item.ticket_code,
+                 operator.id,
+                 list.id
+               )
+    end
+  end
+
+  describe "check_in_at_gate/4" do
+    test "checks in via gate on matching list" do
+      org = org_fixture()
+      event = published_event_fixture(org)
+      order = confirmed_order_fixture(event)
+      operator = user_fixture()
+      [order_item | _] = order.order_items
+
+      {:ok, list} =
+        CheckIns.create_check_in_list(event.id, %{name: "General", item_ids: [order_item.item_id]})
+
+      {:ok, gate} =
+        CheckIns.create_gate(event.id, %{name: "North Door", check_in_list_ids: [list.id]})
+
+      assert {:ok, check_in} =
+               CheckIns.check_in_at_gate(event.id, order_item.ticket_code, operator.id, gate.id)
+
+      assert check_in.check_in_list_id == list.id
+    end
+
+    test "returns :not_on_list when ticket doesn't match any gate list" do
+      org = org_fixture()
+      event = published_event_fixture(org)
+      order = confirmed_order_fixture(event)
+      operator = user_fixture()
+      [order_item | _] = order.order_items
+      other_item = item_fixture(event, %{name: "VIP Only"})
+
+      {:ok, list} =
+        CheckIns.create_check_in_list(event.id, %{name: "VIP", item_ids: [other_item.id]})
+
+      {:ok, gate} =
+        CheckIns.create_gate(event.id, %{name: "VIP Door", check_in_list_ids: [list.id]})
+
+      assert {:error, :not_on_list} =
+               CheckIns.check_in_at_gate(event.id, order_item.ticket_code, operator.id, gate.id)
+    end
+  end
 end

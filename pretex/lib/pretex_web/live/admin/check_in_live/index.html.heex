@@ -5,12 +5,18 @@
 >
   <div class="mx-auto max-w-2xl px-4 py-8">
     <%!-- Back link --%>
-    <div class="mb-6">
+    <div class="mb-6 flex items-center justify-between">
       <.link
         navigate={~p"/admin/organizations/#{@org}/events/#{@event}"}
         class="inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-primary transition-colors"
       >
         <.icon name="hero-arrow-left" class="size-4" /> Voltar ao Evento
+      </.link>
+      <.link
+        navigate={~p"/admin/organizations/#{@org}/events/#{@event}/check-in/config"}
+        class="inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-primary transition-colors"
+      >
+        <.icon name="hero-cog-6-tooth" class="size-4" /> Configurar
       </.link>
     </div>
 
@@ -25,6 +31,21 @@
           <div class="stat-value text-primary">{@checked_in_count}</div>
           <div class="stat-desc">de {@total_tickets || 0} ingressos confirmados</div>
         </div>
+      </div>
+
+      <%!-- Gate selector --%>
+      <div :if={@gates != []} class="flex items-center gap-3">
+        <label class="text-sm font-medium text-base-content/60">Portão:</label>
+        <select
+          class="select select-bordered select-sm"
+          phx-change="select_gate"
+          name="gate_id"
+        >
+          <option value="">Todos (evento inteiro)</option>
+          <option :for={gate <- @gates} value={gate.id} selected={gate.id == @selected_gate_id}>
+            {gate.name}
+          </option>
+        </select>
       </div>
 
       <%!-- Scan result feedback --%>
