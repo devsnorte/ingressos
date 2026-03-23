@@ -19,6 +19,7 @@ defmodule Pretex.Events.Event do
     field(:accent_color, :string, default: "#f43f5e")
 
     field(:is_series, :boolean, default: false)
+    field(:multi_entry, :boolean, default: false)
 
     belongs_to(:organization, Pretex.Organizations.Organization)
     has_many(:sub_events, Pretex.Events.SubEvent, foreign_key: :parent_event_id)
@@ -38,7 +39,8 @@ defmodule Pretex.Events.Event do
       :banner_url,
       :primary_color,
       :accent_color,
-      :is_series
+      :is_series,
+      :multi_entry
     ])
     |> validate_required([:name, :starts_at, :ends_at])
     |> validate_length(:name, min: 2, max: 255)
