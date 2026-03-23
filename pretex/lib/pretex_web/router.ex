@@ -41,6 +41,14 @@ defmodule PretexWeb.Router do
     post("/payments/:token", PaymentWebhookController, :receive)
   end
 
+  # -- Device provisioning API (no auth — init token is the auth) ---------------
+
+  scope "/api", PretexWeb do
+    pipe_through(:api)
+
+    post("/devices/provision", DeviceController, :provision)
+  end
+
   # -- Staff auth (magic link) -----------------------------------------------
 
   scope "/staff", PretexWeb do
