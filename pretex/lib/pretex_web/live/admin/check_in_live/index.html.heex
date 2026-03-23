@@ -1,0 +1,143 @@
+<.dashboard_layout
+  current_path={~p"/admin/organizations/#{@org}/events/#{@event}/check-in"}
+  org={@org}
+  flash={@flash}
+>
+  <div class="mx-auto max-w-2xl px-4 py-8">
+    <%!-- Back link --%>
+    <div class="mb-6">
+      <.link
+        navigate={~p"/admin/organizations/#{@org}/events/#{@event}"}
+        class="inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-primary transition-colors"
+      >
+        <.icon name="hero-arrow-left" class="size-4" /> Voltar ao Evento
+      </.link>
+    </div>
+
+    <div class="space-y-6">
+      <%!-- Stats bar --%>
+      <div class="stats shadow w-full bg-base-100">
+        <div class="stat">
+          <div class="stat-figure text-primary">
+            <.icon name="hero-qr-code" class="size-8" />
+          </div>
+          <div class="stat-title">Check-ins</div>
+          <div class="stat-value text-primary">{@checked_in_count}</div>
+          <div class="stat-desc">de {@total_tickets || 0} ingressos confirmados</div>
+        </div>
+      </div>
+
+      <%!-- Scan result feedback --%>
+      <div
+        :if={@scan_result}
+        class={[
+          "alert shadow-lg",
+          if(@scan_result.status == :success, do: "alert-success", else: "alert-error")
+        ]}
+      >
+        <div class="flex items-center gap-3">
+          <.icon
+            name={if(@scan_result.status == :success, do: "hero-check-circle", else: "hero-x-circle")}
+            class="size-8 shrink-0"
+          />
+          <div>
+            <h3 class="font-bold text-lg">{@scan_result.message}</h3>
+            <p :if={@scan_result.attendee_name} class="text-sm">
+              {@scan_result.attendee_name}
+              <span :if={@scan_result[:item_name]} class="opacity-70">
+                — {@scan_result.item_name}
+              </span>
+            </p>
+          </div>
+        </div>
+        <button class="btn btn-sm btn-ghost" phx-click="clear_scan_result">
+          <.icon name="hero-x-mark" class="size-4" />
+        </button>
+      </div>
+
+      <%!-- QR Scanner --%>
+      <div class="card bg-base-100 shadow-sm border border-base-200">
+        <div class="card-body">
+          <h2 class="card-title text-base">
+            <.icon name="hero-qr-code" class="size-5" /> Scanner QR Code
+          </h2>
+          <div id="qr-scanner-container" phx-hook="QRScanner">
+            <div id="qr-reader" data-qr-reader class="w-full rounded-lg overflow-hidden"></div>
+            <div class="mt-3 flex gap-2">
+              <button data-start-scan class="btn btn-primary btn-sm gap-2">
+                <.icon name="hero-camera" class="size-4" /> Iniciar Câmera
+              </button>
+              <button data-stop-scan class="btn btn-ghost btn-sm gap-2 hidden">
+                <.icon name="hero-stop" class="size-4" /> Parar Câmera
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%!-- Manual search --%>
+      <div class="card bg-base-100 shadow-sm border border-base-200">
+        <div class="card-body">
+          <h2 class="card-title text-base">
+            <.icon name="hero-magnifying-glass" class="size-5" /> Buscar Participante
+          </h2>
+          <form phx-change="search" phx-submit="search">
+            <input
+              type="text"
+              name="query"
+              value={@search_query}
+              placeholder="Nome ou email do participante..."
+              class="input input-bordered w-full"
+              phx-debounce="300"
+            />
+          </form>
+
+          <div :if={@search_results != []} class="mt-4 space-y-2">
+            <div
+              :for={attendee <- @search_results}
+              class="flex items-center justify-between rounded-lg bg-base-200/50 px-4 py-3"
+            >
+              <div class="min-w-0 flex-1">
+                <p class="font-medium text-sm">{attendee.attendee_name || "Sem nome"}</p>
+                <p class="text-xs text-base-content/50">{attendee.attendee_email}</p>
+                <p class="text-xs text-base-content/50">
+                  {attendee.item_name} — <span class="font-mono">{attendee.ticket_code}</span>
+                </p>
+              </div>
+              <div>
+                <%= if attendee.checked_in do %>
+                  <div class="flex items-center gap-2">
+                    <span class="badge badge-success badge-sm">Checked in</span>
+                    <button
+                      phx-click="annul_check_in"
+                      phx-value-check-in-id={attendee.check_in_id}
+                      class="btn btn-ghost btn-xs text-error"
+                      data-confirm={"Anular check-in de #{attendee.attendee_name}?"}
+                    >
+                      Anular
+                    </button>
+                  </div>
+                <% else %>
+                  <button
+                    phx-click="check_in_attendee"
+                    phx-value-ticket-code={attendee.ticket_code}
+                    class="btn btn-primary btn-sm"
+                  >
+                    Check-in
+                  </button>
+                <% end %>
+              </div>
+            </div>
+          </div>
+
+          <p
+            :if={@search_query != "" && String.length(@search_query) >= 2 && @search_results == []}
+            class="mt-4 text-sm text-base-content/50 text-center"
+          >
+            Nenhum participante encontrado.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</.dashboard_layout>

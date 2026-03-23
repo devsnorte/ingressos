@@ -384,6 +384,32 @@
       </div>
     </div>
 
+    <%!-- Card de check-in --%>
+    <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
+      <div class="card-body p-6">
+        <div class="flex items-center justify-between gap-4 mb-4">
+          <h2 class="text-base font-semibold text-base-content flex items-center gap-2">
+            <.icon name="hero-qr-code" class="size-4 text-base-content/40" /> Check-in
+          </h2>
+          <.link
+            navigate={~p"/admin/organizations/#{@org}/events/#{@event}/check-in"}
+            class="btn btn-ghost btn-xs gap-1"
+          >
+            <.icon name="hero-arrow-right" class="size-3" /> Abrir Check-in
+          </.link>
+        </div>
+        <div class="flex items-start gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm">
+          <.icon
+            name="hero-information-circle"
+            class="size-5 shrink-0 text-base-content/40 mt-0.5"
+          />
+          <p class="text-base-content/70">
+            Escaneie QR codes ou busque participantes para validar ingressos na entrada do evento.
+          </p>
+        </div>
+      </div>
+    </div>
+
     <%!-- Card de pedidos --%>
     <div class="card bg-base-100 border border-base-200 shadow-sm mb-4">
       <div class="card-body p-6">
