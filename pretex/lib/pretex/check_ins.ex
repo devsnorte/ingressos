@@ -10,7 +10,7 @@ defmodule Pretex.CheckIns do
 
   def checkin_topic(event_id), do: "checkins:event:#{event_id}"
 
-  def check_in_by_ticket_code(event_id, ticket_code, operator_id) do
+  def check_in_by_ticket_code(event_id, ticket_code, operator_id, check_in_list_id \\ nil) do
     order_item =
       OrderItem
       |> join(:inner, [oi], o in Order, on: oi.order_id == o.id)
@@ -23,37 +23,128 @@ defmodule Pretex.CheckIns do
         {:error, :invalid_ticket}
 
       %{order: %{event_id: ^event_id}} = oi ->
-        validate_and_check_in(oi, event_id, operator_id)
+        validate_and_check_in(oi, event_id, operator_id, check_in_list_id)
 
       _wrong_event ->
         {:error, :wrong_event}
     end
   end
 
-  defp validate_and_check_in(%{order: %{status: status}}, _event_id, _operator_id)
+  def check_in_at_gate(event_id, ticket_code, operator_id, gate_id) do
+    gate = get_gate!(gate_id)
+
+    order_item =
+      OrderItem
+      |> join(:inner, [oi], o in Order, on: oi.order_id == o.id)
+      |> where([oi, _o], oi.ticket_code == ^ticket_code)
+      |> preload([oi, o], order: o)
+      |> Repo.one()
+
+    case order_item do
+      nil ->
+        {:error, :invalid_ticket}
+
+      %{order: %{event_id: ^event_id}} = oi ->
+        matching_list =
+          Enum.find(gate.check_in_lists, fn list ->
+            item_on_list?(oi.item_id, list.id) and list_active?(list)
+          end)
+
+        case matching_list do
+          nil -> {:error, :not_on_list}
+          list -> validate_and_check_in(oi, event_id, operator_id, list.id)
+        end
+
+      _wrong_event ->
+        {:error, :wrong_event}
+    end
+  end
+
+  defp validate_and_check_in(%{order: %{status: status}}, _event_id, _operator_id, _list_id)
        when status != "confirmed" do
     {:error, :ticket_cancelled}
   end
 
-  defp validate_and_check_in(order_item, event_id, operator_id) do
-    existing =
-      CheckIn
-      |> where(
-        [c],
-        c.order_item_id == ^order_item.id and c.event_id == ^event_id and is_nil(c.annulled_at)
-      )
-      |> Repo.one()
+  defp validate_and_check_in(order_item, event_id, operator_id, check_in_list_id) do
+    with :ok <- validate_on_list(order_item, check_in_list_id),
+         :ok <- validate_list_active(check_in_list_id) do
+      existing =
+        CheckIn
+        |> where(
+          [c],
+          c.order_item_id == ^order_item.id and c.event_id == ^event_id and is_nil(c.annulled_at)
+        )
+        |> then(fn q ->
+          if check_in_list_id do
+            where(q, [c], c.check_in_list_id == ^check_in_list_id)
+          else
+            where(q, [c], is_nil(c.check_in_list_id))
+          end
+        end)
+        |> Repo.one()
 
-    case existing do
-      nil ->
-        insert_check_in(order_item.id, event_id, operator_id)
+      case existing do
+        nil ->
+          insert_check_in(order_item.id, event_id, operator_id, check_in_list_id)
 
-      _already ->
-        {:error, :already_checked_in}
+        _already ->
+          {:error, :already_checked_in}
+      end
     end
   end
 
-  defp insert_check_in(order_item_id, event_id, operator_id) do
+  defp validate_on_list(_order_item, nil), do: :ok
+
+  defp validate_on_list(order_item, check_in_list_id) do
+    exists =
+      CheckInListItem
+      |> where(
+        [cli],
+        cli.check_in_list_id == ^check_in_list_id and cli.item_id == ^order_item.item_id
+      )
+      |> Repo.exists?()
+
+    if exists, do: :ok, else: {:error, :not_on_list}
+  end
+
+  defp validate_list_active(nil), do: :ok
+
+  defp validate_list_active(check_in_list_id) do
+    list = Repo.get!(CheckInList, check_in_list_id)
+
+    cond do
+      is_nil(list.starts_at_time) and is_nil(list.ends_at_time) ->
+        :ok
+
+      true ->
+        now = Time.utc_now()
+        starts = list.starts_at_time || ~T[00:00:00]
+        ends = list.ends_at_time || ~T[23:59:59]
+
+        if Time.compare(now, starts) != :lt and Time.compare(now, ends) != :gt do
+          :ok
+        else
+          {:error, :list_not_active}
+        end
+    end
+  end
+
+  defp item_on_list?(item_id, check_in_list_id) do
+    CheckInListItem
+    |> where([cli], cli.check_in_list_id == ^check_in_list_id and cli.item_id == ^item_id)
+    |> Repo.exists?()
+  end
+
+  defp list_active?(%{starts_at_time: nil, ends_at_time: nil}), do: true
+
+  defp list_active?(list) do
+    now = Time.utc_now()
+    starts = list.starts_at_time || ~T[00:00:00]
+    ends = list.ends_at_time || ~T[23:59:59]
+    Time.compare(now, starts) != :lt and Time.compare(now, ends) != :gt
+  end
+
+  defp insert_check_in(order_item_id, event_id, operator_id, check_in_list_id) do
     now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
 
     result =
@@ -62,6 +153,11 @@ defmodule Pretex.CheckIns do
       |> Ecto.Changeset.put_change(:order_item_id, order_item_id)
       |> Ecto.Changeset.put_change(:event_id, event_id)
       |> Ecto.Changeset.put_change(:checked_in_by_id, operator_id)
+      |> then(fn cs ->
+        if check_in_list_id,
+          do: Ecto.Changeset.put_change(cs, :check_in_list_id, check_in_list_id),
+          else: cs
+      end)
       |> Repo.insert()
 
     case result do
