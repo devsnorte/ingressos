@@ -115,8 +115,9 @@ defmodule Pretex.CheckIns do
     |> join(:inner, [oi], o in Order, on: oi.order_id == o.id)
     |> where([oi, o], o.event_id == ^event_id and o.status == "confirmed")
     |> where(
-      [oi, _o],
-      ilike(oi.attendee_name, ^term) or ilike(oi.attendee_email, ^term)
+      [oi, o],
+      ilike(oi.attendee_name, ^term) or ilike(oi.attendee_email, ^term) or
+        ilike(o.name, ^term) or ilike(o.email, ^term)
     )
     |> preload([oi, o], order: o, item: [])
     |> Repo.all()

@@ -151,7 +151,10 @@ defmodule Pretex.CheckInsTest do
 
       results = CheckIns.search_attendees(event.id, "Jane")
       assert length(results) > 0
-      assert hd(results).attendee_name =~ "Jane"
+      result = hd(results)
+      # Match found via order_item.attendee_name or order.name
+      name = result.attendee_name || result.order.name
+      assert name =~ "Jane"
     end
 
     test "returns empty list when no match" do
