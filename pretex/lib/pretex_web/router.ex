@@ -168,6 +168,36 @@ defmodule PretexWeb.Router do
 
       live("/organizations/:org_id/events/:event_id/check-in", CheckInLive.Index, :index)
 
+      live(
+        "/organizations/:org_id/events/:event_id/check-in/config",
+        CheckInConfigLive.Index,
+        :index
+      )
+
+      live(
+        "/organizations/:org_id/events/:event_id/check-in/config/lists/new",
+        CheckInConfigLive.Index,
+        :new_list
+      )
+
+      live(
+        "/organizations/:org_id/events/:event_id/check-in/config/lists/:list_id/edit",
+        CheckInConfigLive.Index,
+        :edit_list
+      )
+
+      live(
+        "/organizations/:org_id/events/:event_id/check-in/config/gates/new",
+        CheckInConfigLive.Index,
+        :new_gate
+      )
+
+      live(
+        "/organizations/:org_id/events/:event_id/check-in/config/gates/:gate_id/edit",
+        CheckInConfigLive.Index,
+        :edit_gate
+      )
+
       live("/organizations/:org_id/events/:event_id/fees", FeeLive.Index, :index)
       live("/organizations/:org_id/events/:event_id/fees/new", FeeLive.Index, :new)
       live("/organizations/:org_id/events/:event_id/fees/:id/edit", FeeLive.Index, :edit)
