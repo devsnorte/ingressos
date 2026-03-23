@@ -120,6 +120,12 @@ defmodule PretexWeb.EventsLive.Confirmation do
                     <p :if={order_item.ticket_code} class="text-xs font-mono text-primary/70 mt-1">
                       # {order_item.ticket_code}
                     </p>
+                    <div
+                      :if={order_item.ticket_code && @order.status == "confirmed"}
+                      class="mt-3 flex justify-center"
+                    >
+                      {ticket_qr_svg(order_item.ticket_code) |> Phoenix.HTML.raw()}
+                    </div>
                   </div>
                   <div class="shrink-0 text-right">
                     <span class="font-semibold text-base-content text-sm">
@@ -211,5 +217,11 @@ defmodule PretexWeb.EventsLive.Confirmation do
     dollars = div(cents, 100)
     cents_part = rem(cents, 100)
     "R$ #{dollars},#{String.pad_leading(Integer.to_string(cents_part), 2, "0")}"
+  end
+
+  defp ticket_qr_svg(ticket_code) do
+    ticket_code
+    |> EQRCode.encode()
+    |> EQRCode.svg(width: 160)
   end
 end
