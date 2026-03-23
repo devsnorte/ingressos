@@ -16,6 +16,7 @@ defmodule PretexWeb.Admin.CheckInLive.Index do
 
     checked_in_count = CheckIns.get_check_in_count(event.id)
     total_tickets = CheckIns.get_total_tickets(event.id)
+    gates = CheckIns.list_gates(event.id)
 
     socket =
       socket
@@ -26,17 +27,36 @@ defmodule PretexWeb.Admin.CheckInLive.Index do
       |> assign(:scan_result, nil)
       |> assign(:search_query, "")
       |> assign(:search_results, [])
+      |> assign(:gates, gates)
+      |> assign(:selected_gate_id, nil)
       |> assign(:page_title, "Check-in — #{event.name}")
 
     {:ok, socket}
   end
 
   @impl true
+  def handle_event("select_gate", %{"gate_id" => gate_id}, socket) do
+    selected = if gate_id == "", do: nil, else: String.to_integer(gate_id)
+
+    {:noreply,
+     socket
+     |> assign(:selected_gate_id, selected)
+     |> assign(:search_query, "")
+     |> assign(:search_results, [])}
+  end
+
+  @impl true
   def handle_event("scan", %{"code" => code}, socket) do
     event = socket.assigns.event
     operator_id = socket.assigns.current_user.id
+    gate_id = socket.assigns.selected_gate_id
 
-    result = CheckIns.check_in_by_ticket_code(event.id, code, operator_id)
+    result =
+      if gate_id do
+        CheckIns.check_in_at_gate(event.id, code, operator_id, gate_id)
+      else
+        CheckIns.check_in_by_ticket_code(event.id, code, operator_id)
+      end
 
     scan_result =
       case result do
@@ -63,6 +83,20 @@ defmodule PretexWeb.Admin.CheckInLive.Index do
 
         {:error, :already_checked_in} ->
           %{status: :error, message: "Já foi feito check-in", attendee_name: nil}
+
+        {:error, :not_on_list} ->
+          %{
+            status: :error,
+            message: "Ingresso não válido para este ponto de entrada",
+            attendee_name: nil
+          }
+
+        {:error, :list_not_active} ->
+          %{
+            status: :error,
+            message: "Lista de check-in fora do horário ativo",
+            attendee_name: nil
+          }
       end
 
     socket =
@@ -108,8 +142,16 @@ defmodule PretexWeb.Admin.CheckInLive.Index do
   def handle_event("check_in_attendee", %{"ticket-code" => code}, socket) do
     event = socket.assigns.event
     operator_id = socket.assigns.current_user.id
+    gate_id = socket.assigns.selected_gate_id
 
-    case CheckIns.check_in_by_ticket_code(event.id, code, operator_id) do
+    result =
+      if gate_id do
+        CheckIns.check_in_at_gate(event.id, code, operator_id, gate_id)
+      else
+        CheckIns.check_in_by_ticket_code(event.id, code, operator_id)
+      end
+
+    case result do
       {:ok, _} ->
         results = refresh_search(socket)
 
@@ -124,6 +166,8 @@ defmodule PretexWeb.Admin.CheckInLive.Index do
           case reason do
             :already_checked_in -> "Já foi feito check-in"
             :ticket_cancelled -> "Ingresso cancelado"
+            :not_on_list -> "Ingresso não válido para este ponto de entrada"
+            :list_not_active -> "Lista fora do horário ativo"
             _ -> "Erro ao fazer check-in"
           end
 

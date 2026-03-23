@@ -391,12 +391,20 @@
           <h2 class="text-base font-semibold text-base-content flex items-center gap-2">
             <.icon name="hero-qr-code" class="size-4 text-base-content/40" /> Check-in
           </h2>
-          <.link
-            navigate={~p"/admin/organizations/#{@org}/events/#{@event}/check-in"}
-            class="btn btn-ghost btn-xs gap-1"
-          >
-            <.icon name="hero-arrow-right" class="size-3" /> Abrir Check-in
-          </.link>
+          <div class="flex items-center gap-2">
+            <.link
+              navigate={~p"/admin/organizations/#{@org}/events/#{@event}/check-in/config"}
+              class="btn btn-ghost btn-xs gap-1"
+            >
+              <.icon name="hero-cog-6-tooth" class="size-3" /> Configurar
+            </.link>
+            <.link
+              navigate={~p"/admin/organizations/#{@org}/events/#{@event}/check-in"}
+              class="btn btn-ghost btn-xs gap-1"
+            >
+              <.icon name="hero-arrow-right" class="size-3" /> Abrir Check-in
+            </.link>
+          </div>
         </div>
         <div class="flex items-start gap-3 rounded-lg bg-base-200 border border-base-300 p-4 text-sm">
           <.icon
