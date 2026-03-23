@@ -10,6 +10,7 @@ defmodule Pretex.CheckIns.CheckIn do
     belongs_to(:event, Pretex.Events.Event)
     belongs_to(:checked_in_by, Pretex.Accounts.User, foreign_key: :checked_in_by_id)
     belongs_to(:annulled_by, Pretex.Accounts.User, foreign_key: :annulled_by_id)
+    belongs_to(:check_in_list, Pretex.CheckIns.CheckInList)
 
     timestamps(type: :utc_datetime)
   end
