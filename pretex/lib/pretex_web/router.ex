@@ -203,6 +203,8 @@ defmodule PretexWeb.Router do
       live("/organizations/:org_id/memberships/new", MembershipLive.Index, :new)
       live("/organizations/:org_id/memberships/:id/edit", MembershipLive.Index, :edit)
       live("/organizations/:org_id/memberships/:id/grant", MembershipLive.Index, :grant)
+
+      live("/organizations/:org_id/devices", DeviceLive.Index, :index)
     end
   end
 
