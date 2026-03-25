@@ -41,6 +41,14 @@ defmodule PretexWeb.Router do
     post("/payments/:token", PaymentWebhookController, :receive)
   end
 
+  # -- Device provisioning API (no auth — init token is the auth) ---------------
+
+  scope "/api", PretexWeb do
+    pipe_through(:api)
+
+    post("/devices/provision", DeviceController, :provision)
+  end
+
   # -- Staff auth (magic link) -----------------------------------------------
 
   scope "/staff", PretexWeb do
@@ -195,6 +203,8 @@ defmodule PretexWeb.Router do
       live("/organizations/:org_id/memberships/new", MembershipLive.Index, :new)
       live("/organizations/:org_id/memberships/:id/edit", MembershipLive.Index, :edit)
       live("/organizations/:org_id/memberships/:id/grant", MembershipLive.Index, :grant)
+
+      live("/organizations/:org_id/devices", DeviceLive.Index, :index)
     end
   end
 

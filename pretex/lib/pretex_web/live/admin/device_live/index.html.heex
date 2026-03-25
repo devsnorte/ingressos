@@ -1,0 +1,91 @@
+<.dashboard_layout
+  current_path={~p"/admin/organizations/#{@org}/devices"}
+  org={@org}
+  flash={@flash}
+>
+  <div class="mx-auto max-w-4xl px-4 py-8">
+    <div class="mb-6 flex items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-bold text-base-content">Dispositivos</h1>
+        <p class="text-sm text-base-content/60 mt-1">{@org.name}</p>
+      </div>
+      <button phx-click="generate_token" class="btn btn-primary btn-sm gap-1">
+        <.icon name="hero-plus" class="size-4" /> Gerar Token
+      </button>
+    </div>
+
+    <%!-- Generated token display --%>
+    <div
+      :if={@generated_token}
+      class="mb-6 rounded-2xl border-2 border-primary/30 bg-primary/5 p-6 text-center"
+    >
+      <p class="text-xs font-semibold uppercase tracking-widest text-primary/70 mb-2">
+        Token de Inicialização
+      </p>
+      <p class="text-4xl font-mono font-bold tracking-[0.3em] text-primary mb-3">
+        {@generated_token}
+      </p>
+      <p class="text-sm text-base-content/60 mb-4">
+        Compartilhe este código com o voluntário. Ele expira em 24 horas e só pode ser usado uma vez.
+      </p>
+      <button phx-click="dismiss_token" class="btn btn-ghost btn-sm">
+        <.icon name="hero-x-mark" class="size-4" /> Fechar
+      </button>
+    </div>
+
+    <%!-- Devices table --%>
+    <div class="card bg-base-100 border border-base-200 shadow-sm">
+      <div :if={@devices == []} class="p-12 text-center">
+        <.icon name="hero-device-phone-mobile" class="size-12 text-base-content/20 mx-auto mb-3" />
+        <p class="text-sm text-base-content/50">Nenhum dispositivo provisionado.</p>
+        <p class="text-xs text-base-content/40 mt-1">
+          Gere um token de inicialização e compartilhe com um voluntário para provisionar um dispositivo.
+        </p>
+      </div>
+
+      <div
+        :for={device <- @devices}
+        class="flex items-center justify-between gap-4 px-5 py-4 border-b border-base-200 last:border-b-0"
+      >
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+          <div class={[
+            "w-2.5 h-2.5 rounded-full shrink-0",
+            if(device.status == "active", do: "bg-success", else: "bg-error")
+          ]}>
+          </div>
+          <div class="min-w-0">
+            <p class="font-medium text-sm text-base-content truncate">{device.name}</p>
+            <p class="text-xs text-base-content/50">
+              Provisionado por {device.provisioned_by.name} ·
+              {Calendar.strftime(device.provisioned_at, "%d/%m/%Y %H:%M")}
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-4 shrink-0">
+          <div class="text-right">
+            <p class="text-xs text-base-content/50">Última atividade</p>
+            <p class="text-sm text-base-content/70">{time_ago(device.last_seen_at)}</p>
+          </div>
+
+          <span class={[
+            "badge badge-sm",
+            if(device.status == "active", do: "badge-success", else: "badge-error")
+          ]}>
+            {if device.status == "active", do: "Ativo", else: "Revogado"}
+          </span>
+
+          <button
+            :if={device.status == "active"}
+            phx-click="revoke_device"
+            phx-value-id={device.id}
+            data-confirm={"Revogar acesso de \"#{device.name}\"? O dispositivo não poderá mais fazer check-in."}
+            class="btn btn-ghost btn-xs text-error"
+          >
+            Revogar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</.dashboard_layout>

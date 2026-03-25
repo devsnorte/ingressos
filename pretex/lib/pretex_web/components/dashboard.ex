@@ -66,6 +66,11 @@ defmodule PretexWeb.Components.Dashboard do
         label: "Associações",
         path: "/admin/organizations/#{org_id}/memberships"
       },
+      %{
+        icon: "hero-device-phone-mobile",
+        label: "Dispositivos",
+        path: "/admin/organizations/#{org_id}/devices"
+      },
       %{icon: "hero-chart-bar", label: "Relatórios", path: "#", disabled: true},
       %{icon: "hero-cog-6-tooth", label: "Configurações", path: "#", disabled: true}
     ]
