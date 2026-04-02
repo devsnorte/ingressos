@@ -33,6 +33,8 @@ defmodule Pretex.Sync do
   end
 
   def process_upload(device_id, results) do
+    allowed_event_ids = MapSet.new(assigned_event_ids(device_id))
+
     summary =
       Enum.reduce(
         results,
@@ -40,11 +42,15 @@ defmodule Pretex.Sync do
         fn entry, acc ->
           acc = %{acc | processed: acc.processed + 1}
 
-          case process_single_checkin(device_id, entry) do
-            :inserted -> %{acc | inserted: acc.inserted + 1}
-            :conflict_resolved -> %{acc | conflicts_resolved: acc.conflicts_resolved + 1}
-            :skipped -> %{acc | skipped: acc.skipped + 1}
-            :error -> %{acc | errors: acc.errors + 1}
+          if entry.event_id not in allowed_event_ids do
+            %{acc | errors: acc.errors + 1}
+          else
+            case process_single_checkin(device_id, entry) do
+              :inserted -> %{acc | inserted: acc.inserted + 1}
+              :conflict_resolved -> %{acc | conflicts_resolved: acc.conflicts_resolved + 1}
+              :skipped -> %{acc | skipped: acc.skipped + 1}
+              :error -> %{acc | errors: acc.errors + 1}
+            end
           end
         end
       )

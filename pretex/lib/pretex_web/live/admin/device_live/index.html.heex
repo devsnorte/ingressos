@@ -105,7 +105,7 @@
             </button>
           </span>
 
-          <form phx-submit="assign_event" class="inline-flex items-center">
+          <form phx-submit="assign_event" class="inline-flex items-center gap-1">
             <input type="hidden" name="device_id" value={device.id} />
             <select
               name="event_id"
@@ -119,6 +119,9 @@
                 {event.name}
               </option>
             </select>
+            <button type="submit" class="btn btn-xs btn-ghost btn-circle text-primary">
+              <.icon name="hero-plus" class="size-3" />
+            </button>
           </form>
         </div>
       </div>
