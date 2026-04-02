@@ -8,11 +8,13 @@ defmodule PretexWeb.Admin.DeviceLive.Index do
   def mount(%{"org_id" => org_id}, _session, socket) do
     org = Organizations.get_organization!(org_id)
     devices = Devices.list_devices(org.id)
+    events = Devices.list_org_events(org.id)
 
     socket =
       socket
       |> assign(:org, org)
       |> assign(:devices, devices)
+      |> assign(:events, events)
       |> assign(:generated_token, nil)
       |> assign(:page_title, "Dispositivos — #{org.name}")
 
@@ -52,6 +54,37 @@ defmodule PretexWeb.Admin.DeviceLive.Index do
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Erro ao revogar dispositivo.")}
     end
+  end
+
+  @impl true
+  def handle_event(
+        "assign_event",
+        %{"device_id" => device_id_str, "event_id" => event_id_str},
+        socket
+      ) do
+    device_id = String.to_integer(device_id_str)
+    event_id = String.to_integer(event_id_str)
+
+    case Devices.assign_device_to_event(device_id, event_id) do
+      {:ok, _} ->
+        {:noreply, assign(socket, :devices, Devices.list_devices(socket.assigns.org.id))}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Dispositivo já atribuído a este evento.")}
+    end
+  end
+
+  @impl true
+  def handle_event(
+        "unassign_event",
+        %{"device_id" => device_id_str, "event_id" => event_id_str},
+        socket
+      ) do
+    device_id = String.to_integer(device_id_str)
+    event_id = String.to_integer(event_id_str)
+
+    Devices.unassign_device_from_event(device_id, event_id)
+    {:noreply, assign(socket, :devices, Devices.list_devices(socket.assigns.org.id))}
   end
 
   defp time_ago(nil), do: "Nunca"

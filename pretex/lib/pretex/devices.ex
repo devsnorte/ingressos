@@ -79,7 +79,7 @@ defmodule Pretex.Devices do
     Device
     |> where([d], d.organization_id == ^organization_id)
     |> order_by([d], desc: d.provisioned_at)
-    |> preload(:provisioned_by)
+    |> preload([:provisioned_by, device_assignments: :event])
     |> Repo.all()
   end
 
@@ -127,6 +127,13 @@ defmodule Pretex.Devices do
     DeviceAssignment
     |> where([a], a.device_id == ^device_id)
     |> preload(:event)
+    |> Repo.all()
+  end
+
+  def list_org_events(organization_id) do
+    Pretex.Events.Event
+    |> where([e], e.organization_id == ^organization_id)
+    |> order_by([e], desc: e.starts_at)
     |> Repo.all()
   end
 
