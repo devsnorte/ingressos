@@ -19,6 +19,11 @@ defmodule PretexWeb.Router do
     plug(:accepts, ["json"])
   end
 
+  pipeline :device_api do
+    plug :accepts, ["json"]
+    plug PretexWeb.Plugs.DeviceAuth
+  end
+
   pipeline :require_customer_no_2fa do
     plug(:require_authenticated_customer_no_2fa)
   end
@@ -47,6 +52,15 @@ defmodule PretexWeb.Router do
     pipe_through(:api)
 
     post("/devices/provision", DeviceController, :provision)
+  end
+
+  # -- Device sync API (requires device token auth) ----------------------------
+
+  scope "/api/sync", PretexWeb do
+    pipe_through(:device_api)
+
+    get "/manifest", SyncController, :manifest
+    post "/checkins", SyncController, :upload
   end
 
   # -- Staff auth (magic link) -----------------------------------------------
