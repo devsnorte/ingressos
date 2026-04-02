@@ -14,6 +14,8 @@ defmodule Pretex.Devices.Device do
     belongs_to(:organization, Pretex.Organizations.Organization)
     belongs_to(:provisioned_by, Pretex.Accounts.User, foreign_key: :provisioned_by_id)
 
+    has_many(:device_assignments, Pretex.Devices.DeviceAssignment)
+
     timestamps(type: :utc_datetime)
   end
 
