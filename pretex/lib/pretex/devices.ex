@@ -4,7 +4,7 @@ defmodule Pretex.Devices do
   import Ecto.Query
 
   alias Pretex.Repo
-  alias Pretex.Devices.{Device, DeviceInitToken}
+  alias Pretex.Devices.{Device, DeviceAssignment, DeviceInitToken}
 
   @token_expiry_hours 24
 
@@ -107,6 +107,27 @@ defmodule Pretex.Devices do
         now = DateTime.utc_now() |> DateTime.truncate(:second)
         device |> Ecto.Changeset.change(last_seen_at: now) |> Repo.update()
     end
+  end
+
+  def assign_device_to_event(device_id, event_id) do
+    %DeviceAssignment{}
+    |> DeviceAssignment.changeset(%{device_id: device_id, event_id: event_id})
+    |> Repo.insert()
+  end
+
+  def unassign_device_from_event(device_id, event_id) do
+    DeviceAssignment
+    |> where([a], a.device_id == ^device_id and a.event_id == ^event_id)
+    |> Repo.delete_all()
+
+    :ok
+  end
+
+  def list_device_assignments(device_id) do
+    DeviceAssignment
+    |> where([a], a.device_id == ^device_id)
+    |> preload(:event)
+    |> Repo.all()
   end
 
   defp generate_short_code do
