@@ -103,7 +103,7 @@ defmodule Pretex.SyncTest do
       event = published_event_fixture(org)
 
       _order1 = confirmed_order_fixture(event, %{name: "Early Bird", email: "early@test.com"})
-      since = DateTime.utc_now() |> DateTime.add(1, :second)
+      since = DateTime.utc_now() |> DateTime.add(-1, :second)
       _order2 = confirmed_order_fixture(event, %{name: "Late Comer", email: "late@test.com"})
 
       {:ok, _} = Devices.assign_device_to_event(device.id, event.id)

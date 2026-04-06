@@ -98,8 +98,8 @@ defmodule Pretex.Sync do
 
     %{
       ticket_code: order_item.ticket_code,
-      attendee_name: order_item.attendee_name,
-      attendee_email: order_item.attendee_email,
+      attendee_name: order_item.attendee_name || order_item.order.name,
+      attendee_email: order_item.attendee_email || order_item.order.email,
       item_name: order_item.item.name,
       checked_in_at: if(check_in, do: check_in.checked_in_at)
     }
@@ -139,6 +139,9 @@ defmodule Pretex.Sync do
   end
 
   defp upsert_check_in(order_item_id, event_id, device_id, checked_in_at) do
+    {s, _precision} = checked_in_at.microsecond
+    checked_in_at = %{checked_in_at | microsecond: {s, 6}}
+
     existing =
       CheckIn
       |> where(
