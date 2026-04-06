@@ -22,6 +22,7 @@ defmodule Pretex.Events.Event do
     field(:multi_entry, :boolean, default: false)
 
     belongs_to(:organization, Pretex.Organizations.Organization)
+    belongs_to(:seating_plan, Pretex.Seating.SeatingPlan)
     has_many(:sub_events, Pretex.Events.SubEvent, foreign_key: :parent_event_id)
 
     timestamps(type: :utc_datetime)
