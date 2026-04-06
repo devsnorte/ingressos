@@ -102,7 +102,15 @@ defmodule Pretex.SyncTest do
       device = provisioned_device_fixture(org)
       event = published_event_fixture(org)
 
-      _order1 = confirmed_order_fixture(event, %{name: "Early Bird", email: "early@test.com"})
+      order1 = confirmed_order_fixture(event, %{name: "Early Bird", email: "early@test.com"})
+
+      # Backdate order1's items so they fall before the since cutoff
+      past = DateTime.utc_now() |> DateTime.add(-3600, :second) |> DateTime.truncate(:second)
+
+      Enum.each(order1.order_items, fn oi ->
+        oi |> Ecto.Changeset.change(updated_at: past) |> Pretex.Repo.update!()
+      end)
+
       since = DateTime.utc_now() |> DateTime.add(-1, :second)
       _order2 = confirmed_order_fixture(event, %{name: "Late Comer", email: "late@test.com"})
 
@@ -113,6 +121,7 @@ defmodule Pretex.SyncTest do
 
       names = Enum.map(ev.attendees, & &1.attendee_name)
       assert "Late Comer" in names
+      refute "Early Bird" in names
     end
 
     test "returns cancelled ticket codes for removal" do
