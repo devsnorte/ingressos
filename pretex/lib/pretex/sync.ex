@@ -13,10 +13,12 @@ defmodule Pretex.Sync do
     server_timestamp = DateTime.utc_now() |> DateTime.truncate(:second)
 
     events =
-      Enum.map(event_ids, fn event_id ->
-        event = Repo.get!(Pretex.Events.Event, event_id)
-        attendees = fetch_attendees(event_id, since)
-        removed = if since, do: fetch_removed_ticket_codes(event_id, since), else: []
+      Pretex.Events.Event
+      |> where([e], e.id in ^event_ids)
+      |> Repo.all()
+      |> Enum.map(fn event ->
+        attendees = fetch_attendees(event.id, since)
+        removed = if since, do: fetch_removed_ticket_codes(event.id, since), else: []
 
         %{
           id: event.id,
@@ -35,7 +37,7 @@ defmodule Pretex.Sync do
   def process_upload(device_id, results) do
     allowed_event_ids = MapSet.new(assigned_event_ids(device_id))
 
-    summary =
+    Repo.transaction(fn ->
       Enum.reduce(
         results,
         %{processed: 0, inserted: 0, conflicts_resolved: 0, skipped: 0, errors: 0},
@@ -54,8 +56,7 @@ defmodule Pretex.Sync do
           end
         end
       )
-
-    {:ok, summary}
+    end)
   end
 
   defp assigned_event_ids(device_id) do
@@ -68,34 +69,28 @@ defmodule Pretex.Sync do
   defp fetch_attendees(event_id, nil) do
     build_attendee_query(event_id)
     |> Repo.all()
-    |> Enum.map(&format_attendee(event_id, &1))
+    |> Enum.map(&format_attendee/1)
   end
 
   defp fetch_attendees(event_id, since) do
     build_attendee_query(event_id)
-    |> where([oi, _o], oi.updated_at > ^since)
+    |> where([oi, _o, _c], oi.updated_at > ^since)
     |> Repo.all()
-    |> Enum.map(&format_attendee(event_id, &1))
+    |> Enum.map(&format_attendee/1)
   end
 
   defp build_attendee_query(event_id) do
     OrderItem
     |> join(:inner, [oi], o in Order, on: oi.order_id == o.id)
-    |> where([oi, o], o.event_id == ^event_id and o.status == "confirmed")
-    |> preload([oi, o], [:item, order: o])
+    |> join(:left, [oi, o], c in CheckIn,
+      on: c.order_item_id == oi.id and c.event_id == ^event_id and is_nil(c.annulled_at)
+    )
+    |> where([oi, o, _c], o.event_id == ^event_id and o.status == "confirmed")
+    |> preload([oi, o, _c], [:item, order: o])
+    |> select([oi, o, c], {oi, c})
   end
 
-  defp format_attendee(event_id, order_item) do
-    check_in =
-      CheckIn
-      |> where(
-        [c],
-        c.order_item_id == ^order_item.id and
-          c.event_id == ^event_id and
-          is_nil(c.annulled_at)
-      )
-      |> Repo.one()
-
+  defp format_attendee({order_item, check_in}) do
     %{
       ticket_code: order_item.ticket_code,
       attendee_name: order_item.attendee_name || order_item.order.name,
@@ -139,8 +134,7 @@ defmodule Pretex.Sync do
   end
 
   defp upsert_check_in(order_item_id, event_id, device_id, checked_in_at) do
-    {s, _precision} = checked_in_at.microsecond
-    checked_in_at = %{checked_in_at | microsecond: {s, 6}}
+    checked_in_at = ensure_usec(checked_in_at)
 
     existing =
       CheckIn
@@ -174,4 +168,9 @@ defmodule Pretex.Sync do
         end
     end
   end
+
+  defp ensure_usec(%DateTime{microsecond: {us, precision}} = dt) when precision < 6,
+    do: %{dt | microsecond: {us, 6}}
+
+  defp ensure_usec(%DateTime{} = dt), do: dt
 end
