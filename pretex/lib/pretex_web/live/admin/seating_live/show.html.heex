@@ -1,0 +1,155 @@
+<.dashboard_layout
+  current_path={~p"/admin/organizations/#{@org}/seating"}
+  org={@org}
+  flash={@flash}
+>
+  <div class="mx-auto max-w-4xl px-4 py-8">
+    <%!-- Barra superior --%>
+    <div class="mb-6 flex items-center justify-between gap-4 flex-wrap">
+      <.link
+        navigate={~p"/admin/organizations/#{@org}/seating"}
+        class="inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-primary transition-colors"
+      >
+        <.icon name="hero-arrow-left" class="size-4" /> Voltar às Plantas
+      </.link>
+
+      <button phx-click="show_assign_event" class="btn btn-primary btn-sm gap-1">
+        <.icon name="hero-link" class="size-4" /> Atribuir a Evento
+      </button>
+    </div>
+
+    <%!-- Cabeçalho da planta --%>
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-base-content">{@plan.name}</h1>
+      <p class="text-sm text-base-content/60 mt-1">
+        Criada em {Calendar.strftime(@plan.inserted_at, "%d/%m/%Y")}
+        · {@plan.sections |> length()} seções
+        · {@plan.sections |> Enum.flat_map(& &1.seats) |> length()} assentos no total
+      </p>
+    </div>
+
+    <%!-- Modal de atribuição a evento --%>
+    <div
+      :if={@assign_event_form}
+      class="card bg-base-100 border border-primary/30 shadow-md mb-6"
+    >
+      <div class="card-body p-5">
+        <h2 class="text-base font-semibold text-base-content mb-3">Atribuir Planta a Evento</h2>
+        <.form for={@assign_event_form} phx-submit="assign_to_event">
+          <div class="flex items-end gap-3">
+            <div class="flex-1">
+              <label class="label">
+                <span class="label-text text-sm">Evento</span>
+              </label>
+              <select name="assignment[event_id]" class="select select-bordered w-full select-sm">
+                <option value="">Selecione um evento…</option>
+                <%= for event <- @events do %>
+                  <option value={event.id}>{event.name}</option>
+                <% end %>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">Atribuir</button>
+            <button type="button" phx-click="cancel_assign_event" class="btn btn-ghost btn-sm">
+              Cancelar
+            </button>
+          </div>
+        </.form>
+      </div>
+    </div>
+
+    <%!-- Seções --%>
+    <div class="space-y-4">
+      <%= for section <- @plan.sections do %>
+        <div class="card bg-base-100 border border-base-200 shadow-sm">
+          <div class="card-body p-5">
+            <%!-- Cabeçalho da seção --%>
+            <div class="flex items-start justify-between gap-4 mb-3">
+              <div>
+                <h2 class="text-base font-semibold text-base-content">{section.name}</h2>
+                <p class="text-xs text-base-content/50 mt-0.5">
+                  {section.capacity} assentos · {section.row_count || 0} fileiras
+                </p>
+              </div>
+
+              <div class="flex items-center gap-3 shrink-0">
+                <%!-- Mapeamento atual --%>
+                <div class="text-right">
+                  <p class="text-xs text-base-content/50">Tipo de ingresso</p>
+                  <p class="text-sm font-medium text-base-content">
+                    {section_item_label(section.item)}
+                    <%= if variation = section_variation_label(section.item_variation) do %>
+                      <span class="text-base-content/60">· {variation}</span>
+                    <% end %>
+                  </p>
+                </div>
+
+                <button
+                  phx-click="map_section"
+                  phx-value-section_id={section.id}
+                  class="btn btn-ghost btn-xs gap-1"
+                >
+                  <.icon name="hero-pencil-square" class="size-3" /> Mapear
+                </button>
+              </div>
+            </div>
+
+            <%!-- Formulário de mapeamento inline --%>
+            <div
+              :if={@mapping_section_id == section.id}
+              class="border-t border-base-200 pt-4 mt-2"
+            >
+              <p class="text-sm font-medium text-base-content mb-3">
+                Mapear seção a um tipo de ingresso
+              </p>
+              <.form for={@mapping_form} phx-submit="save_mapping">
+                <div class="flex flex-wrap items-end gap-3">
+                  <div class="flex-1 min-w-40">
+                    <label class="label">
+                      <span class="label-text text-xs">Item</span>
+                    </label>
+                    <select name="mapping[item_id]" class="select select-bordered w-full select-sm">
+                      <option value="">Nenhum</option>
+                      <%= for item <- @event_items do %>
+                        <option value={item.id}>{item.name}</option>
+                      <% end %>
+                    </select>
+                  </div>
+                  <div class="flex-1 min-w-40">
+                    <label class="label">
+                      <span class="label-text text-xs">Variação (opcional)</span>
+                    </label>
+                    <select
+                      name="mapping[item_variation_id]"
+                      class="select select-bordered w-full select-sm"
+                    >
+                      <option value="">Nenhuma</option>
+                      <%= for item <- @event_items, variation <- item.variations do %>
+                        <option value={variation.id}>{item.name} — {variation.name}</option>
+                      <% end %>
+                    </select>
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-xs">Salvar</button>
+                  <button type="button" phx-click="cancel_mapping" class="btn btn-ghost btn-xs">
+                    Cancelar
+                  </button>
+                </div>
+              </.form>
+            </div>
+
+            <%!-- Grade de assentos --%>
+            <div class="mt-3 flex flex-wrap gap-1">
+              <%= for seat <- section.seats do %>
+                <span class={[
+                  "badge badge-sm font-mono",
+                  if(seat.status == "available", do: "badge-ghost", else: "badge-error")
+                ]}>
+                  {seat.label}
+                </span>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</.dashboard_layout>
