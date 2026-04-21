@@ -10,13 +10,14 @@ defmodule Pretex.CheckIns.CheckIn do
     belongs_to(:event, Pretex.Events.Event)
     belongs_to(:checked_in_by, Pretex.Accounts.User, foreign_key: :checked_in_by_id)
     belongs_to(:annulled_by, Pretex.Accounts.User, foreign_key: :annulled_by_id)
+    belongs_to(:device, Pretex.Devices.Device)
 
     timestamps(type: :utc_datetime)
   end
 
   def changeset(check_in, attrs) do
     check_in
-    |> cast(attrs, [:checked_in_at, :annulled_at])
+    |> cast(attrs, [:checked_in_at, :annulled_at, :device_id])
     |> validate_required([:checked_in_at])
   end
 end

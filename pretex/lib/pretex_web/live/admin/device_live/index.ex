@@ -8,11 +8,13 @@ defmodule PretexWeb.Admin.DeviceLive.Index do
   def mount(%{"org_id" => org_id}, _session, socket) do
     org = Organizations.get_organization!(org_id)
     devices = Devices.list_devices(org.id)
+    events = Devices.list_org_events(org.id)
 
     socket =
       socket
       |> assign(:org, org)
       |> assign(:devices, devices)
+      |> assign(:events, events)
       |> assign(:generated_token, nil)
       |> assign(:page_title, "Dispositivos — #{org.name}")
 
@@ -40,18 +42,73 @@ defmodule PretexWeb.Admin.DeviceLive.Index do
 
   @impl true
   def handle_event("revoke_device", %{"id" => id_str}, socket) do
-    id = String.to_integer(id_str)
+    device_id = String.to_integer(id_str)
 
-    case Devices.revoke_device(id) do
-      {:ok, _} ->
-        {:noreply,
-         socket
-         |> assign(:devices, Devices.list_devices(socket.assigns.org.id))
-         |> put_flash(:info, "Acesso do dispositivo revogado.")}
-
-      {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Erro ao revogar dispositivo.")}
+    with :ok <- verify_device_belongs_to_org(device_id, socket.assigns.org.id),
+         {:ok, _} <- Devices.revoke_device(device_id) do
+      {:noreply,
+       socket
+       |> assign(:devices, Devices.list_devices(socket.assigns.org.id))
+       |> put_flash(:info, "Acesso do dispositivo revogado.")}
+    else
+      _ -> {:noreply, put_flash(socket, :error, "Erro ao revogar dispositivo.")}
     end
+  end
+
+  @impl true
+  def handle_event("assign_event", %{"event_id" => ""}, socket) do
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event(
+        "assign_event",
+        %{"device_id" => device_id_str, "event_id" => event_id_str},
+        socket
+      ) do
+    device_id = String.to_integer(device_id_str)
+    event_id = String.to_integer(event_id_str)
+    org_id = socket.assigns.org.id
+
+    with :ok <- verify_device_belongs_to_org(device_id, org_id),
+         :ok <- verify_event_belongs_to_org(event_id, org_id),
+         {:ok, _} <- Devices.assign_device_to_event(device_id, event_id) do
+      {:noreply, assign(socket, :devices, Devices.list_devices(org_id))}
+    else
+      _ -> {:noreply, put_flash(socket, :error, "Dispositivo já atribuído a este evento.")}
+    end
+  end
+
+  @impl true
+  def handle_event(
+        "unassign_event",
+        %{"device_id" => device_id_str, "event_id" => event_id_str},
+        socket
+      ) do
+    device_id = String.to_integer(device_id_str)
+    event_id = String.to_integer(event_id_str)
+    org_id = socket.assigns.org.id
+
+    with :ok <- verify_device_belongs_to_org(device_id, org_id) do
+      Devices.unassign_device_from_event(device_id, event_id)
+      {:noreply, assign(socket, :devices, Devices.list_devices(org_id))}
+    else
+      _ -> {:noreply, put_flash(socket, :error, "Operação não permitida.")}
+    end
+  end
+
+  defp verify_device_belongs_to_org(device_id, org_id) do
+    device = Devices.get_device!(device_id)
+    if device.organization_id == org_id, do: :ok, else: :error
+  rescue
+    Ecto.NoResultsError -> :error
+  end
+
+  defp verify_event_belongs_to_org(event_id, org_id) do
+    event = Pretex.Events.get_event!(event_id)
+    if event.organization_id == org_id, do: :ok, else: :error
+  rescue
+    Ecto.NoResultsError -> :error
   end
 
   defp time_ago(nil), do: "Nunca"
